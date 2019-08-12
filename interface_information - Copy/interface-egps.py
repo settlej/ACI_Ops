@@ -1,7 +1,7 @@
 #!/bin//python
 
-import re
-import readline
+#import re
+#import readline
 import urllib2
 import json
 import ssl
