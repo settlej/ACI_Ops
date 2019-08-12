@@ -1,6 +1,6 @@
 #!/bin//python
 
-import re
+#import re
 import readline
 import urllib2
 import json
