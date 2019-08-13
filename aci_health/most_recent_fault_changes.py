@@ -1,3 +1,5 @@
+#!/bin//python
+
 import re
 import readline
 import urllib2
@@ -5,15 +7,6 @@ import json
 import ssl
 import os
 import datetime
-
-def displaycurrenttime():
-    currenttime = datetime.datetime.now()
-    return str(currenttime)[:-3]
-
-def time_difference(fault_time):
-    currenttime = datetime.datetime.now()
-    ref_fault_time = datetime.datetime.strptime(fault_time, '%Y-%m-%d %H:%M:%S.%f')
-    return str(currenttime - ref_fault_time)[:-7]
 
 
 def GetRequest(url, icookie):
@@ -34,6 +27,15 @@ def getCookie():
     with open('/.aci/.sessions/.token', 'r') as f:
         cookie = f.read()
 
+def displaycurrenttime():
+    currenttime = datetime.datetime.now()
+    return str(currenttime)[:-3]
+
+def time_difference(fault_time):
+    currenttime = datetime.datetime.now()
+    ref_fault_time = datetime.datetime.strptime(fault_time, '%Y-%m-%d %H:%M:%S.%f')
+    return str(currenttime - ref_fault_time)[:-7]
+
 
 def askrefresh():
     while True:
@@ -53,11 +55,8 @@ def gatheranddisplayrecentfaults():
         print("Current time = " + displaycurrenttime())
         url = """https://localhost/api/node/class/faultInfo.json?query-target-filter=and(ne(faultInfo.severity,"cleared"))&order-by=faultInfo.lastTransition|desc&page=0&page-size=100"""
         result, totalcount = GetResponseData(url)
-        #print(result)
-        
         print('\n{:>5}   {:26}{:20}{:18}{:18}{}'.format('#','Time','Time Difference', 'Type','Fault-State','Fault Summary'))
         print('-'*175)
-        
         faultdict = {}
         for num,fault in enumerate(result,1):
             if fault.get('faultInst'):
@@ -71,7 +70,6 @@ def gatheranddisplayrecentfaults():
                 faulttype = fault['faultInst']['attributes']['type']
                 faultstate = fault['faultInst']['attributes']['lc']
                 faultdn = fault['faultInst']['attributes']['dn']
-                #print(faultlastTransition)
                 diff_time = time_difference(faultlastTransition[:-6])
                 faultdict[num] = [faultlastTransition[:-6],faulttype,faultstate,faultdn,faultdescr]
                 print('{:5}.) {:26}{:20}{:18}{:18}{}'.format(num,faultlastTransition[:-6],diff_time,faulttype,faultstate,summaryfaultdescr))
@@ -89,8 +87,6 @@ def gatheranddisplayrecentfaults():
                 diff_time = time_difference(faultlastTransition[:-6])
                 faultdict[num] = [faultlastTransition[:-6],faulttype,faultstate,faultdn,faultdescr]
                 print('{:5}.) {:26}{:20}{:18}{:18}{}'.format(num,faultlastTransition[:-6],diff_time,faulttype,faultstate,summaryfaultdescr))
-                
-        
         while True:
             moredetails = raw_input("\nMore details, select number [refresh=Blank and Enter]:  ")
             if moredetails == '':
@@ -104,13 +100,11 @@ def gatheranddisplayrecentfaults():
         diff_time = time_difference(faultdict[int(moredetails)][0])
         print('\n\n{:26}{:20}{:18}{:18}{}'.format('Time','Time Difference', 'Type','Fault-State','Object-Affected'))
         print('-'*120)
-        #print('/'.join(str(faultdict[int(moredetails)][3]).split('/')[:-1]))
         print('{:26}{:20}{:18}{:18}{}\n'.format(faultdict[int(moredetails)][0],diff_time, faultdict[int(moredetails)][1],faultdict[int(moredetails)][2],'/'.join(str(faultdict[int(moredetails)][3]).split('/')[:-1])))
         print('Fault Details')
         print('-'*15)
         print(faultdict[int(moredetails)][4])
         print('\n\n')
-
         refresh = askrefresh()
         if refresh == True:
             continue
@@ -129,5 +123,3 @@ if __name__ == '__main__':
     except KeyboardInterrupt as k:
         print("\n\nExiting Program....")
         exit()
-    except Exception as e:
-        print(e)

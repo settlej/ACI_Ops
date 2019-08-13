@@ -8,9 +8,6 @@ import ssl
 import os
 import datetime
 
-def displaycurrenttime():
-    currenttime = datetime.datetime.now()
-    return str(currenttime)[:-7]
 
 def GetRequest(url, icookie):
     method = "GET"
@@ -30,6 +27,9 @@ def get_Cookie():
     with open('/.aci/.sessions/.token', 'r') as f:
         cookie = f.read()
 
+def displaycurrenttime():
+    currenttime = datetime.datetime.now()
+    return str(currenttime)[:-7]
 
 def ask_refresh():
     while True:
@@ -190,20 +190,15 @@ def eventgather(eventresult):
                     interface = re.search(r'eth.*\/[0-9]{1,3}\]', eventdn).group()
                 else:
                     interface = 'unknown'
-                #portinterfaces = '{} {}'.format(leaf,interface[:-1])
             elif re.search(r'po[0-9]*\]', eventdn):
                 leaf = re.search(r'node-[0-9]{1,3}', eventdn).group()
                 leaf = leaf.replace('node', 'leaf')
                 interface = re.search(r'po[0-9]*\]', eventdn).group()
-                #portinterfaces = '{} {}'.format(leaf,interface[:-1])
-            #else:
-                #portinterfaces = ""
             listfault.append(eventObject(ftype='event', created=eventcreated[:-6], lastTransition=eventcreated[:-6],
                              user=eventuser, code=None, dn=eventdn, descr=eventdescr, summarydescr=summaryeventdescr,
                              changeset=None, state=None, trig=eventtrig))
     return listfault
 
-            #eventdict[num] = [eventcreated[:-6],eventtrig,eventuser,eventdn,eventdescr]
 def gather_and_display_related_events():
     while True:
         get_Cookie()
@@ -213,13 +208,10 @@ def gather_and_display_related_events():
         url = """https://localhost/api//class/aaaModLR.json?query-target-filter=and(gt(aaaModLR.created,"{}T{}"),lt(aaaModLR.created,"{}T{}"))&order-by=aaaModLR.created|desc""".format(date1,time1,date2,time2)
         auditresult, totalcount = GetResponseData(url)
         list1 = auditgather(auditresult)
-        
         print('Gathering Fault Logs...')
         url = """https://localhost/api/node/class/faultInfo.json?query-target-filter=and(gt(faultInfo.created,"{}T{}"),lt(faultInfo.created,"{}T{}"))&order-by=faultInfo.lastTransition|desc""".format(date1,time1,date2,time2)
         faultresult, totalcount = GetResponseData(url)
         list2 = faultgather(faultresult)
-        
-        
         print('Gathering Event Logs...\n')
         url = """https://localhost/api/node/class/eventRecord.json?query-target-filter=and(gt(eventRecord.created,"{}T{}"),lt(eventRecord.created,"{}T{}"))&order-by=eventRecord.created|desc""".format(date1,time1,date2,time2)
         eventresult, totalcount = GetResponseData(url)
@@ -232,15 +224,12 @@ def gather_and_display_related_events():
         for num,event in enumerate(lista,1):
             if event.ftype == 'event':
                 eventdict[num] = event
-                #print('{:6}\x1b[1;37;43m{:8}\x1b[0m{:26}{:10}{:18}{}'.format(str(num) + '.)', event.ftype,event.lastTransition,event.user,event.state,event.summarydescr))
                 print('{:6}\x1b[2;30;43m{:8}\x1b[0m{:26}{:10}{:18}{}'.format(str(num) + '.)', event.ftype,event.lastTransition,event.user,event.state,event.summarydescr))
-                #print('{:6}\x1b[6;37;41m{:8}\x1b[0m{:26}{:10}{:18}{}'.format(str(num) + '.)', event.ftype,event.lastTransition,event.user,event.state,event.summarydescr))
             elif event.ftype == 'fault' or event.ftype == 'faultd':
                 eventdict[num] = event
                 print('{:6}\x1b[1;33;44m{:8}\x1b[0m{:26}{:10}{:18}{}'.format(str(num) + '.)', event.ftype,event.lastTransition,event.user,event.state,event.summarydescr))
             elif event.ftype == 'audit':
                 eventdict[num] = event
-                #print('{:6}\x1b[1;37;42m{:8}\x1b[0m{:26}{:10}{:18}{}'.format(str(num) + '.)', event.ftype,event.lastTransition,event.user,event.state,event.summarydescr))
                 print('{:6}\x1b[6;30;41m{:8}\x1b[0m{:26}{:10}{:18}{}'.format(str(num) + '.)', event.ftype,event.lastTransition,event.user,event.state,event.summarydescr))
         while True:
             while True:
@@ -254,7 +243,6 @@ def gather_and_display_related_events():
                 break
             print('\n\n{:8}{:26}{:26}{:20}{:18}{:18}{}'.format('Type','Time Created', 'Time Modified', 'User','State','Object-Affected',''))
             print('-'*120)
-            #print('/'.join(str(eventdict[int(moredetails)][3]).split('/')[:-1]))
             print('{:8}{:26}{:26}{:20}{:18}{:18}{}\n'.format(eventdict[ask].ftype,eventdict[ask].created,eventdict[ask].lastTransition, eventdict[ask].user,eventdict[ask].state,eventdict[ask].dn, ''))
             print('Changed info (Only for Faults)')
             print('-'*25)
@@ -276,5 +264,3 @@ if __name__ == '__main__':
     except KeyboardInterrupt as k:
         print("\n\nExiting Program....")
         exit()
-    except Exception as e:
-        print(e)

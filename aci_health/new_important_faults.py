@@ -7,6 +7,22 @@ import json
 import ssl
 import os
 import datetime
+
+
+def GetRequest(url, icookie):
+    method = "GET"
+    cookies = 'APIC-cookie=' + icookie
+    request = urllib2.Request(url)
+    request.add_header("cookie", cookies)
+    request.add_header("Content-Type", "application/json")
+    request.add_header('Accept', 'application/json')
+    return urllib2.urlopen(request, context=ssl._create_unverified_context())
+def GetResponseData(url):
+    response = GetRequest(url, cookie)
+    result = json.loads(response.read())
+    return result['imdata'], result["totalCount"]
+
+    
 class faultobject():
     def __init__(self, faultstring='', code='', amount=0, order=None, results=None):
         self.faultstring = faultstring
@@ -30,20 +46,6 @@ def time_difference(fault_time):
     currenttime = datetime.datetime.now()
     ref_fault_time = datetime.datetime.strptime(fault_time, '%Y-%m-%d %H:%M:%S.%f')
     return str(currenttime - ref_fault_time)[:-7]
-
-def GetRequest(url, icookie):
-    method = "GET"
-    cookies = 'APIC-cookie=' + icookie
-    request = urllib2.Request(url)
-    request.add_header("cookie", cookies)
-    request.add_header("Content-Type", "application/json")
-    request.add_header('Accept', 'application/json')
-    return urllib2.urlopen(request, context=ssl._create_unverified_context())
-def GetResponseData(url):
-    response = GetRequest(url, cookie)
-    result = json.loads(response.read())
-    return result['imdata'], result["totalCount"]
-
 
 def faultSummary():
     url = """https://localhost/api/node/class/faultSummary.json?query-target-filter=and(not(wcard(faultSummary.dn,%22__ui_%22)),and())""" + \
@@ -121,10 +123,10 @@ def displayfaultSummary(summarylist):
     print('-'*62)
     print('\r')
     listoffoundfalts = []
-    fabricfaultstring += '{:.<45}{}\n'.format('Checking OSPF peer issues',summarylist.get('F1385', 'None'))#if summarylist.get('F1385', 'None'): listoffoundfalts.append(summarylist.get('F1385', 'None'))
-    fabricfaultstring += '{:.<45}{}\n'.format('Checking if Leaf/Spine(s) are Down',summarylist.get('F1543', 'None'))#if summarylist.get('F1543', 'None'): listoffoundfalts.append(summarylist.get('F1543', 'None'))
-    fabricfaultstring += '{:.<45}{}\n'.format('Checking if Leaf uplinks are Down',summarylist.get('F1394', 'None'))#if summarylist.get('F1394', 'None'): listoffoundfalts.append(summarylist.get('F1394', 'None'))
-    fabricfaultstring += '{:.<45}{}\n'.format('Checking for Server ports Down',summarylist.get('F0532', 'None'))#if summarylist.get('F0532', 'None'): listoffoundfalts.append(summarylist.get('F0532', 'None'))
+    fabricfaultstring += '{:.<45}{}\n'.format('Checking OSPF peer issues',summarylist.get('F1385', 'None'))
+    fabricfaultstring += '{:.<45}{}\n'.format('Checking if Leaf/Spine(s) are Down',summarylist.get('F1543', 'None'))
+    fabricfaultstring += '{:.<45}{}\n'.format('Checking if Leaf uplinks are Down',summarylist.get('F1394', 'None'))
+    fabricfaultstring += '{:.<45}{}\n'.format('Checking for Server ports Down',summarylist.get('F0532', 'None'))
     fabricfaultstring += '{:.<45}{}\n'.format('Checking for vPC Fully Down',summarylist.get('F1296', 'None'))
     fabricfaultstring += '{:.<45}{}\n'.format('Checking for vPC Half Down',summarylist.get('F2705', 'None'))
     fabricfaultstring += '{:.<45}{}\n'.format('Checking for vPC/PC Connection issues',summarylist.get('F0600', 'None'))
@@ -411,49 +413,49 @@ def askmoreDetail():
             exit()
         elif faultdict[userselected][0]['fault-type'] == 'OSPF peer issues':
             detail_ospf_faults(faultdict[userselected])
-            complete_refresh = askrefresh(detail_ospf_faults, OSPF_fault_check)#[0] )
+            complete_refresh = askrefresh(detail_ospf_faults, OSPF_fault_check)
         elif faultdict[userselected][0]['fault-type'] == 'Leaf/Spine(s) are Down':
             detail_switch_availability_status_faults(faultdict[userselected])
-            complete_refresh = askrefresh(detail_switch_availability_status_faults, is_Leaf_Spine_Down)#[0])
+            complete_refresh = askrefresh(detail_switch_availability_status_faults, is_Leaf_Spine_Down)
         elif faultdict[userselected][0]['fault-type'] == 'Server ports Down':
             detail_access_inter_faults(faultdict[userselected])
-            complete_refresh = askrefresh(detail_access_inter_faults, is_Leaf_interface_Down)#[0])
+            complete_refresh = askrefresh(detail_access_inter_faults, is_Leaf_interface_Down)
         elif faultdict[userselected][0]['fault-type'] == 'Switch UPLINK':
             detail_leaf_spine_uplink_faults(faultdict[userselected])
-            complete_refresh = askrefresh(detail_leaf_spine_uplink_faults, is_Leaf_uplink_Down)#[0])
+            complete_refresh = askrefresh(detail_leaf_spine_uplink_faults, is_Leaf_uplink_Down)
         elif faultdict[userselected][0]['fault-type'] == 'vPC Fully Down':
             detail_vpc_full_faults(faultdict[userselected])
-            complete_refresh = askrefresh(detail_vpc_full_faults, is_VPC_interface_fully_down)#[0])
+            complete_refresh = askrefresh(detail_vpc_full_faults, is_VPC_interface_fully_down)
         elif faultdict[userselected][0]['fault-type'] == 'VPC Partialty DOWN':
             detail_vpc_part_faults(faultdict[userselected])
-            complete_refresh = askrefresh(detail_vpc_part_faults, is_VPC_paritally_down)#[0])
+            complete_refresh = askrefresh(detail_vpc_part_faults, is_VPC_paritally_down)
         elif faultdict[userselected][0]['fault-type'] == 'APIC Database Replication':
             detail_apic_replica_faults(faultdict[userselected])
-            complete_refresh = askrefresh(detail_apic_replica_faults, APIC_replica_issues)#[0])
+            complete_refresh = askrefresh(detail_apic_replica_faults, APIC_replica_issues)
         elif faultdict[userselected][0]['fault-type'] == 'APIC HEALTH':
             detail_apic_health_faults(faultdict[userselected])
-            complete_refresh = askrefresh(detail_apic_health_faults, APIC_Health_issues)#[0])
+            complete_refresh = askrefresh(detail_apic_health_faults, APIC_Health_issues)
         elif faultdict[userselected][0]['fault-type'] == 'APIC Phys Port issues':
             detail_phys_apic_port_faults(faultdict[userselected])
-            complete_refresh = askrefresh(detail_phys_apic_port_faults, is_APIC_physical_ports_down)#[0])
+            complete_refresh = askrefresh(detail_phys_apic_port_faults, is_APIC_physical_ports_down)
         elif faultdict[userselected][0]['fault-type'] == 'NTP issues':
             detail_ntp_faults(faultdict[userselected])
-            complete_refresh = askrefresh(detail_ntp_faults, is_NTP_issues)#[0])
+            complete_refresh = askrefresh(detail_ntp_faults, is_NTP_issues)
         elif faultdict[userselected][0]['fault-type'] == "APIC can't reach VCenter":
             detail_vcenter_reachable(faultdict[userselected])
             complete_refresh = askrefresh(detail_vcenter_reachable, is_VCENTER_reachable)
         elif faultdict[userselected][0]['fault-type'] == 'vPC/PC Connection issues':
             detail_port_channel_neighbor_faults(faultdict[userselected])
-            complete_refresh = askrefresh(detail_port_channel_neighbor_faults, is_Port_Channel_Neighbor_fail)#[0])
+            complete_refresh = askrefresh(detail_port_channel_neighbor_faults, is_Port_Channel_Neighbor_fail)
         elif faultdict[userselected][0]['fault-type'] == 'Missing Power Supply':
             detail_missing_psu_faults(faultdict[userselected])
-            complete_refresh = askrefresh(detail_missing_psu_faults, is_Missing_PowerSupply)#[0])
+            complete_refresh = askrefresh(detail_missing_psu_faults, is_Missing_PowerSupply)
         elif faultdict[userselected][0]['fault-type'] == 'Unused/Shutdown Power Supply':
             detail_shutdown_psu_faults(faultdict[userselected])
-            complete_refresh = askrefresh(detail_shutdown_psu_faults, is_PowerSupply_shutdown)#[0])
+            complete_refresh = askrefresh(detail_shutdown_psu_faults, is_PowerSupply_shutdown)
         elif faultdict[userselected][0]['fault-type'] == 'Failed Power Supply':
             detail_failed_psu_faults(faultdict[userselected])
-            complete_refresh = askrefresh(detail_failed_psu_faults, is_PowerSupply_failure)#[0])
+            complete_refresh = askrefresh(detail_failed_psu_faults, is_PowerSupply_failure)
 
         os.system('clear')
         print('\n')
@@ -467,32 +469,6 @@ def askmoreDetail():
         #        break
 
         
-#def collecting_all_faults():
-#    print('\n' + '-'*80 + '\n')
-#    print('Fabric:')
-#    ospfd = OSPF_fault_check()
-#    lsdownd = is_Leaf_Spine_Down()
-#    uplinkd = is_Leaf_uplink_Down()
-#    intdownd = is_Leaf_interface_Down()
-#    vpcdownd = is_VPC_interface_fully_down()
-#    vpcpartd = is_VPC_paritally_down()
-#    PoNeighbord = is_Port_Channel_Neighbor_fail()
-#    ntpd = is_NTP_issues()
-#    vcenterd = is_VCENTER_reachable()
-#    print('APIC: ')
-#    apicrepd = APIC_replica_issues()
-#    apichealthd = APIC_Health_issues()
-#    physapicportd = is_APIC_physical_ports_down()
-#    print('Power:')
-#    missingpsud = is_Missing_PowerSupply()
-#    shutdownpsud = is_PowerSupply_shutdown()
-#    failurepsud = is_PowerSupply_failure()
-#    print('\n' + '-'*80 + '\n')
-#    return ospfd + lsdownd +  uplinkd + intdownd  + vpcdownd + vpcpartd + PoNeighbord + ntpd +vcenterd+  apicrepd + apichealthd + physapicportd + missingpsud + shutdownpsud + failurepsud
-
-#def askrefresh(code)
-#    ask = raw_input("Would you like to refresh? [y|n]:  ")
-#    if 
 def refreshloop(detail_function, fault):
     print('\r')
     print('Current Time = ' + displaycurrenttime())            
@@ -510,7 +486,7 @@ def refreshloop(detail_function, fault):
         else:
             return
 
-def Main():
+def main():
     unauthenticated = False
     while True:
         try:
@@ -525,8 +501,7 @@ def Main():
             displayfaultSummary(objectdict)
             faultselected = displayfaultSummaryandSelection(ordered)
             fault = get_fault_results(faultselected)
-            #displayresults(results)
-            if fault.code == 'F1385': #OSPFrefreshloop(                    
+            if fault.code == 'F1385': #OSPFrefreshloop                    
                 refreshloop(detail_ospf_faults, fault)
             elif fault.code == 'F1543': # Leaf/Spine Down
                 refreshloop(detail_switch_availability_status_faults, fault)
@@ -558,48 +533,15 @@ def Main():
                 refreshloop(detail_failed_psu_faults, fault)
 
             
-            #askrefresh(fault)
-            #for x in code.results:
-            #    print(x)
-            #    print('\n')
-
-            
-
-            ##print('\n' + '-'*80 + '\n')
-            ##print('Fabric:')
-            ##ospfd = OSPF_fault_check()
-            ##lsdownd = is_Leaf_Spine_Down()
-            ##uplinkd = is_Leaf_uplink_Down()
-            ##intdownd = is_Leaf_interface_Down()
-            ##vpcdownd = is_VPC_interface_fully_down()
-            ##vpcpartd = is_VPC_paritally_down()
-            ##PoNeighbord = is_Port_Channel_Neighbor_fail()
-            ##ntpd = is_NTP_issues()
-            ##print('APIC: ')
-            ##apicrepd = APIC_replica_issues()
-            ##apichealthd = APIC_Health_issues()
-            ##physapicportd = is_APIC_physical_ports_down()
-            ##print('Power:')
-            ##missingpsud = is_Missing_PowerSupply()
-            ##shutdownpsud = is_PowerSupply_shutdown()
-            ##failurepsud = is_PowerSupply_failure()
-            ##print('\n' + '-'*80 + '\n')
-            ##listdetail = ospfd + lsdownd +  uplinkd + intdownd  + vpcdownd + vpcpartd + PoNeighbord + ntpd +  apicrepd + apichealthd + physapicportd + missingpsud + shutdownpsud + failurepsud
-            #print('debug1: ', len(unfilteredlist))
-            #listdetail = list(filter(None, unfilteredlist)) 
-            #print('debug2: ', listdetail)
-            #askmoreDetail()
-            #if complete_refresh == True:
-            #    continue
-            #break
-            #else:
-            #    continue
-            
-
         except urllib2.HTTPError as e:
             unauthenticated = True
             pass
 
 
-
-Main()
+if __name__ == '__main__':
+    try:
+        main()
+    except KeyboardInterrupt as k:
+        print("\n\nExiting Program....")
+        exit()
+    
