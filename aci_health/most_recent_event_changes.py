@@ -1,3 +1,5 @@
+#!/bin//python
+
 import re
 import readline
 import urllib2
@@ -5,15 +7,6 @@ import json
 import ssl
 import os
 import datetime
-
-def displaycurrenttime():
-    currenttime = datetime.datetime.now()
-    return str(currenttime)[:-3]
-
-def time_difference(event_time):
-    currenttime = datetime.datetime.now()
-    ref_event_time = datetime.datetime.strptime(event_time, '%Y-%m-%d %H:%M:%S.%f')
-    return str(currenttime - ref_event_time)[:-7]
 
 
 def GetRequest(url, icookie):
@@ -34,7 +27,15 @@ def getCookie():
     with open('/.aci/.sessions/.token', 'r') as f:
         cookie = f.read()
 
+def displaycurrenttime():
+    currenttime = datetime.datetime.now()
+    return str(currenttime)[:-3]
 
+def time_difference(event_time):
+    currenttime = datetime.datetime.now()
+    ref_event_time = datetime.datetime.strptime(event_time, '%Y-%m-%d %H:%M:%S.%f')
+    return str(currenttime - ref_event_time)[:-7]
+        
 def askrefresh():
     while True:
         refresh = raw_input("Return to event list? [y=default|n]:  ") or 'y'
@@ -54,13 +55,10 @@ def gatheranddisplayrecentevents():
         print("\nEvents loading...\n")
         url = """https://localhost/api/node/class/eventRecord.json?query-target-filter=not(wcard(eventRecord.dn,%22__ui_%22))&order-by=eventRecord.created|desc&page=0&page-size=50"""
         result, totalcount = GetResponseData(url)
-        #print(result)
         os.system('clear')
         print("Current time = " + displaycurrenttime())
-
         print('\n{:>5}   {:26}{:20}{:24}{}'.format('#','Time','Time Difference', 'Port','Event Summary'))
         print('-'*175)
-        
         eventdict = {}
         for num,event in enumerate(result,1):
             if event.get('eventRecord'):
@@ -74,13 +72,8 @@ def gatheranddisplayrecentevents():
                 eventtrig = event['eventRecord']['attributes']['trig']
                 eventuser = event['eventRecord']['attributes']['user']
                 eventdn = event['eventRecord']['attributes']['dn']
-                #if 'Port' in summaryeventdescr and 'po' in eventdn:
-                #print(eventdn)
                 if 'eth' in eventdn and not 'extpaths' in eventdn:
-                    #print(eventdn)
-                #    print(1)
                     leaf = re.search(r'(node-[0-9]{1,3})|(paths-[0-9]{1,3})', eventdn).group()
-                    #leaf = leaf.replace('node', 'leaf')
                     if leaf.startswith('paths'):
                         leaf = leaf.replace('paths', 'leaf')
                     elif leaf.startswith('node'):
@@ -88,22 +81,17 @@ def gatheranddisplayrecentevents():
                     interface = re.search(r'eth.*\/[0-9]{1,3}\]', eventdn).group()
                     portinterfaces = '{} {}'.format(leaf,interface[:-1])
                 elif re.search(r'po[0-9]*\]', eventdn):
-                    
-                #    print(2)
                     leaf = re.search(r'node-[0-9]{1,3}', eventdn).group()
                     leaf = leaf.replace('node', 'leaf')
                     interface = re.search(r'po[0-9]*\]', eventdn).group()
                     portinterfaces = '{} {}'.format(leaf,interface[:-1])
                 #elif 'rsoosPath' in eventdn and not 'extpaths' in eventdn:
-                #    print(3)
-                #    #print(eventdn)
                 #    leaf = re.search(r'protpaths-[0-9]{3}-[0-9]{3}', eventdn).group()
                 #    leaf = leaf.replace('protpaths', 'VPC node')
                 #    interface = re.search(r'pathep-.*\]', eventdn).group()
                 #    interface = interface.replace('pathep-', "")
                 #    portinterfaces = '{} {}'.format(leaf,interface[:-1])
                 #elif 'rsoosPath' in eventdn and 'extpaths' in eventdn:
-                #    print(4)
                 #    leaf = re.search(r'paths-[0-9]{3}', eventdn).group()
                 #    leaf = leaf.replace('paths','node')
                 #    fex = re.search(r'extpaths-.*\]', eventdn).group()
@@ -128,13 +116,11 @@ def gatheranddisplayrecentevents():
         diff_time = time_difference(eventdict[int(moredetails)][0])
         print('\n\n{:26}{:20}{:18}{:18}{}'.format('Time','Time Difference', 'Type','User','Object-Affected'))
         print('-'*120)
-        #print('/'.join(str(eventdict[int(moredetails)][3]).split('/')[:-1]))
         print('{:26}{:20}{:18}{:18}{}\n'.format(eventdict[int(moredetails)][0],diff_time, eventdict[int(moredetails)][1],eventdict[int(moredetails)][2],'/'.join(str(eventdict[int(moredetails)][3]).split('/')[:-1])))
         print('Event Details')
         print('-'*15)
         print(eventdict[int(moredetails)][4])
         print('\n\n')
-
         refresh = askrefresh()
         if refresh == True:
             continue
@@ -153,5 +139,3 @@ if __name__ == '__main__':
     except KeyboardInterrupt as k:
         print("\n\nExiting Program....")
         exit()
-   # except Exception as e:
-    #    print(e)
