@@ -10,12 +10,9 @@ import datetime
 
 def getToken(host):
     ssl._create_default_https_context = ssl._create_unverified_context
-
     user = "\"admin\""
     pwd = "\"ciscopsdt\""
-
     url = "https://" + host + "/api/aaaLogin.json"
-
     payload = "{ \"aaaUser\" : { \"attributes\": {\"name\": " + user + ",\"pwd\": " + pwd + "} } }"
     request = urllib2.Request(url, data=payload)
     response = urllib2.urlopen(request)
