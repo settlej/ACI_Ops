@@ -8,6 +8,18 @@ import ssl
 import os
 import datetime
 
+def getToken(host):
+    ssl._create_default_https_context = ssl._create_unverified_context
+    user = "\"admin\""
+    pwd = "\"ciscopsdt\""
+    url = "https://" + host + "/api/aaaLogin.json"
+    payload = "{ \"aaaUser\" : { \"attributes\": {\"name\": " + user + ",\"pwd\": " + pwd + "} } }"
+    request = urllib2.Request(url, data=payload)
+    response = urllib2.urlopen(request)
+    token = json.loads(response.read())
+    cookie = token["imdata"][0]["aaaLogin"]["attributes"]["token"]
+    return cookie
+
 
 def GetRequest(url, icookie):
     method = "GET"
@@ -17,7 +29,7 @@ def GetRequest(url, icookie):
     request.add_header("Content-Type", "application/json")
     request.add_header('Accept', 'application/json')
     return urllib2.urlopen(request, context=ssl._create_unverified_context())
-def GetResponseData(url):
+def GetResponseData(url, cookie):
     response = GetRequest(url, cookie)
     result = json.loads(response.read())
     return result['imdata'], result["totalCount"]
@@ -47,10 +59,10 @@ def time_difference(fault_time):
     ref_fault_time = datetime.datetime.strptime(fault_time, '%Y-%m-%d %H:%M:%S.%f')
     return str(currenttime - ref_fault_time)[:-7]
 
-def faultSummary():
-    url = """https://localhost/api/node/class/faultSummary.json?query-target-filter=and(not(wcard(faultSummary.dn,%22__ui_%22)),and())""" + \
+def faultSummary(host, cookie):
+    url = """https://""" + host + """/api/node/class/faultSummary.json?query-target-filter=and(not(wcard(faultSummary.dn,%22__ui_%22)),and())""" + \
           """&order-by=faultSummary.severity|desc&page=0&page-size=100"""
-    result, totalcount = GetResponseData(url)
+    result, totalcount = GetResponseData(url, cookie)
     #print(result)
     reduced_fault_summary_dict = {}
     neededfaults = ['F1385', # OSPF
@@ -146,8 +158,8 @@ def displayfaultSummary(summarylist):
             print('\t'+ faults)
     print('-'*62)
 
-def get_fault_results(code):
-    url = """https://localhost/api/node/class/faultInfo.json?query-target-filter=and(ne(faultInfo.severity,"cleared"),""" + \
+def get_fault_results(host, code):
+    url = """https://""" + host + """/api/node/class/faultInfo.json?query-target-filter=and(ne(faultInfo.severity,"cleared"),""" + \
           """eq(faultInfo.code,"{}"))&order-by=faultInfo.lastTransition|Desc&page=0&order-by=faultInfo.lastTransition|Desc&page-size=100""".format(code.code)
     result, totalcount = GetResponseData(url)
     code.results = result
@@ -194,7 +206,7 @@ def detail_access_inter_faults(listdetail):
         usedlocation =  description.find('used')
         description_final = description[:usedlocation - 2] 
         if 'po' in interface.group():
-            poName = retrievePortChannelName(interface.group(), leaf.group())
+            poName = retrievePortChannelName(host, interface.group(), leaf.group())
             print('{:26}{:20}{:10}{:15}{:18}{:18}{}'.format(timestamp[:-6],diff_time, leaf.group(), interface.group(), poName, lc, description_final))
         else:
             print('{:26}{:20}{:10}{:15}{:18}{:18}{}'.format(timestamp[:-6],diff_time, leaf.group(), interface.group(), '', lc,  description_final))
@@ -365,17 +377,17 @@ def detail_failed_psu_faults(listdetail):
             node = node.group().replace('Node', 'APIC')
         print("{:26}{:20}{:12}{:18}{}".format(timestamp[:-6],diff_time,node,lc,descr))
     print('\n')
-def retrievePortChannelName(PoNum, leaf):
-    url = """https://localhost/api/node/mo/topology/pod-1/node-{leaf}/sys/aggr-{PoNum}/rtaccBndlGrpToAggrIf.json""".format(leaf=leaf[4:],PoNum=PoNum)
+def retrievePortChannelName(host, PoNum, leaf):
+    url = """https://""" + host + """/api/node/mo/topology/pod-1/node-{leaf}/sys/aggr-{PoNum}/rtaccBndlGrpToAggrIf.json""".format(leaf=leaf[4:],PoNum=PoNum)
     result = GetResponseData(url)
     poresult = result[0][0][u"pcRtAccBndlGrpToAggrIf"][u"attributes"][u'tDn']
     poposition = result[0][0][u"pcRtAccBndlGrpToAggrIf"][u"attributes"][u'tDn'].rfind('accbundle-')
     poName = poresult[poposition+10:]
     return poName
-def getCookie():
-    global cookie
+def getCookie(cookie):
     with open('/.aci/.sessions/.token', 'r') as f:
         cookie = f.read()
+        return cookie
 
 
 def askrefresh(detail_function, is_function):
@@ -473,7 +485,7 @@ def refreshloop(detail_function, fault):
     print('\r')
     print('Current Time = ' + displaycurrenttime())            
     while True:
-        get_fault_results(fault)
+        get_fault_results(host, fault)
         detail_function(fault.results)
         if fault.results == []:
             print("No Faults, all have been resolved...\n")
@@ -486,18 +498,35 @@ def refreshloop(detail_function, fault):
         else:
             return
 
+
+def localOrRemote(environment):
+    if environment == "remote":
+        host = raw_input("Enter IP address or FQDN of APIC: ")
+        cookie = getToken(host)
+        return host, cookie
+    else:
+        host = "localhost"
+        cookie = getCookie(host)
+        return host, cookie
+
+
 def main():
     unauthenticated = False
+    environment = raw_input("Enter APIC environment variable [remote|local]: ")
+    while environment not in {"remote", "local"}:
+        print("Invalid Response. Please enter \"remote\" or \"local\".")
+        main()
+    host, cookie = localOrRemote(environment)
+
     while True:
         try:
-            getCookie()
             if unauthenticated:
                 os.system('clear')
                 print('Authentication Token timed out...restarting program')
             else:
                 os.system('clear')
             unauthenticated = False
-            ordered, objectdict = faultSummary()
+            ordered, objectdict = faultSummary(host, cookie)
             displayfaultSummary(objectdict)
             faultselected = displayfaultSummaryandSelection(ordered)
             fault = get_fault_results(faultselected)
