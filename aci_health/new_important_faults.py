@@ -8,6 +8,7 @@ import ssl
 import os
 import datetime
 
+
 def getToken(host):
     ssl._create_default_https_context = ssl._create_unverified_context
     user = 'admin'
@@ -17,20 +18,19 @@ def getToken(host):
     request = urllib2.Request(url, data=payload)
     response = urllib2.urlopen(request)
     token = json.loads(response.read())
-    global cookie
     cookie = token["imdata"][0]["aaaLogin"]["attributes"]["token"]
     return cookie
 
 
 def GetRequest(url, icookie):
     method = "GET"
-    cookies = 'APIC-cookie=' + icookie
+    cookies = 'APIC-cookie=' + str(icookie)
     request = urllib2.Request(url)
     request.add_header("cookie", cookies)
     request.add_header("Content-Type", "application/json")
     request.add_header('Accept', 'application/json')
     return urllib2.urlopen(request, context=ssl._create_unverified_context())
-def GetResponseData(url):
+def GetResponseData(url, cookie):
     response = GetRequest(url, cookie)
     result = json.loads(response.read())
     return result['imdata'], result["totalCount"]
@@ -63,8 +63,7 @@ def time_difference(fault_time):
 def faultSummary(host, cookie):
     url = ("""https://{host}/api/node/class/faultSummary.json?query-target-filter=and(not(wcard(faultSummary.dn,%22__ui_%22)),and())""" + \
           """&order-by=faultSummary.severity|desc&page=0&page-size=100""").format(host=host)
-    print(url)
-    result, totalcount = GetResponseData(url)
+    result, totalcount = GetResponseData(url, cookie)
     #print(result)
     reduced_fault_summary_dict = {}
     neededfaults = ['F1385', # OSPF
@@ -82,6 +81,7 @@ def faultSummary(host, cookie):
                     'F0413', # missing psu
                     'F1451', # shutdown psu
                     'F1940'] # failed psu
+
     orderedfilteredfaultlist = []
     for fault in result:
         if fault['faultSummary']['attributes']['code'] in neededfaults:
@@ -161,9 +161,9 @@ def displayfaultSummary(summarylist):
     print('-'*62)
 
 def get_fault_results(host, cookie, code):
-    url = ("""https://{host}/api/node/class/faultInfo.json?query-target-filter=and(ne(faultInfo.severity,"cleared"),""" + 
+    url = ("""https://{host}/api/node/class/faultInfo.json?query-target-filter=and(ne(faultInfo.severity,"cleared"),""" +
           """eq(faultInfo.code,"{code}"))&order-by=faultInfo.lastTransition|Desc&page=0&order-by=faultInfo.lastTransition|Desc&page-size=100""").format(host=host,code=code.code)
-    result, totalcount = GetResponseData(url)
+    result, totalcount = GetResponseData(url, cookie)
     code.results = result
     code.amount = totalcount
     return code
@@ -380,9 +380,9 @@ def detail_failed_psu_faults(listdetail,host):
         print("{:26}{:20}{:12}{:18}{}".format(timestamp[:-6],diff_time,node,lc,descr))
     print('\n')
 
-def retrievePortChannelName(host, PoNum, leaf):
+def retrievePortChannelName(host, cookie, PoNum, leaf):
     url = """https://{host}/api/node/mo/topology/pod-1/node-{leaf}/sys/aggr-{PoNum}/rtaccBndlGrpToAggrIf.json""".format(host=host,leaf=leaf[4:],PoNum=PoNum)
-    result = GetResponseData(url)
+    result = GetResponseData(url, cookie)
     poresult = result[0][0][u"pcRtAccBndlGrpToAggrIf"][u"attributes"][u'tDn']
     poposition = result[0][0][u"pcRtAccBndlGrpToAggrIf"][u"attributes"][u'tDn'].rfind('accbundle-')
     poName = poresult[poposition+10:]
@@ -390,7 +390,6 @@ def retrievePortChannelName(host, PoNum, leaf):
 
 def getCookie():
     with open('/.aci/.sessions/.token', 'r') as f:
-        global cookie
         cookie = f.read()
         return cookie
 
@@ -474,6 +473,7 @@ def askmoreDetail(host):
             detail_failed_psu_faults(faultdict[userselected])
             complete_refresh = askrefresh(detail_failed_psu_faults, is_PowerSupply_failure)
 
+
         os.system('clear')
         print('\n')
         if complete_refresh == 1:
@@ -507,7 +507,7 @@ def refreshloop(detail_function, fault, host, cookie):
 def localOrRemote():
     if os.path.isfile('a/.aci/.sessions/.token'):
         host = "localhost"
-        cookie = getCookie(host)
+        cookie = getCookie()
         return host, cookie
     else:
         host = raw_input("Enter IP address or FQDN of APIC: ")
@@ -562,7 +562,7 @@ def main():
             elif fault.code == 'F1940': # failed psu
                 refreshloop(detail_failed_psu_faults, fault, host, cookie)
 
-            
+
         except urllib2.HTTPError as e:
             unauthenticated = True
             pass
