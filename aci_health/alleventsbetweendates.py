@@ -1,13 +1,28 @@
 #!/bin//python
 
 import re
-import readline
+try:
+    import readline
+except:
+    pass
 import urllib2
 import json
 import ssl
 import os
 import datetime
+import trace
+import getpass
 
+def getToken(apic, user, pwd):
+    ssl._create_default_https_context = ssl._create_unverified_context
+    url = "https://{apic}/api/aaaLogin.json".format(apic=apic)
+    payload = '{"aaaUser":{"attributes":{"name":"%(user)s","pwd":"%(pwd)s"}}}' % {"pwd":pwd,"user":user}
+    request = urllib2.Request(url, data=payload)
+    response = urllib2.urlopen(request, timeout=4)
+    token = json.loads(response.read())
+    global cookie
+    cookie = token["imdata"][0]["aaaLogin"]["attributes"]["token"]
+    return cookie
 
 def GetRequest(url, icookie):
     method = "GET"
@@ -22,10 +37,16 @@ def GetResponseData(url):
     result = json.loads(response.read())
     return result['imdata'], result["totalCount"]
 
-def get_Cookie():
+def getCookie():
     global cookie
     with open('/.aci/.sessions/.token', 'r') as f:
         cookie = f.read()
+
+def clear_screen():
+    if os.name == 'posix':
+        os.system('clear')
+    else:
+        os.system('cls')
 
 def displaycurrenttime():
     currenttime = datetime.datetime.now()
@@ -40,13 +61,52 @@ def ask_refresh():
             return False
         else:
             continue
-    
+
+def localOrRemote():
+    if os.path.isfile('/.aci/.sessions/.token'):
+        apic = "localhost"
+        cookie = getCookie()
+        return apic, cookie
+    else:
+        unauthenticated = False
+        timedout = False
+        error = ''
+        while True:
+            clear_screen()
+            if unauthenticated:
+                print(error)
+                unauthenticated = False
+            elif timedout:
+                print(error)
+                apic = raw_input("Enter IP address or FQDN of APIC: ")
+                timedout = False
+            else:
+                print(error)
+                apic = raw_input("\nEnter IP address or FQDN of APIC: ")
+            try:
+                user = raw_input('\nUsername: ')
+                pwd = getpass.getpass('Password: ')
+                cookie = getToken(apic, user,pwd)
+            except urllib2.HTTPError as auth:
+                unauthenticated = True
+                error = '\n\x1b[1;31;40mAuthentication failed\x1b[0m\n'
+                continue
+            except urllib2.URLError as e:
+                timedout = True
+                error = "\n\x1b[1;31;40mThere was an '%s' error connecting to APIC '%s'\x1b[0m\n" % (e.reason,apic)
+                continue
+            except Exception as e:
+                print("\n\x1b[1;31;40mError has occured, please try again\x1b[0m\n")
+                continue
+            break
+    return apic, cookie
+
 def get_and_seperate_dates():
     userdatefailure = False
     futuredate = False
     while True:
         if userdatefailure == True:
-            os.system('clear')
+            clear_screen()
         print("Current time = " + displaycurrenttime())
         print("\nBetween Dates (Oldest -> Latest) \n\n[Format: yyyy-mm-ddThh:mm:ss - yyyy-mm-ddThh:mm:ss ]\n\n")
         if userdatefailure == True:
@@ -199,21 +259,21 @@ def eventgather(eventresult):
                              changeset=None, state=None, trig=eventtrig))
     return listfault
 
-def gather_and_display_related_events():
+def gather_and_display_related_events(apic,cookie):
     while True:
-        get_Cookie()
-        os.system('clear')
+        #get_Cookie()
+        clear_screen()
         date1,time1,date2,time2 = get_and_seperate_dates()
         print('\nGathering Audit Logs...')
-        url = """https://localhost/api//class/aaaModLR.json?query-target-filter=and(gt(aaaModLR.created,"{}T{}"),lt(aaaModLR.created,"{}T{}"))&order-by=aaaModLR.created|desc""".format(date1,time1,date2,time2)
+        url = """https://{apic}/api//class/aaaModLR.json?query-target-filter=and(gt(aaaModLR.created,"{}T{}"),lt(aaaModLR.created,"{}T{}"))&order-by=aaaModLR.created|desc""".format(date1,time1,date2,time2,apic=apic)
         auditresult, totalcount = GetResponseData(url)
         list1 = auditgather(auditresult)
         print('Gathering Fault Logs...')
-        url = """https://localhost/api/node/class/faultInfo.json?query-target-filter=and(gt(faultInfo.created,"{}T{}"),lt(faultInfo.created,"{}T{}"))&order-by=faultInfo.lastTransition|desc""".format(date1,time1,date2,time2)
+        url = """https://{apic}/api/node/class/faultInfo.json?query-target-filter=and(gt(faultInfo.created,"{}T{}"),lt(faultInfo.created,"{}T{}"))&order-by=faultInfo.lastTransition|desc""".format(date1,time1,date2,time2,apic=apic)
         faultresult, totalcount = GetResponseData(url)
         list2 = faultgather(faultresult)
         print('Gathering Event Logs...\n')
-        url = """https://localhost/api/node/class/eventRecord.json?query-target-filter=and(gt(eventRecord.created,"{}T{}"),lt(eventRecord.created,"{}T{}"))&order-by=eventRecord.created|desc""".format(date1,time1,date2,time2)
+        url = """https://{apic}/api/node/class/eventRecord.json?query-target-filter=and(gt(eventRecord.created,"{}T{}"),lt(eventRecord.created,"{}T{}"))&order-by=eventRecord.created|desc""".format(date1,time1,date2,time2,apic=apic)
         eventresult, totalcount = GetResponseData(url)
         list3 = eventgather(eventresult)
         print('{:6}{:8}{:26}{:10}{:18}{}'.format('Order','Type', 'Date & Time ', 'User','Fault-State','Summary Description'))
@@ -255,7 +315,8 @@ def gather_and_display_related_events():
         
 
 def main():
-    gather_and_display_related_events()
+    apic, cookie = localOrRemote()
+    gather_and_display_related_events(apic,cookie)
 
     
 if __name__ == '__main__':

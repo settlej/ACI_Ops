@@ -13,9 +13,9 @@ import datetime
 import getpass
 
 
-def getToken(host, user, pwd):
+def getToken(apic, user, pwd):
     ssl._create_default_https_context = ssl._create_unverified_context
-    url = "https://{host}/api/aaaLogin.json".format(host=host)
+    url = "https://{apic}/api/aaaLogin.json".format(apic=apic)
     payload = '{"aaaUser":{"attributes":{"name":"%(user)s","pwd":"%(pwd)s"}}}' % {"pwd":pwd,"user":user}
     request = urllib2.Request(url, data=payload)
     response = urllib2.urlopen(request, timeout=4)
@@ -68,9 +68,9 @@ def time_difference(fault_time):
     ref_fault_time = datetime.datetime.strptime(fault_time, '%Y-%m-%d %H:%M:%S.%f')
     return str(currenttime - ref_fault_time)[:-7]
 
-def faultSummary(host, cookie):
-    url = ("""https://{host}/api/node/class/faultSummary.json?query-target-filter=and(not(wcard(faultSummary.dn,%22__ui_%22)),and())""" + \
-          """&order-by=faultSummary.severity|desc&page=0&page-size=100""").format(host=host)
+def faultSummary(apic, cookie):
+    url = ("""https://{apic}/api/node/class/faultSummary.json?query-target-filter=and(not(wcard(faultSummary.dn,%22__ui_%22)),and())""" + \
+          """&order-by=faultSummary.severity|desc&page=0&page-size=100""").format(apic=apic)
     result, totalcount = GetResponseData(url, cookie)
     #print(result)
     reduced_fault_summary_dict = {}
@@ -173,16 +173,16 @@ def displayfaultSummary(summarylist):
             print('\t'+ faults)
     print('-'*62)
 
-def get_fault_results(host, cookie, code):
-    url = ("""https://{host}/api/node/class/faultInfo.json?query-target-filter=and(ne(faultInfo.severity,"cleared"),""" +
-          """eq(faultInfo.code,"{code}"))&order-by=faultInfo.lastTransition|Desc&page=0&order-by=faultInfo.lastTransition|Desc&page-size=100""").format(host=host,code=code.code)
+def get_fault_results(apic, cookie, code):
+    url = ("""https://{apic}/api/node/class/faultInfo.json?query-target-filter=and(ne(faultInfo.severity,"cleared"),""" +
+          """eq(faultInfo.code,"{code}"))&order-by=faultInfo.lastTransition|Desc&page=0&order-by=faultInfo.lastTransition|Desc&page-size=100""").format(apic=apic,code=code.code)
     result, totalcount = GetResponseData(url, cookie)
     code.results = result
     code.amount = totalcount
     return code
 
 
-def detail_ospf_faults(listdetail,host):
+def detail_ospf_faults(listdetail,apic):
     print('\n')
     print("{:26}{:20}{:12}{:18}{}".format('Time', 'Time Diff','Leaf', 'State','Description'))
     print('-'*120)
@@ -195,7 +195,7 @@ def detail_ospf_faults(listdetail,host):
         controller = re.search(r'[nN]ode-[0-9]{0,3}', fault['faultInst']['attributes']['dn'])
         print("{:26}{:20}{:12}{:18}{}".format(timestamp[:-6],diff_time,controller.group(), lc,descr))
     print('\n')
-def detail_switch_availability_status_faults(listdetail,host):
+def detail_switch_availability_status_faults(listdetail,apic):
     print('\n')
     print("{:26}{:20}{:12}{:18}{}".format('Time', 'Time Diff','Leaf', 'State','Description'))
     print('-'*120)
@@ -207,7 +207,7 @@ def detail_switch_availability_status_faults(listdetail,host):
         device = re.search(r'[nN]ode [0-9]{1,3}', descr).group()
         print("{:26}{:20}{:12}{:18}{}".format(timestamp[:-6],diff_time,device, lc,descr))
     print('\n')
-def detail_access_inter_faults(listdetail, host):
+def detail_access_inter_faults(listdetail, apic):
     print('\n{:26}{:20}{:10}{:15}{:18}{:18}{}'.format('Time', 'Time Diff','Switch','Interface','Port-Channel', 'State', 'Description'))
     print('-'*120)
     for fault in listdetail:
@@ -221,12 +221,12 @@ def detail_access_inter_faults(listdetail, host):
         usedlocation =  description.find('used')
         description_final = description[:usedlocation - 2] 
         if 'po' in interface.group():
-            poName = retrievePortChannelName(host, cookie, interface.group(), leaf.group())
+            poName = retrievePortChannelName(apic, cookie, interface.group(), leaf.group())
             print('{:26}{:20}{:10}{:15}{:18}{:18}{}'.format(timestamp[:-6],diff_time, leaf.group(), interface.group(), poName, lc, description_final))
         else:
             print('{:26}{:20}{:10}{:15}{:18}{:18}{}'.format(timestamp[:-6],diff_time, leaf.group(), interface.group(), '', lc,  description_final))
     print('\n')
-def detail_leaf_spine_uplink_faults(listdetail,host):
+def detail_leaf_spine_uplink_faults(listdetail,apic):
     print('\n')
     print("{:26}{:20}{:12}{:12}{:18}{}".format('Time', 'Time Diff','Leaf','Interface', 'State','Description'))
     print('-'*120)
@@ -239,7 +239,7 @@ def detail_leaf_spine_uplink_faults(listdetail,host):
         interface = re.search(r'\[.*\]', fault['faultInst']['attributes']['dn'])
         print("{:26}{:20}{:12}{:12}{:18}{}".format(timestamp[:-6],diff_time,controller.group(), interface.group(), lc,descr))
     print('\n')
-def detail_vpc_full_faults(listdetail,host):
+def detail_vpc_full_faults(listdetail,apic):
     print('\n{:26}{:20}{:10}{:15}{:18}{:18}{}'.format('Time', 'Time Diff','Switch','Interface','Port-Channel', 'State', 'Description'))
     print('-'*120)
     for fault in listdetail:
@@ -252,7 +252,7 @@ def detail_vpc_full_faults(listdetail,host):
             lc = fault['faultInst']['attributes']['lc']
             print('{:26}{:20}{:10}{:18}{}'.format(timestamp[:-6],diff_time, '', lc, descr))
     print('\n')
-def detail_vpc_part_faults(listdetail,host):
+def detail_vpc_part_faults(listdetail,apic):
     print("\n{:26}{:20}{:15}{:18}{}".format('Time', 'Time Diff','Leaf', 'State','Description'))
     print('-'*120)
     for fault in listdetail:
@@ -266,7 +266,7 @@ def detail_vpc_part_faults(listdetail,host):
             lc = fault['faultInst']['attributes']['lc']
             print("{:26}{:20}{:15}{:18}{:18}{}".format(timestamp[:23],dn,lc,descr,'changeSet: ' + changeSet))
     print('\n')
-def detail_apic_replica_faults(listdetail,host):
+def detail_apic_replica_faults(listdetail,apic):
     print("{:26}{:20}{:12}{:18}{}".format('Time', 'Time Diff','Controller', 'State','Description'))
     print('-'*120)
     for fault in listdetail:
@@ -277,7 +277,7 @@ def detail_apic_replica_faults(listdetail,host):
         controller = re.search(r'controller [0-9]', fault['faultInst']['attributes']['descr'])
         print("{:26}{:20}{:12}{:18}{}".format(timestamp[:-6],diff_time,controller.group()[-1],lc,descr))
     print('\n')
-def detail_apic_health_faults(listdetail,host):
+def detail_apic_health_faults(listdetail,apic):
     print("{:26}{:20}{:12}{:18}{}".format('Time', 'Time Diff','Controller', 'State','Description'))
     print('-'*120)
     for fault in listdetail:
@@ -288,7 +288,7 @@ def detail_apic_health_faults(listdetail,host):
         controller = re.search(r'[nN]ode-[0-9]', fault['faultInst']['attributes']['dn'])
         print("{:26}{:20}{:^12}{:18}{}".format(timestamp[:-6],diff_time,controller.group()[-1],lc,descr))
     print('\n')
-def detail_ntp_faults(listdetail,host):
+def detail_ntp_faults(listdetail,apic):
     print("{:26}{:20}{:12}{:18}{}".format('Time', 'Time Diff', 'Device', 'State','Description'))
     print('-'*120)
     for fault in listdetail:
@@ -303,7 +303,7 @@ def detail_ntp_faults(listdetail,host):
             node = node.group().replace('node', 'APIC')
         print("{:26}{:20}{:12}{:18}{}".format(timestamp[:-6],diff_time,node,lc,descr))
     print('\n')
-def detail_vcenter_reachable(listdetail,host):
+def detail_vcenter_reachable(listdetail,apic):
     print("{:26}{:20}{:18}{}".format('Time', 'Time Diff', 'State','Description'))
     print('-'*120)
     for fault in listdetail:
@@ -324,7 +324,7 @@ def detail_vcenter_reachable(listdetail,host):
             print("{:26}{:20}{:18}{}".format(timestamp[:-6],diff_time,lc,descr))
 
     print('\n')
-def detail_phys_apic_port_faults(listdetail,host):
+def detail_phys_apic_port_faults(listdetail,apic):
     print("{:26}{:20}{:12}{:18}{}".format('Time', 'Time Diff', 'Device', 'State','Description'))
     print('-'*120)
     for fault in listdetail:
@@ -339,7 +339,7 @@ def detail_phys_apic_port_faults(listdetail,host):
             node = node.group().replace('Node', 'APIC')
         print("{:26}{:20}{:12}{:18}{}".format(timestamp[:-6],diff_time,node,lc,descr))
     print('\n')
-def detail_port_channel_neighbor_faults(listdetail,host):
+def detail_port_channel_neighbor_faults(listdetail,apic):
     print("{:26}{:20}{:25}{:18}{}".format('Time', 'Time Diff','Description', 'State','Path'))
     print('-'*120)
     for fault in listdetail:
@@ -351,7 +351,7 @@ def detail_port_channel_neighbor_faults(listdetail,host):
         lc = fault['faultInst']['attributes']['lc']
         print("{:26}{:20}{:25}{:18}{}".format(timestamp[:-6],diff_time,lc,descr, dn))
     print('\n')
-def detail_missing_psu_faults(listdetail,host):
+def detail_missing_psu_faults(listdetail,apic):
     print("{:26}{:20}{:18}{:12}{:12}{}".format('Time', 'Time Diff', 'State','Device', 'PSU Slot', 'Description'))
     print('-'*120)
     for fault in listdetail:
@@ -364,7 +364,7 @@ def detail_missing_psu_faults(listdetail,host):
         lc = fault['faultInst']['attributes']['lc']
         print("{:26}{:20}{:18}{:12}{:12}{}".format(timestamp[:-6],diff_time,lc,node.group(),psu.group(),descr))
     print('\n')
-def detail_shutdown_psu_faults(listdetail,host):
+def detail_shutdown_psu_faults(listdetail,apic):
     print("{:26}{:20}{:18}{:12}{:12}{}".format('Time', 'Time Diff', 'State','Device','PSU Slot','Description'))
     print('-'*120)
     for fault in listdetail:
@@ -377,7 +377,7 @@ def detail_shutdown_psu_faults(listdetail,host):
         lc = fault['faultInst']['attributes']['lc']
         print("{:26}{:20}{:18}{:12}{:12}{}".format(timestamp[:-6],diff_time,lc,node.group(),psu.group(),descr))
     print('\n')
-def detail_failed_psu_faults(listdetail,host):
+def detail_failed_psu_faults(listdetail,apic):
     print("{:26}{:20}{:12}{:18}{}".format('Time', 'Time Diff', 'Device', 'State','Description'))
     print('-'*120)
     for fault in listdetail:
@@ -393,8 +393,8 @@ def detail_failed_psu_faults(listdetail,host):
         print("{:26}{:20}{:12}{:18}{}".format(timestamp[:-6],diff_time,node,lc,descr))
     print('\n')
 
-def retrievePortChannelName(host, cookie, PoNum, leaf):
-    url = """https://{host}/api/node/mo/topology/pod-1/node-{leaf}/sys/aggr-{PoNum}/rtaccBndlGrpToAggrIf.json""".format(host=host,leaf=leaf[4:],PoNum=PoNum)
+def retrievePortChannelName(apic, cookie, PoNum, leaf):
+    url = """https://{apic}/api/node/mo/topology/pod-1/node-{leaf}/sys/aggr-{PoNum}/rtaccBndlGrpToAggrIf.json""".format(apic=apic,leaf=leaf[4:],PoNum=PoNum)
     result = GetResponseData(url, cookie)
     poresult = result[0][0][u"pcRtAccBndlGrpToAggrIf"][u"attributes"][u'tDn']
     poposition = result[0][0][u"pcRtAccBndlGrpToAggrIf"][u"attributes"][u'tDn'].rfind('accbundle-')
@@ -428,7 +428,7 @@ def askrefresh(detail_function, is_function):
 
 
 
-def askmoreDetail(host):
+def askmoreDetail(apic):
     while True:
         listdetail = []
         faultdict = {}
@@ -447,7 +447,7 @@ def askmoreDetail(host):
             detail_switch_availability_status_faults(faultdict[userselected])
             complete_refresh = askrefresh(detail_switch_availability_status_faults, is_Leaf_Spine_Down)
         elif faultdict[userselected][0]['fault-type'] == 'Server ports Down':
-            detail_access_inter_faults(faultdict[userselected],host)
+            detail_access_inter_faults(faultdict[userselected],apic)
             complete_refresh = askrefresh(detail_access_inter_faults, is_Leaf_interface_Down)
         elif faultdict[userselected][0]['fault-type'] == 'Switch UPLINK':
             detail_leaf_spine_uplink_faults(faultdict[userselected])
@@ -498,12 +498,12 @@ def askmoreDetail(host):
         #        break
 
         
-def refreshloop(detail_function, fault, host, cookie):
+def refreshloop(detail_function, fault, apic, cookie):
     print('\r')
     print('Current Time = ' + displaycurrenttime())            
     while True:
-        get_fault_results(host, cookie, fault)
-        detail_function(fault.results,host)
+        get_fault_results(apic, cookie, fault)
+        detail_function(fault.results,apic)
         if fault.results == []:
             print("No Faults, all have been resolved...\n")
         ask = raw_input('Would you like to refresh? [y=default|n]:  ') or 'y'
@@ -517,9 +517,9 @@ def refreshloop(detail_function, fault, host, cookie):
 
 def localOrRemote():
     if os.path.isfile('/.aci/.sessions/.token'):
-        host = "localhost"
+        apic = "localhost"
         cookie = getCookie()
-        return host, cookie
+        return apic, cookie
     else:
         unauthenticated = False
         timedout = False
@@ -531,33 +531,33 @@ def localOrRemote():
                 unauthenticated = False
             elif timedout:
                 print(error)
-                host = raw_input("Enter IP address or FQDN of APIC: ")
+                apic = raw_input("Enter IP address or FQDN of APIC: ")
                 timedout = False
             else:
                 print(error)
-                host = raw_input("\nEnter IP address or FQDN of APIC: ")
+                apic = raw_input("\nEnter IP address or FQDN of APIC: ")
             try:
                 user = raw_input('\nUsername: ')
                 pwd = getpass.getpass('Password: ')
-                cookie = getToken(host, user,pwd)
+                cookie = getToken(apic, user,pwd)
             except urllib2.HTTPError as auth:
                 unauthenticated = True
                 error = '\n\x1b[1;31;40mAuthentication failed\x1b[0m\n'
                 continue
             except urllib2.URLError as e:
                 timedout = True
-                error = "\n\x1b[1;31;40mThere was an error connecting to APIC '%s'\x1b[0m\n" % host
+                error = "\n\x1b[1;31;40mThere was an '%s' error connecting to APIC '%s'\x1b[0m\n" % (e.reason,apic)
                 continue
             except Exception as e:
                 print("\n\x1b[1;31;40mError has occured, please try again\x1b[0m\n")
                 continue
             break
-    return host, cookie
+    return apic, cookie
 
 
 def main():
     unauthenticated = False
-    host, cookie = localOrRemote()
+    apic, cookie = localOrRemote()
 
     while True:
         try:
@@ -567,40 +567,40 @@ def main():
             else:
                 clear_screen()
             unauthenticated = False
-            ordered, objectdict = faultSummary(host, cookie)
+            ordered, objectdict = faultSummary(apic, cookie)
             displayfaultSummary(objectdict)
             faultselected = displayfaultSummaryandSelection(ordered)
-            fault = get_fault_results(host, cookie, faultselected)
+            fault = get_fault_results(apic, cookie, faultselected)
             if fault.code == 'F1385': #OSPFrefreshloop                    
-                refreshloop(detail_ospf_faults, fault, host, cookie)
+                refreshloop(detail_ospf_faults, fault, apic, cookie)
             elif fault.code == 'F1543': # Leaf/Spine Down
-                refreshloop(detail_switch_availability_status_faults, fault, host, cookie)
+                refreshloop(detail_switch_availability_status_faults, fault, apic, cookie)
             elif fault.code == 'F1394': # Uplinks
-                refreshloop(detail_leaf_spine_uplink_faults, fault, host, cookie)
+                refreshloop(detail_leaf_spine_uplink_faults, fault, apic, cookie)
             elif fault.code == 'F0532': # Server ports
-                refreshloop(detail_access_inter_faults, fault, host, cookie)
+                refreshloop(detail_access_inter_faults, fault, apic, cookie)
             elif fault.code == 'F1296': # vPC full down
-                refreshloop(detail_vpc_full_faults, fault, host, cookie)
+                refreshloop(detail_vpc_full_faults, fault, apic, cookie)
             elif fault.code == 'F2705': # vPC half down
-                refreshloop(detail_vpc_part_faults, fault, host, cookie)
+                refreshloop(detail_vpc_part_faults, fault, apic, cookie)
             elif fault.code == 'F0600': # vPC connection issues
-                refreshloop(detail_port_channel_neighbor_faults, fault, host, cookie)
+                refreshloop(detail_port_channel_neighbor_faults, fault, apic, cookie)
             elif fault.code == 'F1574': # NTP
-                refreshloop(detail_ntp_faults, fault, host, cookie)
+                refreshloop(detail_ntp_faults, fault, apic, cookie)
             elif fault.code == 'F0130': # APIC can't reach VCENTER
-                refreshloop(detail_vcenter_reachable, fault, host, cookie)
+                refreshloop(detail_vcenter_reachable, fault, apic, cookie)
             elif fault.code == 'F1262': # Database APIC
-                refreshloop(detail_apic_replica_faults, fault, host, cookie)
+                refreshloop(detail_apic_replica_faults, fault, apic, cookie)
             elif fault.code == 'F0321': # Health APIC
-                refreshloop(detail_apic_health_faults, fault, host, cookie)
+                refreshloop(detail_apic_health_faults, fault, apic, cookie)
             elif fault.code == 'F0103': # apic interfaces
-                refreshloop(detail_phys_apic_port_faults, fault, host, cookie)
+                refreshloop(detail_phys_apic_port_faults, fault, apic, cookie)
             elif fault.code == 'F0413': # missing psu
-                refreshloop(detail_missing_psu_faults, fault, host, cookie)
+                refreshloop(detail_missing_psu_faults, fault, apic, cookie)
             elif fault.code == 'F1451': # shutdown psu
-                refreshloop(detail_shutdown_psu_faults, fault, host, cookie)
+                refreshloop(detail_shutdown_psu_faults, fault, apic, cookie)
             elif fault.code == 'F1940': # failed psu
-                refreshloop(detail_failed_psu_faults, fault, host, cookie)
+                refreshloop(detail_failed_psu_faults, fault, apic, cookie)
 
 
         except urllib2.HTTPError as e:
