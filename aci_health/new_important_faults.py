@@ -1,22 +1,24 @@
 #!/bin//python
 
 import re
-import readline
+try:
+    import readline
+except:
+    pass
 import urllib2
 import json
 import ssl
 import os
 import datetime
+import getpass
 
 
-def getToken(host):
+def getToken(host, user, pwd):
     ssl._create_default_https_context = ssl._create_unverified_context
-    user = 'admin'
-    pwd = 'ciscopsdt'
     url = "https://{host}/api/aaaLogin.json".format(host=host)
     payload = '{"aaaUser":{"attributes":{"name":"%(user)s","pwd":"%(pwd)s"}}}' % {"pwd":pwd,"user":user}
     request = urllib2.Request(url, data=payload)
-    response = urllib2.urlopen(request)
+    response = urllib2.urlopen(request, timeout=4)
     token = json.loads(response.read())
     cookie = token["imdata"][0]["aaaLogin"]["attributes"]["token"]
     return cookie
@@ -34,6 +36,12 @@ def GetResponseData(url, cookie):
     response = GetRequest(url, cookie)
     result = json.loads(response.read())
     return result['imdata'], result["totalCount"]
+
+def clear_screen():
+    if os.name == 'posix':
+        os.system('clear')
+    else:
+        os.system('cls')
 
     
 class faultobject():
@@ -122,7 +130,12 @@ def displayfaultSummaryandSelection(orderedlist):
     print('\t{}.) Exit'.format(str(len(orderedlist)+1)))
     orderedlist.append('Exit')
     print('\n')
-    selected = raw_input('Which fault?:  ')
+    while True:
+        selected = raw_input('Which fault?:  ')
+        if selected.isdigit() and (int(selected) > 0 and int(selected) < len(orderedlist)+1):
+            break
+        else:
+            print('\n\x1b[1;31;40mInvalid entry...please try again\x1b[0m\n') 
     faultselected = (orderedlist[int(selected)-1])
     if faultselected is orderedlist[-1]:
         print('Exiting program...\n')
@@ -208,7 +221,7 @@ def detail_access_inter_faults(listdetail, host):
         usedlocation =  description.find('used')
         description_final = description[:usedlocation - 2] 
         if 'po' in interface.group():
-            poName = retrievePortChannelName(host, interface.group(), leaf.group())
+            poName = retrievePortChannelName(host, cookie, interface.group(), leaf.group())
             print('{:26}{:20}{:10}{:15}{:18}{:18}{}'.format(timestamp[:-6],diff_time, leaf.group(), interface.group(), poName, lc, description_final))
         else:
             print('{:26}{:20}{:10}{:15}{:18}{:18}{}'.format(timestamp[:-6],diff_time, leaf.group(), interface.group(), '', lc,  description_final))
@@ -408,7 +421,7 @@ def askrefresh(detail_function, is_function):
         else:
             break
             
-    os.system('clear')
+    clear_screen()
     #print('\n')
     return
     
@@ -473,8 +486,7 @@ def askmoreDetail(host):
             detail_failed_psu_faults(faultdict[userselected])
             complete_refresh = askrefresh(detail_failed_psu_faults, is_PowerSupply_failure)
 
-
-        os.system('clear')
+        clear_screen()
         print('\n')
         if complete_refresh == 1:
             return True
@@ -494,25 +506,53 @@ def refreshloop(detail_function, fault, host, cookie):
         detail_function(fault.results,host)
         if fault.results == []:
             print("No Faults, all have been resolved...\n")
-        ask = raw_input('Would you like to refresh? [y|n]:  ')
+        ask = raw_input('Would you like to refresh? [y=default|n]:  ') or 'y'
         if ask[0].lower() == 'y' and not ask == '':
             print('\r')
             print('Current Time = ' + displaycurrenttime())            
-
             continue
         else:
             return
 
 
 def localOrRemote():
-    if os.path.isfile('a/.aci/.sessions/.token'):
+    if os.path.isfile('/.aci/.sessions/.token'):
         host = "localhost"
         cookie = getCookie()
         return host, cookie
     else:
-        host = raw_input("Enter IP address or FQDN of APIC: ")
-        cookie = getToken(host)
-        return host, cookie
+        unauthenticated = False
+        timedout = False
+        error = ''
+        while True:
+            clear_screen()
+            if unauthenticated:
+                print(error)
+                unauthenticated = False
+            elif timedout:
+                print(error)
+                host = raw_input("Enter IP address or FQDN of APIC: ")
+                timedout = False
+            else:
+                print(error)
+                host = raw_input("\nEnter IP address or FQDN of APIC: ")
+            try:
+                user = raw_input('\nUsername: ')
+                pwd = getpass.getpass('Password: ')
+                cookie = getToken(host, user,pwd)
+            except urllib2.HTTPError as auth:
+                unauthenticated = True
+                error = '\n\x1b[1;31;40mAuthentication failed\x1b[0m\n'
+                continue
+            except urllib2.URLError as e:
+                timedout = True
+                error = "\n\x1b[1;31;40mThere was an error connecting to APIC '%s'\x1b[0m\n" % host
+                continue
+            except Exception as e:
+                print("\n\x1b[1;31;40mError has occured, please try again\x1b[0m\n")
+                continue
+            break
+    return host, cookie
 
 
 def main():
@@ -522,10 +562,10 @@ def main():
     while True:
         try:
             if unauthenticated:
-                os.system('clear')
+                clear_screen()
                 print('Authentication Token timed out...restarting program')
             else:
-                os.system('clear')
+                clear_screen()
             unauthenticated = False
             ordered, objectdict = faultSummary(host, cookie)
             displayfaultSummary(objectdict)
@@ -551,7 +591,7 @@ def main():
                 refreshloop(detail_vcenter_reachable, fault, host, cookie)
             elif fault.code == 'F1262': # Database APIC
                 refreshloop(detail_apic_replica_faults, fault, host, cookie)
-            elif fault.code == 'F0321': # H:ealth APIC
+            elif fault.code == 'F0321': # Health APIC
                 refreshloop(detail_apic_health_faults, fault, host, cookie)
             elif fault.code == 'F0103': # apic interfaces
                 refreshloop(detail_phys_apic_port_faults, fault, host, cookie)
