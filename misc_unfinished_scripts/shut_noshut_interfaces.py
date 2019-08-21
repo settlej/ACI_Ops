@@ -271,9 +271,9 @@ def physical_selection(all_leaflist, allepglist):
     finalgrouped = zip(*firstgrouped)
     for column in finalgrouped:
         a = column[0].number
-        b = goodspacing(column[0]) + '  ' + column[0].descr[:25]
+        b = goodspacing(column[0])
         c = column[1].number
-        d = goodspacing(column[1]) + '  ' + column[1].descr[:25]
+        d = goodspacing(column[1])
         if column[2] == '' or column[2] == None:
             e = ''
             f = ''
@@ -282,7 +282,7 @@ def physical_selection(all_leaflist, allepglist):
             e = column[2].number
             f = goodspacing(column[2])
             #f = row[2].leaf + ' ' + row[2].fex + ' ' + str(row[2].name)
-        print('{:6}.) {:45}{}.) {:45}{}.) {}'.format(a,b,c,d,e,f))
+        print('{:6}.) {:33}{}.) {:33}{}.) {}'.format(a,b,c,d,e,f))
     while True:
         try:
             selectedinterfaces = raw_input("\nSelect interface(s) by number: ")
@@ -301,7 +301,7 @@ def physical_selection(all_leaflist, allepglist):
             break
         except KeyboardInterrupt as k:
             print('\n\nEnding Script....\n')
-            exit()
+            return
     return choseninterfaceobjectlist
 
       #  except Exception as e:

@@ -131,7 +131,7 @@ def grouper(iterable, n, fillvalue=''):
 def menu():
     while True:
         os.system('clear')
-        print("\nSelect interface for adding EPGs: \n" + \
+        print("\nSelect interface for removing EPGs: \n" + \
           "\n\t1.) Physical Interfaces: \n" + \
           "\t2.) PC Interfaces: \n" + \
           "\t3.) VPC Interfaces: \n")
@@ -330,7 +330,7 @@ def postremove(interface,queue):
         result =  PostandGetResponseData(url, data)
         #print(result)
         if result == []:
-            print(interface_epg + ' removed from ' + interface.name)
+            print(interface_epg[:interface_epg.find('rspathAtt')-1] + ' removed from ' + interface.name)
             #queue.put(interface_epg + ' removed from ' + interface.name)
 
 def port_channel_selection(allpclist,allepglist):
@@ -388,6 +388,7 @@ def main():
                     interface.epgs.append(epg['fvRsPathAtt']['attributes']['dn'])
                 print('\n')
                 removeepgs(interfaces)
+                interface.epgs = []
                 print('Done')
             raw_input('\n#Press enter to continue...')
         elif selection == '2':
