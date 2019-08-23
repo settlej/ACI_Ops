@@ -310,9 +310,9 @@ def main():
         except KeyboardInterrupt as k:
             print('\nEnding Program\n')
             exit()
-        except Exception as e:
-            print(e)
-            break
+        #except Exception as e:
+        #    print(e)
+        #    break
 
 if __name__ == '__main__':
     try:
