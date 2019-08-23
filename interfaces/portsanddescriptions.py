@@ -32,8 +32,8 @@ def get_Cookie():
         cookie = f.read()
 
 def get_All_leafs():
-    url = """https://localhost/api/node/class/fabricNode.json?query-target-filter=and(not(wcard(fabricNode.dn,%22__ui_%22)),""" \
-          """and(eq(fabricNode.role,"leaf"),eq(fabricNode.fabricSt,"active"),ne(fabricNode.nodeType,"virtual")))"""
+    url = """https://{apic}/api/node/class/fabricNode.json?query-target-filter=and(not(wcard(fabricNode.dn,%22__ui_%22)),""" \
+          """and(eq(fabricNode.role,"leaf"),eq(fabricNode.fabricSt,"active"),ne(fabricNode.nodeType,"virtual")))""".format(apic=apic)
     result, totalCount = GetResponseData(url)
     return result
 
@@ -168,8 +168,8 @@ def pull_leaf_interfaces(leafs):
     leafdictwithresults = {}
     leaf_interface_collection = []
     for leaf in leafs:
-        url = """https://localhost/api/node-{}/class/l1PhysIf.json?rsp-subtree-class=rmonIfIn,rmonIfOut,pcAggrMbrIf,ethpmPhysIf,l1PhysIf,rmonEtherStats&rsp-subtree=full""".format(leaf)
-      #  url = """https://localhost/api/class/l1PhysIf.json?rsp-subtree-class=rmonIfIn,pcAggrMbrIf,ethpmPhysIf,l1PhysIf&rsp-subtree=full""".format(leaf)
+        url = """https://{apic}/api/node-{}/class/l1PhysIf.json?rsp-subtree-class=rmonIfIn,rmonIfOut,pcAggrMbrIf,ethpmPhysIf,l1PhysIf,rmonEtherStats&rsp-subtree=full""".format(leaf,apic=apic)
+      #  url = """https://{apic}/api/class/l1PhysIf.json?rsp-subtree-class=rmonIfIn,pcAggrMbrIf,ethpmPhysIf,l1PhysIf&rsp-subtree=full""".format(leaf)
         #print(url)
         result, totalcount = GetResponseData(url)
         leafdictwithresults[leaf] = result
@@ -203,8 +203,8 @@ def leaf_selection(all_leaflist):
 def match_port_channels_to_interfaces(interfaces, leaf):
    # for leaf in leafs:
     listofpcinterfaces = []
-    url = """https://localhost/api/node/class/topology/pod-1/node-{}/pcAggrIf.json?rsp-subtree-include=relations&target-subtree-class=pcAggrIf,"""\
-           """ethpmAggrIf&rsp-subtree=children&rsp-subtree-class=pcRsMbrIfs,ethpmAggrIf""".format(leaf)
+    url = """https://{apic}/api/node/class/topology/pod-1/node-{}/pcAggrIf.json?rsp-subtree-include=relations&target-subtree-class=pcAggrIf,"""\
+           """ethpmAggrIf&rsp-subtree=children&rsp-subtree-class=pcRsMbrIfs,ethpmAggrIf""".format(leaf,apic=apic)
   #  https://192.168.255.2/api/node/class/topology/pod-1/node-101/pcAggrIf.json?&target-subtree-class=pcAggrIf,ethpmAggrIf&rsp-subtree=children&rsp-subtree-class=pcRsMbrIfs,ethpmAggrIf
     result, totalcount = GetResponseData(url)
     #print(result)
