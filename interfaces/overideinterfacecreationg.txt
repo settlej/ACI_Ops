@@ -1,0 +1,8 @@
+"GET /api/class/fabricNode.xml?query-target-filter=eq(fabricNode.role,%22leaf%22)&order-by=fabricNode.id HTTP/1.1" 200 1038 "-" 
+"GET /api/class/dhcpClientNode.xml?rsp-prop-include=all&query-target-filter=eq(dhcpClientNode.nodeId,%22101%22) HTTP/1.1" 200 757 "-" 
+"GET /api/mo/topology/pod-1/node-101.xml HTTP/1.1" 200 554 "-" 
+"GET /api/class/infraRsHPathAtt.xml?query-target-filter=or(wcard(infraRsHPathAtt.tDn,%22paths-101%22)) HTTP/1.1" 200 1558 "-" 
+"GET /api/class/infraHPathS.xml?rsp-subtree=children&query-target-filter=or(eq(infraHPathS.dn,%22uni/infra/hpaths-__ui_l101_eth1--27%22),eq(infraHPathS.dn,%22uni/infra/hpaths-__ui_l101_eth1--30%22),eq(infraHPathS.dn,%22uni/infra/hpaths-__ui_l101_eth1--28%22),eq(infraHPathS.dn,%22uni/infra/hpaths-__ui_l101_eth1--31%22)) HTTP/1.1" 200 2625 "-" 
+"GET /api/class/infraRsSHPathAtt.xml?query-target-filter=or(wcard(infraRsSHPathAtt.tDn,%22paths-101%22)) HTTP/1.1" 200 70 "-" 
+"POST /api/mo/uni/infra/hpaths-__ui_l101_eth1--39.xml HTTP/1.1" 200 70 "-" 
+"POST /decoy/exec/cmd.cli HTTP/1.1" 200 0 "-" 
