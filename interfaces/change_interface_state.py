@@ -336,7 +336,7 @@ def postshut(interface,queue):
         result =  PostandGetResponseData(url, data)
         if result == []:
             #print(interface.leaf + ' ' +  interface.name + ' shut')
-            queue.put('shut ' + interface.name)
+            queue.put('[Complete] shut ' + interface.name)
 
 def noshutinterfaces(interfaces):
     queue = Queue.Queue()
@@ -352,13 +352,6 @@ def noshutinterfaces(interfaces):
     for x in sorted(interfacelist2):
         print(x)
 
-        #url = 'https://localhost/api/node/mo/uni/fabric/outofsvc.json' 
-        # data is the 'POST' data sent in the REST call to 'blacklist' (shutdown) on a normal interface
-        #data = """'{{"fabricRsOosPath":{{"attributes":{{"dn":"uni/fabric/outofsvc/rsoosPath-[{interface}]","status":"deleted"}},"children":[]}}}}'""".format(interface=interface)
-        #result =  PostandGetResponseData(url, data)
-        #if result == []:
-        #    print(interface.leaf + ' ' +  interface.name + ' no shut')
-
 def postnoshut(interface,queue):
         url = 'https://{apic}/api/node/mo/uni/fabric/outofsvc.json'.format(apic=apic)
         # data is the 'POST' data sent in the REST call to 'blacklist' (shutdown) on a normal interface
@@ -366,7 +359,7 @@ def postnoshut(interface,queue):
         result =  PostandGetResponseData(url, data)
         if result == []:
            # queue.put(interface.leaf + ' ' +  interface.name + ' no shut')
-            queue.put('no shut ' + interface.name)
+            queue.put('[Complete] no shut ' + interface.name)
 def port_channel_selection(allpclist,allepglist):
     pcdict = {}  
     pcobjectlist = []
@@ -420,21 +413,28 @@ def main(import_apic, import_cookie):
             interfaces = physical_selection(all_leaflist, allepglist)
             #print(interfaces)
             print('\r')
-            option = custom_raw_input(("Would you like to do?\n\
+            while True:
+                option = custom_raw_input(("Would you like to do?\n\
                         \n1.) shut\
                         \n2.) no shut\
                         \n3.) bounce \n\
                         \nSelect a number: "))
-            if option == '1':
-                print('\n')
-                shutinterfaces(interfaces)
-            elif option == '2':
-                print('\n')
-                noshutinterfaces(interfaces)
-            else:
-                print('\n')
-                shutinterfaces(interfaces)
-                noshutinterfaces(interfaces)
+                if option == '1':
+                    print('\n')
+                    shutinterfaces(interfaces)
+                    break
+                elif option == '2':
+                    print('\n')
+                    noshutinterfaces(interfaces)
+                    break
+                elif option == '3':
+                    print('\n')
+                    shutinterfaces(interfaces)
+                    noshutinterfaces(interfaces)
+                    break
+                else:
+                    print('\n\x1b[1;31;40mInvalid option, please try again...\x1b[0m\n')
+                    continue
             custom_raw_input('\n#Press enter to continue...')
         elif selection == '2':
             interfaces = port_channel_selection(allpclist,allepglist)
@@ -483,9 +483,6 @@ def main(import_apic, import_cookie):
                 shutinterfaces(interfaces)
                 noshutinterfaces(interfaces)
             custom_raw_input('\n#Press enter to continue...')
-        
-
-
 
 if __name__ == "__main__":
     try:
