@@ -389,7 +389,7 @@ def vm_search_function(vm_name):
         print('\n')
         
     else:
-        url = """https://{apic}/api/node/class/fvRsVm.json"""
+        url = """https://{apic}/api/node/class/fvRsVm.json""".format(apic=apic)
         fvRsVm_result, totalcount = GetResponseData(url)
         fvRsVmlist = []
         for vm in fvRsVm_result:
@@ -411,7 +411,7 @@ def vm_search_function(vm_name):
         #url = """https://{apic}/api/mo/{}.json""".format(compVm_dn)
         #result, totalcount = GetResponseData(url)
         #compVm_dn = result[0]['compVm']['attributes']['dn']
-        url = """https://{apic}/api/mo/{}.json?rsp-subtree=full""".format(compVm_dn)
+        url = """https://{apic}/api/mo/{}.json?rsp-subtree=full""".format(compVm_dn, apic=apic)
        # print(url)
         result, totalcount = GetResponseData(url)
        # compVM = None
@@ -454,11 +454,11 @@ def vm_search_function(vm_name):
 
 def mac_path_function(mac, compVM=None):
     epglist =[]
-    url = """https://{apic}/api/node/class/fvCEp.json?query-target-filter=eq(fvCEp.mac,"{}")""".format(mac)
+    url = """https://{apic}/api/node/class/fvCEp.json?query-target-filter=eq(fvCEp.mac,"{}")""".format(mac,apic=apic)
     result, totalcount = GetResponseData(url)
     if totalcount == '0' and compVM:
         print('\n')
-        url = """https://{apic}/api/node/mo/{}.json""".format(compVM.host_rn_reference)
+        url = """https://{apic}/api/node/mo/{}.json""".format(compVM.host_rn_reference,apic=apic)
         result, totalcount = GetResponseData(url)
         #print(result[0]['compHv']['attributes']['name'])
        # print(compVM.compVNiclist)

@@ -217,7 +217,7 @@ def physical_selection(all_leaflist,direction):
             #f = row[2].leaf + ' ' + row[2].fex + ' ' + str(row[2].name)
         print('{:6}.) {:42}{}.) {:42}{}.) {}'.format(a,b,c,d,e,f))
     while True:
-        try:
+        #try:
             selectedinterfaces = raw_input("\nSelect \x1b[1;33;40m{}\x1b[0m interface by number: ".format(direction))
             print('\r')
             if selectedinterfaces.strip().lstrip() == '' or '-' in selectedinterfaces or ',' in selectedinterfaces or not asknode.isdigit():
@@ -235,10 +235,10 @@ def physical_selection(all_leaflist,direction):
            #         print('here')
            #         print("\n\x1b[1;37;41mInvalid format and/or range...Try again\x1b[0m\n")
            #         continue
-            break
-        except KeyboardInterrupt as k:
-            print('\n\nEnding Script....\n')
-            return
+           #break
+        #except KeyboardInterrupt as k:
+        #    print('\n\nEnding Script....\n')
+        #    return
 
       #  except Exception as e:
 

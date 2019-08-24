@@ -88,13 +88,23 @@ def localOrRemote():
             break
     return apic, cookie
 
-def reauthenticate(apic):
+def reauthenticate(apic, error):
+    unauthenticated = True
+    timedout = False
     while True:
+        clear_screen()
+        if unauthenticated:
+            print(error)
+            unauthenticated = False
+        elif timedout:
+            print(error)
+            apic = raw_input("Enter IP address or FQDN of APIC: ")
+            timedout = False
         try:
             user = raw_input('\nUsername: ')
             pwd = getpass.getpass('Password: ')
-            cookie = getToken(apic, user,pwd)
-        except urllib2.HTTPError as auth:
+            getToken(apic, user,pwd)
+        except urllib2.HTTPError:
             unauthenticated = True
             error = '\n\x1b[1;31;40mAuthentication failed\x1b[0m\n'
             continue
@@ -117,12 +127,10 @@ def main():
     keyinterrupt = False
     while True:
         try:
+            clear_screen()
             if unauthenticated:
-                clear_screen()
-                print('Authentication Failed or timed out...restarting program')
-                raise AuthenticationFailure
-            else:
-                clear_screen()
+                error = '\n\x1b[1;31;40mAuthentication Failed or timed out...restarting program\x1b[0m'
+                cookie = reauthenticate(apic, error)
             unauthenticated = False
             clear_screen()
             if keyinterrupt:
@@ -164,11 +172,11 @@ def main():
                             '\t| 18.) Configure interface Descriptions (Not Available)\n' + 
                             '\t| 19.) Import/Export interface Descriptions (Not Available)\n' + 
                             '\t ---------------------------------------------------\x1b[0m\n\n\x1b[s')
-            print('\x1b[1;33;40m\x1b[5;70H -------------------------------\x1b[0m\n')
-            print('\x1b[1;33;40m\x1b[6;70H|           Hint:\x1b[0m')
-            print('\x1b[1;33;40m\x1b[7;70H|  Type "exit" on any input\x1b[0m')
-            print('\x1b[1;33;40m\x1b[8;70H|    to return to main menu\x1b[0m')
-            print('\x1b[1;33;40m\x1b[9;70H -------------------------------\x1b[0m')
+            print('\x1b[1;33;40m\x1b[5;70H -----------------------------')
+            print('\x1b[1;33;40m\x1b[6;70H|           Hint:             |')
+            print('\x1b[1;33;40m\x1b[7;70H|  Type "exit" on any input   |')
+            print('\x1b[1;33;40m\x1b[8;70H|    to return to main menu   |')
+            print('\x1b[1;33;40m\x1b[9;70H -----------------------------\x1b[0m')
             choosen = custom_raw_input('\x1b[uSelect a number: ')
             if choosen == '1':
                 try:
@@ -302,17 +310,16 @@ def main():
                     continue
             #elif choosen == 'exit':
             #    raise KeyboardInterrupt
-
-        except AuthenticationFailure as a:
-            cookie = reauthenticate(apic)
-            unauthenticated = False
+        except urllib2.HTTPError as e:
+            unauthenticated = True
             continue
+
         except KeyboardInterrupt as k:
             print('\nEnding Program\n')
             exit()
-        except Exception as e:
-            print(e)
-            break
+        #except Exception as e:
+        #    print(e)
+        #    break
 
 if __name__ == '__main__':
     try:

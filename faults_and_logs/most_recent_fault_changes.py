@@ -67,7 +67,7 @@ def gatheranddisplayrecentfaults():
                 faultdescr = fault['faultInst']['attributes']['descr'].split()
                 faultdescr = ' '.join(faultdescr)
                 if len(faultdescr) > 120:
-                     summaryfaultdescr = faultdescr[:120] + '...'
+                     summaryfaultdescr = faultdescr[:112] + '...'
                 else:
                     summaryfaultdescr = faultdescr
                 faultlastTransition = ' '.join(fault['faultInst']['attributes']['lastTransition'].split('T'))
@@ -81,7 +81,7 @@ def gatheranddisplayrecentfaults():
                 faultdescr = fault['faultDelegate']['attributes']['descr'].split()
                 faultdescr = ' '.join(faultdescr)
                 if len(faultdescr) > 120:
-                     summaryfaultdescr = faultdescr[:120] + '...'
+                     summaryfaultdescr = faultdescr[:112] + '...'
                 else:
                     summaryfaultdescr = faultdescr
                 faultlastTransition = ' '.join(fault['faultDelegate']['attributes']['lastTransition'].split('T'))
