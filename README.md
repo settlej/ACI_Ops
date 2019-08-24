@@ -7,6 +7,8 @@ Tools to enhance CLI experience replacing slower ACI show commands with addition
 ![Image of add epgs](https://github.com/settlej/Better_ACI_CLI_Tools/blob/master/images/add_vlans.JPG)</br></br>
 # Remove EPGs from Multiple Interfaces
 ![Image of remove_epgs](https://github.com/settlej/Better_ACI_CLI_Tools/blob/master/images/remove_epgs.JPG)</br></br>
+# Better 'show interface status'
+![Image of showinterfaces]https://github.com/settlej/Better_ACI_CLI_Tools/blob/master/images/show%20interfaces.JPG)</br></br>
 # Find Endpoints with Additional Information
 ![Image of ip search](https://github.com/settlej/Better_ACI_CLI_Tools/blob/master/images/ipsearch.PNG)</br></br>
 # Find Endpoints even when Powered Off
