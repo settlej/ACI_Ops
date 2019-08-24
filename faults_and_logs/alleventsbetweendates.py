@@ -37,17 +37,6 @@ def GetResponseData(url):
     response = GetRequest(url, cookie)
     result = json.loads(response.read())
     return result['imdata'], result["totalCount"]
-#
-#def getCookie():
-#    global cookie
-#    with open('/.aci/.sessions/.token', 'r') as f:
-#        cookie = f.read()
-#
-def clear_screen():
-    if os.name == 'posix':
-        clear_screen()
-    else:
-        os.system('cls')
 
 def displaycurrenttime():
     currenttime = datetime.datetime.now()

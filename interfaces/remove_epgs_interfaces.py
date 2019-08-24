@@ -229,7 +229,7 @@ def physical_selection(all_leaflist, allepglist):
     for num,node in enumerate(nodelist,1):
         print("{}.) {}".format(num,node))
     while True:
-        try:
+        #try:
             asknode = custom_raw_input('\nWhat leaf(s): ')
             print('\r')
             returnedlist = parseandreturnsingelist(asknode, nodelist)
@@ -237,9 +237,9 @@ def physical_selection(all_leaflist, allepglist):
                 continue
             chosenleafs = [nodelist[int(node)-1] for node in returnedlist]
             break
-        except KeyboardInterrupt as k:
-            print('\n\nEnding Script....\n')
-            return
+        #except KeyboardInterrupt as k:
+         #   print('\n\nEnding Script....\n')
+         #   return
     compoundedleafresult = []
     for leaf in chosenleafs:
         url = """https://{apic}/api/node/class/fabricPathEp.json?query-target-filter=and(not(wcard(fabricPathEp.dn,%22__ui_%22)),""" \
@@ -290,7 +290,7 @@ def physical_selection(all_leaflist, allepglist):
             #f = row[2].leaf + ' ' + row[2].fex + ' ' + str(row[2].name)
         print('{:6}.) {:45}{}.) {:45}{}.) {}'.format(a,b,c,d,e,f))
     while True:
-        try:
+        #try:
             selectedinterfaces = custom_raw_input("\nSelect interface(s) by number: ")
             print('\r')
             if selectedinterfaces.strip().lstrip() == '':
@@ -305,9 +305,9 @@ def physical_selection(all_leaflist, allepglist):
            #         print("\n\x1b[1;37;41mInvalid format and/or range...Try again\x1b[0m\n")
            #         continue
             break
-        except KeyboardInterrupt as k:
-            print('\n\nEnding Script....\n')
-            exit()
+        #except KeyboardInterrupt as k:
+        #    print('\n\nEnding Script....\n')
+        #    exit()
     return choseninterfaceobjectlist
 
       #  except Exception as e:
@@ -368,7 +368,7 @@ def port_channel_selection(allpclist,allepglist):
            #     #if chosennumber in 
            #     pcdict[pcobjectlist[int(t)]]
             break
-        except:
+        except ValueError:
             print("\n\x1b[1;37;41mInvalid format and/or range...Try again\x1b[0m\n")
     return choseninterfaceobjectlist
 
