@@ -275,7 +275,6 @@ def physical_selection(all_leaflist, allepglist):
            interfacedict[interf] = str(num) + '.) '
            interf.number = num
     listlen = len(finalsortedinterfacelist) / 3
-    #firstgrouped = [x for x in grouper(finalsortedinterfacelist,40)]
     firstgrouped = [x for x in grouper(finalsortedinterfacelist,listlen)]
     finalgrouped = zip(*firstgrouped)
     for column in finalgrouped:
@@ -335,7 +334,6 @@ def postshut(interface,queue):
         data = """'{{"fabricRsOosPath":{{"attributes":{{"tDn":"{interface}","lc":"blacklist"}},"children":[]}}}}'""".format(interface=interface)
         result =  PostandGetResponseData(url, data)
         if result == []:
-            #print(interface.leaf + ' ' +  interface.name + ' shut')
             queue.put('[Complete] shut ' + interface.name)
 
 def noshutinterfaces(interfaces):
@@ -354,43 +352,34 @@ def noshutinterfaces(interfaces):
 
 def postnoshut(interface,queue):
         url = 'https://{apic}/api/node/mo/uni/fabric/outofsvc.json'.format(apic=apic)
-        # data is the 'POST' data sent in the REST call to 'blacklist' (shutdown) on a normal interface
+        # data is the 'POST' data sent in the REST call to delete object from 'blacklist' (no shut)
         data = """'{{"fabricRsOosPath":{{"attributes":{{"dn":"uni/fabric/outofsvc/rsoosPath-[{interface}]","status":"deleted"}},"children":[]}}}}'""".format(interface=interface)
         result =  PostandGetResponseData(url, data)
         if result == []:
-           # queue.put(interface.leaf + ' ' +  interface.name + ' no shut')
             queue.put('[Complete] no shut ' + interface.name)
+
 def port_channel_selection(allpclist,allepglist):
-    pcdict = {}  
     pcobjectlist = []
     for pc in allpclist:
         pcobjectlist.append(pcObject(name = pc['fabricPathEp']['attributes']['name'],
                                      dn = pc['fabricPathEp']['attributes']['dn'] ))
-    #for pc in allpclist:
-    #    pcdict[pc['fabricPathEp']['attributes']['name']] = pc['fabricPathEp']['attributes']['dn']
     print("\n{:>4} |  {}".format("#","Port-Channel Name"))
     print("-"* 65)
-   # numpcdict = {}
     for num,pc in enumerate(sorted(pcobjectlist),1):
         print("{:>4}.) {}".format(num,pc.name))
         pc.number = num
-    #    numpcdict[num] = pc
     while True:
         try:
             askpcnum = custom_raw_input("\nWhich number(s)?: ")
             print('\r')
             if askpcnum.strip().lstrip() == '':
                 continue
-            #askpcnum = '1,2,3,6,9,12,14'
             pcsinglelist = parseandreturnsingelist(askpcnum,pcobjectlist)
             if pcsinglelist == 'invalid':
                 continue
             choseninterfaceobjectlist = filter(lambda x: x.number in pcsinglelist, pcobjectlist)
-           # for chosennumber in pcsinglelist:
-           #     #if chosennumber in 
-           #     pcdict[pcobjectlist[int(t)]]
             break
-        except:
+        except ValueError:
             print("\n\x1b[1;37;41mInvalid format and/or range...Try again\x1b[0m\n")
     return choseninterfaceobjectlist
 

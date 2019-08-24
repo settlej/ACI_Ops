@@ -1,4 +1,4 @@
-
+#!/usr/bin/env python
 
 import os
 import getpass
@@ -140,7 +140,7 @@ def main():
                 #print('-------------------------------------------------\x1b[0m')
           #  import pdb; pdb.set_trace()
 
-            print('\nWhat would you like to do?:\n\n' +
+            print('\n What would you like to do?:\n\n' +
                             '\t\x1b[1;32;40m  [INTERFACES]\n'+
                             '\t ---------------------------------------------------\n' +
                             '\t| 1.)  Shut/NoShut interfaces\n' + 
@@ -177,7 +177,7 @@ def main():
             print('\x1b[1;33;40m\x1b[7;70H|  Type "exit" on any input   |')
             print('\x1b[1;33;40m\x1b[8;70H|    to return to main menu   |')
             print('\x1b[1;33;40m\x1b[9;70H -----------------------------\x1b[0m')
-            choosen = custom_raw_input('\x1b[uSelect a number: ')
+            choosen = custom_raw_input('\x1b[u Select a number: ')
             if choosen == '1':
                 try:
                     shut_noshut_interfaces.main(apic,cookie)

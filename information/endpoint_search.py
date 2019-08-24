@@ -8,13 +8,12 @@ except:
 import urllib2
 import json
 import ssl
-#import ipaddress
 import trace
 import os
 import pdb
 from localutils.custom_utils import *
 
-ipaddr = None
+#ipaddr = None
 
 def GetRequest(url, icookie):
     method = "GET"
@@ -142,15 +141,10 @@ class compEpPConn():
     def __repr__(self):
         return self.epgPKey
 
-
-
-
-
 def get_Cookie():
     global cookie
     with open('/.aci/.sessions/.token', 'r') as f:
         cookie = f.read()
-
 
 def gather_fvCEp_fullinfo(result):
     eplist = []
@@ -220,21 +214,18 @@ def readable_dnpath(dnpath):
 
 
 def display_live_history_info(ipaddressEP, totalcount):
-    try:
-        url = """https://{apic}/mqapi2/troubleshoot.eptracker.json?ep={}&order-by=troubleshootEpTransition.date|desc""".format(ipaddressEP.dn,apic=apic)
-        result, totalcount = GetResponseData(url)
-        if totalcount == '0':
-            print('No current IP history found...check event history\n')
-        else:
-            for historyep in result:
-                dnpath = historyep['troubleshootEpTransition']['attributes']['path']
-                dnpath = readable_dnpath(dnpath)
-                troubleshootstring = "{:26}\t{:15}\t{:18}\t{:20}\t{}"
-                print(troubleshootstring.format(historyep['troubleshootEpTransition']['attributes']['date'][:-6], 
-                    historyep['troubleshootEpTransition']['attributes']['encap'], historyep['troubleshootEpTransition']['attributes']['ip'],
-                    historyep['troubleshootEpTransition']['attributes']['mac'], dnpath))
-    except Exception as e:
-        print(e)
+    url = """https://{apic}/mqapi2/troubleshoot.eptracker.json?ep={}&order-by=troubleshootEpTransition.date|desc""".format(ipaddressEP.dn,apic=apic)
+    result, totalcount = GetResponseData(url)
+    if totalcount == '0':
+        print('No current IP history found...check event history\n')
+    else:
+        for historyep in result:
+            dnpath = historyep['troubleshootEpTransition']['attributes']['path']
+            dnpath = readable_dnpath(dnpath)
+            troubleshootstring = "{:26}\t{:15}\t{:18}\t{:20}\t{}"
+            print(troubleshootstring.format(historyep['troubleshootEpTransition']['attributes']['date'][:-6], 
+                historyep['troubleshootEpTransition']['attributes']['encap'], historyep['troubleshootEpTransition']['attributes']['ip'],
+                historyep['troubleshootEpTransition']['attributes']['mac'], dnpath))
 
 def gather_compVM_info(result):
     host_rn_reference = None
@@ -262,11 +253,9 @@ def gather_compVM_info(result):
                                                     ip=vnicip,
                                                     adapterType=vnicadapterType)
                 if child['compVNic'].get('children'):
-                    #print('yesssss')
                     for object in child['compVNic']['children']:
                         if object.get('compRsDlPol'):
                             local_compRsDlPol = compRsDlPol(tDn=object['compRsDlPol']['attributes']['tDn'])
-                            #print(local_compRsDlPol)
                         elif object.get('compEpPConn'):
                             local_compEpPConn = compEpPConn(epgPKey=object['compEpPConn']['attributes']['epgPKey'],
                                                             encap=object['compEpPConn']['attributes']['encap'],
@@ -292,14 +281,12 @@ def eventhistory(address):
         url = """https://{apic}/api/node/class/eventRecord.json?query-target-filter=and(eq(eventRecord.code,"E4209236"))&query-target-filter=and(wcard(eventRecord.dn,"cep-{address}"))&order-by=eventRecord.created|desc&page=0&page-size=30""".format(address=address,apic=apic)
     elif len(address) >= 7 and len(address) <= 15 :
         url = """https://{apic}/api/node/class/eventRecord.json?query-target-filter=and(eq(eventRecord.code,"E4209236"))&query-target-filter=and(wcard(eventRecord.descr,"{address}$"))&order-by=eventRecord.created|desc&page=0&page-size=30""".format(address=address,apic=apic)
-    
     result, totalcount = GetResponseData(url)
     print('\n')
     if totalcount == '0':
         print("{:.<45}0\n".format("Searching Event Records"))
     else:
         print("{:.<45}Found {} Events\n".format("Searching Event Records",totalcount))
-       
     print("{:26}{:12}".format('Time','Description', ))
     print('-'*90)
     if totalcount == '0':
@@ -314,19 +301,7 @@ def eventhistory(address):
             macfound = 'No Mac Found'
         else:
             macfound = macfound.group()[4:]
-        #controller = re.search(r'node-[0-9]', event['eventRecord']['attributes']['dn'])
         print("{:26}{:^12}  [{}]".format(timestamp[:-6],descr,'mac: ' + macfound))
-        
-#def find_and_display_current_location_info(ipaddressEP, totalcount, compVm=None):
-#    dnpath = ipaddressEP.fvRsCEpToPathEp.tDn
-#    dnpath = readable_dnpath(dnpath)
-#    print('\n')
-#    print("{:^115}".format('EPG = \x1b[1;33;40m ' + ipaddressEP.epg + ' \x1b[0m\n'))
-#    print("{:26}\t{:15}\t{:18}\t{:20}\t{}".format("Date", "encap-vlan", "Ip Address", "Mac Address", "Path"))
-#    print('-'*115)
-#    print("{:26}\t{:15}\t{:18}\t{:20}\t{}".format("Current", ipaddressEP.encap, ipaddressEP.ip, ipaddressEP.mac, dnpath))
-#    if ipaddressEP.fvRsVm:
-#        display_vm_information(ipaddressEP, compVm)
 
 
 def display_vm_information(endpointobject, compVm):
@@ -348,13 +323,7 @@ def display_vm_information(endpointobject, compVm):
                     print("{:96}vm_name = {:18}\n{:96}Host = {:18}\n{:96}State = {:18}\n".format('',vmname,'',vmhostname,'',vmpowerstate))#,vmstate))
             else:
                 if vmhostname == '\x1b[1;37;41m****OLD INFORMATION PHASING OUT****\x1b[0m':
-                    print("{:96}{:18}\n{:96}{:18}\n".format('','','',vmhostname))#,vmstate))                #print(vars(compVm))
-                   # print('debug11')
-                    #else:
-                    #    print("{:96}vm_name = {:18}\n{:96}Host = {:18}\n{:96}State = {:18}\n".format('',vmname,'',vmhostname,'',vmpowerstate))#,vmstate))
-                    #    print('debug22')
-          #  except AttributeError as ae:
-          #      pdb.set_trace()
+                    print("{:96}{:18}\n{:96}{:18}\n".format('','','',vmhostname))
 
 def find_and_display_current_location_info(macEP, totalcount, compVm=None):
     dnpath = macEP.fvRsCEpToPathEp.tDn
@@ -387,7 +356,6 @@ def vm_search_function(vm_name):
         print('-'*97)
         print('\x1b[41;1mNo "LIVE Endpoint" VM found...check event history\x1b[0m\n')
         print('\n')
-        
     else:
         url = """https://{apic}/api/node/class/fvRsVm.json""".format(apic=apic)
         fvRsVm_result, totalcount = GetResponseData(url)
@@ -398,27 +366,11 @@ def vm_search_function(vm_name):
                 vmdn = vm['fvRsVm']['attributes']['dn']
                 vmtDn = vm['fvRsVm']['attributes']['tDn']
                 fvRsVmlist.append(fvRsVm(state=vmstate,dn=vmdn,tDn=vmtDn))
-       # for x in fvRsVmlist:
-       #     print(x.dn)
-       #     print(x.tDn)
-       # print('\n')
-       # tDnlist = [x.tDn for x in fvRsVmlist]
-       # dnlist = [x.dn for x in fvRsVmlist]
-        
         compVm_dn = result[0]['compVm']['attributes']['dn']
-        #url = """https://{apic}/api/node/class/fvRsVm.json?query-target-filter=or(eq(fvRsVm.tDn,"{}"))""".format(compVm_dn)
-        #result, totalcount = GetResponseData(url)
-        #url = """https://{apic}/api/mo/{}.json""".format(compVm_dn)
-        #result, totalcount = GetResponseData(url)
-        #compVm_dn = result[0]['compVm']['attributes']['dn']
         url = """https://{apic}/api/mo/{}.json?rsp-subtree=full""".format(compVm_dn, apic=apic)
-       # print(url)
         result, totalcount = GetResponseData(url)
-       # compVM = None
         compVM = gather_compVM_info(result)
-        # choseninterfaceobjectlist = filter(lambda x: x.number in pcsinglelist, pcobjectlist)
         k = filter(lambda x: x in  fvRsVmlist, compVM.compVNiclist)
-       # print(k)
         if len(compVM.compVNiclist) == 1:
             mac_path_function(compVM.compVNiclist[0].mac, compVM=compVM)
         else:
@@ -427,22 +379,7 @@ def vm_search_function(vm_name):
             print("{} interfaces:".format(vm_name))
             print('-'*30)
             for num,vnic in enumerate(compVM.compVNiclist,1):
-                #match = False
-                #for vm in fvRsVmlist:  
-                #    if vnic.mac in vm.dn:
-                #        vnic.fvRsVmobject.append(vm)
-                    
-               # for vm in fvRsVmlist:
-               #     if vnic.mac in vm.dn:
-               #         
-               # if vnic.fvRsVmobject:
-                    #epg = '/'.join(vnic.fvRsVmobject.dn.split('/')[1:-2]).replace('tn-','').replace('ap-','').replace('epg-','')
-                #    epglist = [v.dn for v in vnic.fvRsVmobject]
-                #    print("{}.) VNIC = {} | MAC = {} | IP = {} | EPG = {}".format(num,vnic.name,vnic.mac,vnic.ip,epglist))
-                #else:
-                print("{}.) VNIC = {} | MAC = {} | IP = {}".format(num,vnic.name,vnic.mac,vnic.ip))#"Unknown"))
-            #pdb.set_trace()
-                
+                print("{}.) VNIC = {} | MAC = {} | IP = {}".format(num,vnic.name,vnic.mac,vnic.ip))         
             while True:
                 pickednum = custom_raw_input("\nWhich interface? ")
                 if pickednum.isdigit() and (int(pickednum) > 0 and int(pickednum) <= len(compVM.compVNiclist)):
@@ -450,6 +387,7 @@ def vm_search_function(vm_name):
                 else:
                     continue
             mac_path_function(compVM.compVNiclist[int(pickednum)-1].mac, compVM=compVM)
+            return compVM.compVNiclist[int(pickednum)-1].mac
 
 
 def mac_path_function(mac, compVM=None):
@@ -460,8 +398,6 @@ def mac_path_function(mac, compVM=None):
         print('\n')
         url = """https://{apic}/api/node/mo/{}.json""".format(compVM.host_rn_reference,apic=apic)
         result, totalcount = GetResponseData(url)
-        #print(result[0]['compHv']['attributes']['name'])
-       # print(compVM.compVNiclist)
         for vminterface in compVM.compVNiclist:
             if vminterface.mac == mac:
                 print("{:26}\t{:15}\t{:18}\t{}".format("Date", "encap-vlan", "Ip Address", "Mac Address"))
@@ -471,12 +407,6 @@ def mac_path_function(mac, compVM=None):
                 print("\nNic not using portgroup deployed by ACI\n")
                 print("Helpful info:\n\tHost: {}\t VM Status: {}\tvnic_status: {}\t\tvnic_ip: {}".format(result[0]['compHv']['attributes']['name'],
                                                                                                 compVM.state,vminterface.operSt ,vminterface.ip))
-                #pdb.set_trace()
-
-            #print(vminterface.mac)
-        #print(compVM.compVNiclist[0].operSt)
-        #pdb.set_trace()
-
         print('\n')
     elif totalcount == '0':
         print('\n')
@@ -488,15 +418,11 @@ def mac_path_function(mac, compVM=None):
         fvCEplist = gather_fvCEp_fullinfo(result)
         for fvCEp in fvCEplist:
             url = """https://{apic}/api/node/mo/{}.json?rsp-subtree=full&target-subtree-class=fvCEp,fvRsCEpToPathEp,fvRsHyper,fvRsToNic,fvRsToVm""".format(fvCEp.dn,apic=apic)
-            #print(url)
             result, totalcount = GetResponseData(url)
             completefvCEplist = gather_fvCEp_fullinfo(result)
             #Display current endpoint info
             find_and_display_current_location_info(completefvCEplist[0], totalcount,compVM)
             #Display current known endpoint history
-            #epglist.append(epglistforhistorysearch)
-        #epglist = list(set(epglist[0]))
-
         if len(fvCEplist) > 1:
             print('\n')
             for num,x in enumerate(fvCEplist,1):
@@ -510,21 +436,13 @@ def mac_path_function(mac, compVM=None):
                     continue
             print('\n[History]')
             display_live_history_info(fvCEplist[int(ask)-1], totalcount)
+            print(fvCEplist[int(ask)-1])
+            return fvCEplist[int(ask)-1]
         else:
             print('\n[History]')
             display_live_history_info(completefvCEplist[0], totalcount)
-    while True:
-        history = custom_raw_input("\nWould you like to search event logs for {}? [y|n=default]: ".format(mac)) or 'n'
-        if history != '' and history[0].lower() == 'y':
-            break #return ipaddressEP.ip
-        elif history[0].lower() == 'n':
-            mac = None
-            break
-        else:
-            print("\n\x1b[1;37;41mInvalid option, Please try again\x1b[0m\n")
-            continue
-    if mac:
-            eventhistory(mac)
+            print(completefvCEplist[0])
+            return completefvCEplist[0]
 
 
 def ip_path_function(ipaddr):
@@ -552,18 +470,6 @@ def ip_path_function(ipaddr):
             #Display current known endpoint history
         print('\n[History]')
         display_live_history_info(completefvCEplist[0], totalcount)
-    while True:
-        history = custom_raw_input("\nWould you like to search event logs for {}? [y|n=default]: ".format(ipaddr)) or 'n'
-        if history != '' and history[0].lower() == 'y':
-            break #return ipaddressEP.ip
-        elif history[0].lower() == 'n':
-            ipaddr = None
-            break
-        else:
-            print("\n\x1b[1;37;41mInvalid option, Please try again\x1b[0m\n")
-            continue
-    if ipaddr:
-            eventhistory(ipaddr)
 
 
 
@@ -576,25 +482,27 @@ def main(import_apic,import_cookie):
         clear_screen()
         search = custom_raw_input("\nWhat is the IP, MAC, or VM name?: ")
         if re.match("[0-9a-f]{2}([-:]?)[0-9a-f]{2}(\\1[0-9a-f]{2}){4}$", search.lower()):
-            mac = search.upper()
-            mac_path_function(mac)
+            endpoint = search.upper()
+            mac_path_function(endpoint)
         elif re.match(r"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$",search):
-            ipaddr = search
-            ip_path_function(ipaddr)
+            endpoint = search
+            ip_path_function(endpoint)
         else:
-            vm = search
-            vm_search_function(vm)
+            endpoint = search
+            endpoint = vm_search_function(endpoint)
         while True:
-            again = custom_raw_input("\nSearch another endpoint? [y|n=default] ") or "n"
-            if again[0].lower() == 'y':
+            history = custom_raw_input("\nWould you like to search event logs for {}? [y|n=default]: ".format(endpoint)) or 'n'
+            if history != '' and history[0].lower() == 'y':
+                eventhistory(endpoint)
+                raw_input('#Press enter to continue...')
                 break
-            elif again[0].lower() == 'n':
-                print("\nExiting...\n")
-                exit()
+            elif history[0].lower() == 'n':
+                endpoint = None
+                break
             else:
                 print("\n\x1b[1;37;41mInvalid option, Please try again\x1b[0m\n")
                 continue
-        break
+     
 
 if __name__ == '__main__':
     try:
