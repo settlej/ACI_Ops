@@ -10,8 +10,7 @@ import json
 import ssl
 import os
 import datetime
-from localutils.custom_utils import clear_screen, custom_raw_input, GetRequest, GetResponseData, displaycurrenttime, time_difference
-
+from localutils.custom_utils import *
 
 
 

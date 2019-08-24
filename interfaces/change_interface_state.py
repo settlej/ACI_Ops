@@ -130,11 +130,11 @@ def grouper(iterable, n, fillvalue=''):
     args = [iter(iterable)] * n  # creates list * n so args is a list of iters for iterable
     return itertools.izip_longest(*args, fillvalue=fillvalue)
 
-def clear_screen():
-    if os.name == 'posix':
-        clear_screen()
-    else:
-        os.system('cls')
+#def clear_screen():
+#    if os.name == 'posix':
+#        clear_screen()
+#    else:
+#        os.system('cls')
 
 def menu():
     while True:

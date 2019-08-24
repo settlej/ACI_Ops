@@ -320,7 +320,10 @@ def display_vm_information(endpointobject, compVm):
                 if vmhostname == '\x1b[1;37;41m****OLD INFORMATION PHASING OUT****\x1b[0m':
                     print("{:96}vm_name = {:18}\n{:96}{:18}\n".format('',vmname,'',vmhostname))#,vmstate))
                 else:
-                    print("{:96}vm_name = {:18}\n{:96}Host = {:18}\n{:96}State = {:18}\n".format('',vmname,'',vmhostname,'',vmpowerstate))#,vmstate))
+                    if vmpowerstate == 'poweredOff':
+                        print("{:96}vm_name = {:18}\n{:96}Host = {:18}\n{:96}State = \x1b[1;31;40m{:18}\x1b[0m\n".format('',vmname,'',vmhostname,'',vmpowerstate))#,vmstate))
+                    else:
+                        print("{:96}vm_name = {:18}\n{:96}Host = {:18}\n{:96}State = {:18}\n".format('',vmname,'',vmhostname,'',vmpowerstate))#,vmstate))
             else:
                 if vmhostname == '\x1b[1;37;41m****OLD INFORMATION PHASING OUT****\x1b[0m':
                     print("{:96}{:18}\n{:96}{:18}\n".format('','','',vmhostname))
@@ -379,7 +382,10 @@ def vm_search_function(vm_name):
             print("{} interfaces:".format(vm_name))
             print('-'*30)
             for num,vnic in enumerate(compVM.compVNiclist,1):
-                print("{}.) VNIC = {} | MAC = {} | IP = {}".format(num,vnic.name,vnic.mac,vnic.ip))         
+                if vnic.ip == '0.0.0.0':
+                    print("{}.) VNIC = {} | MAC = {}".format(num,vnic.name,vnic.mac))         
+                else:
+                    print("{}.) VNIC = {} | MAC = {} | IP = {}".format(num,vnic.name,vnic.mac,vnic.ip))         
             while True:
                 pickednum = custom_raw_input("\nWhich interface? ")
                 if pickednum.isdigit() and (int(pickednum) > 0 and int(pickednum) <= len(compVM.compVNiclist)):
@@ -403,9 +409,8 @@ def mac_path_function(mac, compVM=None):
                 print("{:26}\t{:15}\t{:18}\t{}".format("Date", "encap-vlan", "Ip Address", "Mac Address"))
                 print('-'*97)
                 print('\x1b[41;1mMAC not found on Fabric....\x1b[0m\n')
-                print('\r')
-                print("\nNic not using portgroup deployed by ACI\n")
-                print("Helpful info:\n\tHost: {}\t VM Status: {}\tvnic_status: {}\t\tvnic_ip: {}".format(result[0]['compHv']['attributes']['name'],
+                print("Nic not using portgroup deployed by ACI\n")
+                print("Helpful info:\n\tHost: {}\t VM Status: {}\tvnic_status: {}\tvnic_ip: {}".format(result[0]['compHv']['attributes']['name'],
                                                                                                 compVM.state,vminterface.operSt ,vminterface.ip))
         print('\n')
     elif totalcount == '0':
@@ -436,12 +441,10 @@ def mac_path_function(mac, compVM=None):
                     continue
             print('\n[History]')
             display_live_history_info(fvCEplist[int(ask)-1], totalcount)
-            print(fvCEplist[int(ask)-1])
             return fvCEplist[int(ask)-1]
         else:
             print('\n[History]')
             display_live_history_info(completefvCEplist[0], totalcount)
-            print(completefvCEplist[0])
             return completefvCEplist[0]
 
 

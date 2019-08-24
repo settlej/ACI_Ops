@@ -171,13 +171,15 @@ def main():
                             '\t| 17.) Create EPGs (Not Available)\n' +
                             '\t| 18.) Configure interface Descriptions (Not Available)\n' + 
                             '\t| 19.) Import/Export interface Descriptions (Not Available)\n' + 
-                            '\t ---------------------------------------------------\x1b[0m\n\n\x1b[s')
-            print('\x1b[1;33;40m\x1b[5;70H -----------------------------')
-            print('\x1b[1;33;40m\x1b[6;70H|           Hint:             |')
-            print('\x1b[1;33;40m\x1b[7;70H|  Type "exit" on any input   |')
-            print('\x1b[1;33;40m\x1b[8;70H|    to return to main menu   |')
+                            '\t ---------------------------------------------------\x1b[0m')
+            print('\x1b[7')
+            print('\x1b[1;33;40m\x1b[5;70H -----------------------------\x1b[0m')
+            print('\x1b[1;33;40m\x1b[6;70H|           Hint:             \x1b[0m|')
+            print('\x1b[1;33;40m\x1b[7;70H|  Type "exit" on any input   \x1b[0m|')
+            print('\x1b[1;33;40m\x1b[8;70H|    to return to main menu   \x1b[0m|')
             print('\x1b[1;33;40m\x1b[9;70H -----------------------------\x1b[0m')
-            choosen = custom_raw_input('\x1b[u Select a number: ')
+            print('\x1b[8')
+            choosen = custom_raw_input('\x1b[u\x1b[40;1H Select a number: ')
             if choosen == '1':
                 try:
                     shut_noshut_interfaces.main(apic,cookie)
