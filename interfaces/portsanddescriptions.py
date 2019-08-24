@@ -324,6 +324,7 @@ def main(import_apic,import_cookie):
         leafs = leaf_selection(get_All_leafs())
         leafallinterfacesdict = pull_leaf_interfaces(leafs)
         print_interfaces_layout(leafallinterfacesdict,leafs)
+        raw_input('#Press enter to continue...')
     #for leafinterlist in allinterfaceslist:
     #    interfaces = gather_l1PhysIf_info(leafinterlist)
 #
