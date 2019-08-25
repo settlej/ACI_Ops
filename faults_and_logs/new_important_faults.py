@@ -39,12 +39,12 @@ def GetResponseData(url, cookie):
     result = json.loads(response.read())
     return result['imdata'], result["totalCount"]
 
-def clear_screen():
-    if os.name == 'posix':
-        os.system('clear')
-    else:
-        os.system('cls')
-
+#def clear_screen():
+#    if os.name == 'posix':
+#        os.system('clear')
+#    else:
+#        os.system('cls')
+#
     
 class faultobject():
     def __init__(self, faultstring='', code='', amount=0, order=None, results=None):
