@@ -24,6 +24,8 @@ def GetRequest(url, icookie):
     request.add_header("Content-type", "application/json")
     request.add_header('Accept', 'application/json')
     return urllib2.urlopen(request, context=ssl._create_unverified_context())
+
+
 def GetResponseData(url):
     response = GetRequest(url, cookie)
     result = json.loads(response.read())
@@ -85,7 +87,6 @@ def get_All_leafs():
     url = """https://{apic}/api/node/class/fabricNode.json?query-target-filter=and(not(wcard(fabricNode.dn,%22__ui_%22)),""" \
           """and(eq(fabricNode.role,"leaf"),eq(fabricNode.fabricSt,"active"),ne(fabricNode.nodeType,"virtual")))""".format(apic=apic)
     result, totalCount = GetResponseData(url)
-    #print(result)
     return result
 
 def goodspacing(column):
@@ -146,26 +147,29 @@ class fabricPathEp(object):
             return None
 
 
-def physical_selection(all_leaflist,direction):
-    nodelist = [node['fabricNode']['attributes']['id'] for node in all_leaflist]
-    nodelist.sort()
-    for num,node in enumerate(nodelist,1):
-        print("{}.) {}".format(num,node))
-    while True:
-        try:
-            asknode = raw_input('\nWhat leaf: ')
-            print('\r')
-            if asknode.strip().lstrip() == '' or '-' in asknode or ',' in asknode or not asknode.isdigit():
-                print("\n\x1b[1;37;41mInvalid format or number...Try again\x1b[0m\n")
-                continue
-            returnedlist = parseandreturnsingelist(asknode, nodelist)
-            if returnedlist == 'invalid':
-                continue
-            chosenleafs = [nodelist[int(node)-1] for node in returnedlist]
-            break
-        except KeyboardInterrupt as k:
-            print('\n\nEnding Script....\n')
-            return
+def physical_selection(all_leaflist,direction, leaf=None):
+    if leaf == None:
+        nodelist = [node['fabricNode']['attributes']['id'] for node in all_leaflist]
+        nodelist.sort()
+        for num,node in enumerate(nodelist,1):
+            print("{}.) {}".format(num,node))
+        while True:
+            #try:
+                asknode = custom_raw_input('\nWhat leaf: ')
+                print('\r')
+                if asknode.strip().lstrip() == '' or '-' in asknode or ',' in asknode or not asknode.isdigit():
+                    print("\n\x1b[1;37;41mInvalid format or number...Try again\x1b[0m\n")
+                    continue
+                returnedlist = parseandreturnsingelist(asknode, nodelist)
+                if returnedlist == 'invalid':
+                    continue
+                chosenleafs = [nodelist[int(node)-1] for node in returnedlist]
+                break
+            #except KeyboardInterrupt as k:
+            #    print('\n\nEnding Script....\n')
+            #    return
+    else:
+        chosenleafs = [leaf]
     compoundedleafresult = []
     for leaf in chosenleafs:
         url = """https://{apic}/api/node/class/fabricPathEp.json?query-target-filter=and(not(wcard(fabricPathEp.dn,%22__ui_%22)),""" \
@@ -218,13 +222,12 @@ def physical_selection(all_leaflist,direction):
         print('{:6}.) {:42}{}.) {:42}{}.) {}'.format(a,b,c,d,e,f))
     while True:
         #try:
-            selectedinterfaces = raw_input("\nSelect \x1b[1;33;40m{}\x1b[0m interface by number: ".format(direction))
+            selectedinterfaces = custom_raw_input("\nSelect \x1b[1;33;40m{}\x1b[0m interface by number: ".format(direction))
             print('\r')
-            if selectedinterfaces.strip().lstrip() == '' or '-' in selectedinterfaces or ',' in selectedinterfaces or not asknode.isdigit():
+            if selectedinterfaces.strip().lstrip() == '' or '-' in selectedinterfaces or ',' in selectedinterfaces: # or not selectedinterfaces.isdigit():
                 print("\n\x1b[1;37;41mInvalid format or number...Try again\x1b[0m\n")
                 continue
             intsinglelist = parseandreturnsingelist(selectedinterfaces,finalsortedinterfacelist)
-            #print(intsinglelist)
             if intsinglelist == 'invalid':
                 continue
             return filter(lambda x: x.number in intsinglelist, finalsortedinterfacelist), leaf
@@ -272,22 +275,36 @@ def main(import_apic,import_cookie):
     global cookie
     cookie = import_cookie
     apic = import_apic
-    all_leaflist = get_All_leafs()
-    print("\nWhat is the desired \x1b[1;33;40m'Destination'\x1b[0m leaf for span session?\r")
-    userpath = os.path.expanduser("~")
-    userpathmarker = userpath.rfind('/')
-    user = os.path.expanduser("~")[userpathmarker+1:]
-    name = datetime.datetime.now().strftime('%Y:%m:%dT%H:%M:%S') + '_' + user
-    direction = 'Destination'
-    chosendestinterfacobject, leaf = physical_selection(all_leaflist,direction)
-    create_span_dest_url(chosendestinterfacobject[0], name, leaf)
+    #print(vars())
+    #print(dir())
+    #import pdb; pdb.set_trace()
+    while True:
 
-    print("\nWhat is the desired \x1b[1;33;40m'Source'\x1b[0m leaf for span session?\r")
+        all_leaflist = get_All_leafs()
+        if all_leaflist == []:
+            print('\x1b[1;31;40mFailed to retrieve active leafs, make leafs are operational...\x1b[0m')
+            custom_raw_input('\n#Press enter to continue...')
+            return
+        print("\nWhat is the desired \x1b[1;33;40m'Source and Destination'\x1b[0m leaf for span session?\r")
+#        desiredleaf = custom_custom_raw_input("\nWhat is the desired \x1b[1;33;40m'Source and Destination'\x1b[0m leaf for span session?\r")
+       
+        #print("\nWhat is the desired \x1b[1;33;40m'Destination'\x1b[0m leaf for span session?\r")
+        userpath = os.path.expanduser("~")
+        userpathmarker = userpath.rfind('/')
+        user = os.path.expanduser("~")[userpathmarker+1:]
+        name = datetime.datetime.now().strftime('%Y:%m:%dT%H:%M:%S') + '_' + user
+        direction = 'Destination'
+        chosendestinterfacobject, leaf = physical_selection(all_leaflist,direction)
+        create_span_dest_url(chosendestinterfacobject[0], name, leaf)
+    
 
-    direction= 'Source'
-    chosensourceinterfacobject, leaf = physical_selection(all_leaflist,direction)
-    create_source_session_and_port(chosensourceinterfacobject[0],chosendestinterfacobject[0], name, leaf)
-    raw_input('\n#Press enter to continue...')
+    
+        direction= 'Source'
+        chosensourceinterfacobject, leaf = physical_selection(all_leaflist,direction, leaf=leaf)
+        create_source_session_and_port(chosensourceinterfacobject[0],chosendestinterfacobject[0], name, leaf)
+        cookie = refreshToken(apic, cookie)
+        custom_raw_input('\n#Press enter to continue...')
+        break
 
 if __name__ == '__main__':
     try:
@@ -297,9 +314,9 @@ if __name__ == '__main__':
         exit()
 
 
-#name = raw_input("What is the source interface? ")
+#name = custom_raw_input("What is the source interface? ")
 #
-#name = raw_input(")
+#name = custom_raw_input(")
 #
 #{"spanDestGrp":{"attributes":{"dn":"uni/infra/destgrp-SPAN_Destination_eth1_30","name":"SPAN_Destination_eth1_30",
 #"rn":"{rn}","status":"created"},"children":[{"spanDest":

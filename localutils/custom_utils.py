@@ -16,6 +16,18 @@ def clear_screen():
     else:
         os.system('cls')
 
+
+def refreshToken(apic,icookie):
+    ssl._create_default_https_context = ssl._create_unverified_context
+    url = "https://{apic}/api/aaaRefresh.json".format(apic=apic)
+    cookies = 'APIC-cookie=' + icookie
+    request = urllib2.Request(url)
+    request.add_header("Cookie", cookies)
+    response = urllib2.urlopen(request, timeout=4)
+    result = json.loads(response.read())
+    return result["imdata"][0]["aaaLogin"]["attributes"]["token"]
+
+
 #def GetRequest(url, icookie):
 #    method = "GET"
 #    cookies = 'APIC-cookie=' + icookie
