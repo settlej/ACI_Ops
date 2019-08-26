@@ -11,6 +11,8 @@ import ssl
 import os
 import datetime
 import getpass
+import threading
+import Queue
 from localutils.custom_utils import *
 
 
@@ -26,18 +28,18 @@ def getToken(apic, user, pwd):
     return cookie
 
 
-def GetRequest(url, icookie):
-    method = "GET"
-    cookies = 'APIC-cookie=' + str(icookie)
-    request = urllib2.Request(url)
-    request.add_header("cookie", cookies)
-    request.add_header("Content-Type", "application/json")
-    request.add_header('Accept', 'application/json')
-    return urllib2.urlopen(request, context=ssl._create_unverified_context())
-def GetResponseData(url, cookie):
-    response = GetRequest(url, cookie)
-    result = json.loads(response.read())
-    return result['imdata'], result["totalCount"]
+#def GetRequest(url, icookie):
+#    method = "GET"
+#    cookies = 'APIC-cookie=' + str(icookie)
+#    request = urllib2.Request(url)
+#    request.add_header("cookie", cookies)
+#    request.add_header("Content-Type", "application/json")
+#    request.add_header('Accept', 'application/json')
+#    return urllib2.urlopen(request, context=ssl._create_unverified_context())
+#def GetResponseData(url, cookie):
+#    response = GetRequest(url, cookie)
+#    result = json.loads(response.read())
+#    return result['imdata'], result["totalCount"]
 
 #def clear_screen():
 #    if os.name == 'posix':
@@ -209,9 +211,10 @@ def detail_switch_availability_status_faults(listdetail,apic=None):
         device = re.search(r'[nN]ode [0-9]{1,3}', descr).group()
         print("{:26}{:20}{:12}{:18}{}".format(timestamp[:-6],diff_time,device, lc,descr))
     print('\n')
-def detail_access_inter_faults(listdetail, apic):
+def detail_access_inter_faults(listdetail, apic=None):
     print('\n{:26}{:20}{:10}{:15}{:18}{:18}{}'.format('Time', 'Time Diff','Switch','Interface','Port-Channel', 'State', 'Description'))
     print('-'*120)
+    teststring = ''
     for fault in listdetail:
         timestamp = ' '.join(fault['faultInst']['attributes']['lastTransition'].split('T'))
         diff_time = time_difference(timestamp[:-6])
@@ -222,11 +225,28 @@ def detail_access_inter_faults(listdetail, apic):
         #print(description_short)
         usedlocation =  description.find('used')
         description_final = description[:usedlocation - 2] 
+        
+        que = Queue.Queue()
+        polisting = []
+        #polisting2 = []
         if 'po' in interface.group():
-            poName = retrievePortChannelName(apic, cookie, interface.group(), leaf.group())
-            print('{:26}{:20}{:10}{:15}{:18}{:18}{}'.format(timestamp[:-6],diff_time, leaf.group(), interface.group(), poName, lc, description_final))
+            t = threading.Thread(target=retrievePortChannelName, args=(apic, cookie, interface.group(), leaf.group(), que))
+            t.start()
+            polisting.append(t)
+           # teststring += '{:26}{:20}{:10}{:15}{:18}{:18}{}'.format(timestamp[:-6],diff_time, leaf.group(), interface.group(), poName, lc, description_final)
         else:
-            print('{:26}{:20}{:10}{:15}{:18}{:18}{}'.format(timestamp[:-6],diff_time, leaf.group(), interface.group(), '', lc,  description_final))
+            teststring += '{:26}{:20}{:10}{:15}{:18}{:18}{}\n'.format(timestamp[:-6],diff_time, leaf.group(), interface.group(), '', lc,  description_final)
+        for t in polisting:
+            t.join()
+            po = que.get()
+            teststring += '{:26}{:20}{:10}{:15}{:18}{:18}{}\n'.format(timestamp[:-6],diff_time, leaf.group(), interface.group(), po, lc, description_final)
+    print(teststring)
+    print('yes')
+            #polisting2.append(que.get())
+        #for x in interfacelist2:
+        #    teststring += x
+        
+
     print('\n')
 def detail_leaf_spine_uplink_faults(listdetail,apic=None):
     print('\n')
@@ -266,7 +286,7 @@ def detail_vpc_part_faults(listdetail,apic=None):
             timestamp = ' '.join(fault['faultInst']['attributes']['lastTransition'].split('T'))
             diff_time = time_difference(timestamp[:-6])
             lc = fault['faultInst']['attributes']['lc']
-            print("{:26}{:20}{:15}{:18}{:18}{}".format(timestamp[:23],dn,lc,descr,'changeSet: ' + changeSet))
+            print("{:26}{:20}{:15}{:18}{}".format(timestamp[:23],dn,lc,descr,'changeSet: ' + changeSet))
     print('\n')
 def detail_apic_replica_faults(listdetail,apic=None):
     print("{:26}{:20}{:12}{:18}{}".format('Time', 'Time Diff','Controller', 'State','Description'))
@@ -395,19 +415,22 @@ def detail_failed_psu_faults(listdetail,apic=None):
         print("{:26}{:20}{:12}{:18}{}".format(timestamp[:-6],diff_time,node,lc,descr))
     print('\n')
 
-def retrievePortChannelName(apic, cookie, PoNum, leaf):
+def retrievePortChannelName(apic, cookie, PoNum, leaf, que):
     url = """https://{apic}/api/node/mo/topology/pod-1/node-{leaf}/sys/aggr-{PoNum}/rtaccBndlGrpToAggrIf.json""".format(apic=apic,leaf=leaf[4:],PoNum=PoNum)
     result = GetResponseData(url, cookie)
     poresult = result[0][0][u"pcRtAccBndlGrpToAggrIf"][u"attributes"][u'tDn']
     poposition = result[0][0][u"pcRtAccBndlGrpToAggrIf"][u"attributes"][u'tDn'].rfind('accbundle-')
     poName = poresult[poposition+10:]
-    return poName
+    que.put(poName)
+   # return '{:26}{:20}{:10}{:15}{:18}{:18}{}'.format(timestamp[:-6],diff_time, leaf.group(), interface.group(), poName, lc, description_final)
 
-def getCookie():
-    with open('/.aci/.sessions/.token', 'r') as f:
-        global cookie
-        cookie = f.read()
-        return cookie
+    #return poName
+
+#def getCookie():
+#    with open('/.aci/.sessions/.token', 'r') as f:
+#        global cookie
+#        cookie = f.read()
+#        return cookie
 
 
 def askrefresh(detail_function, is_function):

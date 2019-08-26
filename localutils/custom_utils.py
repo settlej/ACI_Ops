@@ -28,19 +28,19 @@ def refreshToken(apic,icookie):
     return result["imdata"][0]["aaaLogin"]["attributes"]["token"]
 
 
-#def GetRequest(url, icookie):
-#    method = "GET"
-#    cookies = 'APIC-cookie=' + icookie
-#    request = urllib2.Request(url)
-#    request.add_header("cookie", cookies)
-#    request.add_header("Content-trig", "application/json")
-#    request.add_header('Accept', 'application/json')
-#    return urllib2.urlopen(request, context=ssl._create_unverified_context())
-#
-#def GetResponseData(url, cookie):
-#    response = GetRequest(url, cookie)
-#    result = json.loads(response.read())
-#    return result['imdata'], result["totalCount"]
+def GetRequest(url, icookie):
+    method = "GET"
+    cookies = 'APIC-cookie=' + icookie
+    request = urllib2.Request(url)
+    request.add_header("cookie", cookies)
+    request.add_header("Content-Type", "application/json")
+    request.add_header('Accept', 'application/json')
+    return urllib2.urlopen(request, context=ssl._create_unverified_context())
+
+def GetResponseData(url, cookie):
+    response = GetRequest(url, cookie)
+    result = json.loads(response.read())
+    return result['imdata'], result["totalCount"]
 #
 ##def getCookie():
 ##    global cookie
