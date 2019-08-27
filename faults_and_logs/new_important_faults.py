@@ -454,74 +454,74 @@ def askrefresh(detail_function, is_function):
 
 
 
-def askmoreDetail(apic):
-    while True:
-        listdetail = []
-        faultdict = {}
-        print('\t')
-        while True:
-            userselected = custom_raw_input("Which fault?: ")
-            if userselected.isdigit():
-                userselected = int(userselected) 
-                break
-        #if faultdict[userselected] == 'exit':
-        #    exit()
-        if faultdict[userselected][0]['fault-type'] == 'OSPF peer issues':
-            detail_ospf_faults(faultdict[userselected])
-            complete_refresh = askrefresh(detail_ospf_faults, OSPF_fault_check)
-        elif faultdict[userselected][0]['fault-type'] == 'Leaf/Spine(s) are Down':
-            detail_switch_availability_status_faults(faultdict[userselected])
-            complete_refresh = askrefresh(detail_switch_availability_status_faults, is_Leaf_Spine_Down)
-        elif faultdict[userselected][0]['fault-type'] == 'Server ports Down':
-            detail_access_inter_faults(faultdict[userselected],apic)
-            complete_refresh = askrefresh(detail_access_inter_faults, is_Leaf_interface_Down)
-        elif faultdict[userselected][0]['fault-type'] == 'Switch UPLINK':
-            detail_leaf_spine_uplink_faults(faultdict[userselected])
-            complete_refresh = askrefresh(detail_leaf_spine_uplink_faults, is_Leaf_uplink_Down)
-        elif faultdict[userselected][0]['fault-type'] == 'vPC Fully Down':
-            detail_vpc_full_faults(faultdict[userselected])
-            complete_refresh = askrefresh(detail_vpc_full_faults, is_VPC_interface_fully_down)
-        elif faultdict[userselected][0]['fault-type'] == 'VPC Partialty DOWN':
-            detail_vpc_part_faults(faultdict[userselected])
-            complete_refresh = askrefresh(detail_vpc_part_faults, is_VPC_paritally_down)
-        elif faultdict[userselected][0]['fault-type'] == 'APIC Database Replication':
-            detail_apic_replica_faults(faultdict[userselected])
-            complete_refresh = askrefresh(detail_apic_replica_faults, APIC_replica_issues)
-        elif faultdict[userselected][0]['fault-type'] == 'APIC HEALTH':
-            detail_apic_health_faults(faultdict[userselected])
-            complete_refresh = askrefresh(detail_apic_health_faults, APIC_Health_issues)
-        elif faultdict[userselected][0]['fault-type'] == 'APIC Phys Port issues':
-            detail_phys_apic_port_faults(faultdict[userselected])
-            complete_refresh = askrefresh(detail_phys_apic_port_faults, is_APIC_physical_ports_down)
-        elif faultdict[userselected][0]['fault-type'] == 'NTP issues':
-            detail_ntp_faults(faultdict[userselected])
-            complete_refresh = askrefresh(detail_ntp_faults, is_NTP_issues)
-        elif faultdict[userselected][0]['fault-type'] == "APIC can't reach VCenter":
-            detail_vcenter_reachable(faultdict[userselected])
-            complete_refresh = askrefresh(detail_vcenter_reachable, is_VCENTER_reachable)
-        elif faultdict[userselected][0]['fault-type'] == 'vPC/PC Connection issues':
-            detail_port_channel_neighbor_faults(faultdict[userselected])
-            complete_refresh = askrefresh(detail_port_channel_neighbor_faults, is_Port_Channel_Neighbor_fail)
-        elif faultdict[userselected][0]['fault-type'] == 'Missing Power Supply':
-            detail_missing_psu_faults(faultdict[userselected])
-            complete_refresh = askrefresh(detail_missing_psu_faults, is_Missing_PowerSupply)
-        elif faultdict[userselected][0]['fault-type'] == 'Unused/Shutdown Power Supply':
-            detail_shutdown_psu_faults(faultdict[userselected])
-            complete_refresh = askrefresh(detail_shutdown_psu_faults, is_PowerSupply_shutdown)
-        elif faultdict[userselected][0]['fault-type'] == 'Failed Power Supply':
-            detail_failed_psu_faults(faultdict[userselected])
-            complete_refresh = askrefresh(detail_failed_psu_faults, is_PowerSupply_failure)
-
-        clear_screen()
-        print('\n')
-        if complete_refresh == 1:
-            return True
-        #if answer.lower() == 'n':
-        #    exitquestion = custom_raw_input("\nWould you like to exit? [y/n]:  ")
-        #    if exitquestion.lower() == 'y':
-        #        exit()
-        #    else:
-        #        break
+#def askmoreDetail(apic):
+#    while True:
+#        listdetail = []
+#        faultdict = {}
+#        print('\t')
+#        while True:
+#            userselected = custom_raw_input("Which fault?: ")
+#            if userselected.isdigit():
+#                userselected = int(userselected) 
+#                break
+#        #if faultdict[userselected] == 'exit':
+#        #    exit()
+#        if faultdict[userselected][0]['fault-type'] == 'OSPF peer issues':
+#            detail_ospf_faults(faultdict[userselected])
+#            complete_refresh = askrefresh(detail_ospf_faults, OSPF_fault_check)
+#        elif faultdict[userselected][0]['fault-type'] == 'Leaf/Spine(s) are Down':
+#            detail_switch_availability_status_faults(faultdict[userselected])
+#            complete_refresh = askrefresh(detail_switch_availability_status_faults, is_Leaf_Spine_Down)
+#        elif faultdict[userselected][0]['fault-type'] == 'Server ports Down':
+#            detail_access_inter_faults(faultdict[userselected],apic)
+#            complete_refresh = askrefresh(detail_access_inter_faults, is_Leaf_interface_Down)
+#        elif faultdict[userselected][0]['fault-type'] == 'Switch UPLINK':
+#            detail_leaf_spine_uplink_faults(faultdict[userselected])
+#            complete_refresh = askrefresh(detail_leaf_spine_uplink_faults, is_Leaf_uplink_Down)
+#        elif faultdict[userselected][0]['fault-type'] == 'vPC Fully Down':
+#            detail_vpc_full_faults(faultdict[userselected])
+#            complete_refresh = askrefresh(detail_vpc_full_faults, is_VPC_interface_fully_down)
+#        elif faultdict[userselected][0]['fault-type'] == 'VPC Partialty DOWN':
+#            detail_vpc_part_faults(faultdict[userselected])
+#            complete_refresh = askrefresh(detail_vpc_part_faults, is_VPC_paritally_down)
+#        elif faultdict[userselected][0]['fault-type'] == 'APIC Database Replication':
+#            detail_apic_replica_faults(faultdict[userselected])
+#            complete_refresh = askrefresh(detail_apic_replica_faults, APIC_replica_issues)
+#        elif faultdict[userselected][0]['fault-type'] == 'APIC HEALTH':
+#            detail_apic_health_faults(faultdict[userselected])
+#            complete_refresh = askrefresh(detail_apic_health_faults, APIC_Health_issues)
+#        elif faultdict[userselected][0]['fault-type'] == 'APIC Phys Port issues':
+#            detail_phys_apic_port_faults(faultdict[userselected])
+#            complete_refresh = askrefresh(detail_phys_apic_port_faults, is_APIC_physical_ports_down)
+#        elif faultdict[userselected][0]['fault-type'] == 'NTP issues':
+#            detail_ntp_faults(faultdict[userselected])
+#            complete_refresh = askrefresh(detail_ntp_faults, is_NTP_issues)
+#        elif faultdict[userselected][0]['fault-type'] == "APIC can't reach VCenter":
+#            detail_vcenter_reachable(faultdict[userselected])
+#            complete_refresh = askrefresh(detail_vcenter_reachable, is_VCENTER_reachable)
+#        elif faultdict[userselected][0]['fault-type'] == 'vPC/PC Connection issues':
+#            detail_port_channel_neighbor_faults(faultdict[userselected])
+#            complete_refresh = askrefresh(detail_port_channel_neighbor_faults, is_Port_Channel_Neighbor_fail)
+#        elif faultdict[userselected][0]['fault-type'] == 'Missing Power Supply':
+#            detail_missing_psu_faults(faultdict[userselected])
+#            complete_refresh = askrefresh(detail_missing_psu_faults, is_Missing_PowerSupply)
+#        elif faultdict[userselected][0]['fault-type'] == 'Unused/Shutdown Power Supply':
+#            detail_shutdown_psu_faults(faultdict[userselected])
+#            complete_refresh = askrefresh(detail_shutdown_psu_faults, is_PowerSupply_shutdown)
+#        elif faultdict[userselected][0]['fault-type'] == 'Failed Power Supply':
+#            detail_failed_psu_faults(faultdict[userselected])
+#            complete_refresh = askrefresh(detail_failed_psu_faults, is_PowerSupply_failure)
+#
+#        clear_screen()
+#        print('\n')
+#        if complete_refresh == 1:
+#            return True
+#        #if answer.lower() == 'n':
+#        #    exitquestion = custom_raw_input("\nWould you like to exit? [y/n]:  ")
+#        #    if exitquestion.lower() == 'y':
+#        #        exit()
+#        #    else:
+#        #        break
 
         
 def refreshloop(detail_function, fault, apic, cookie):
