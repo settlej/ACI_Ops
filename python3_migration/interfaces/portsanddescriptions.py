@@ -5,7 +5,7 @@ try:
     import readline
 except:
     pass
-import urllib2
+import urllib.request, urllib.error, urllib.parse
 import json
 import ssl
 import trace
@@ -16,11 +16,11 @@ from localutils.custom_utils import *
 def GetRequest(url, icookie):
     method = "GET"
     cookies = 'APIC-cookie=' + icookie
-    request = urllib2.Request(url)
+    request = urllib.request.Request(url)
     request.add_header("cookie", cookies)
     request.add_header("Content-Type", "application/json")
     request.add_header('Accept', 'application/json')
-    return urllib2.urlopen(request, context=ssl._create_unverified_context())
+    return urllib.request.urlopen(request, context=ssl._create_unverified_context())
 def GetResponseData(url):
     response = GetRequest(url, cookie)
     result = json.loads(response.read())
@@ -130,7 +130,7 @@ def parseandreturnsingelist(liststring, collectionlist):
         if len(rangelist) >= 1:
             for foundrange in rangelist:
                 tempsplit = foundrange.split('-')
-                for i in xrange(int(tempsplit[0]), int(tempsplit[1])+1):
+                for i in range(int(tempsplit[0]), int(tempsplit[1])+1):
                     singlelist.append(int(i))
         if max(singlelist) > len(collectionlist) or min(singlelist) < 1:
             print('\n\x1b[1;37;41mInvalid format and/or range...Try again\x1b[0m\n')
@@ -186,7 +186,7 @@ def leaf_selection(all_leaflist):
     nodelist.sort()
     print('\nAvailable leafs to choose from:\n')
     for num,node in enumerate(nodelist,1):
-        print("{}.) {}".format(num,node))
+        print(("{}.) {}".format(num,node)))
     while True:
        # try:
             asknode = custom_raw_input('\nWhat leaf(s): ')
@@ -224,17 +224,19 @@ def match_port_channels_to_interfaces(interfaces, leaf):
                     if pcinter.tSKey ==  interface.id:
                         interface.add_portchannel(pc)
             else:
-                #print(pc.portmembers[0].tSkey, interface.id)
+                #breakpoint()
+                #print((pc.portmembers[0].tSKey, interface.id))
                 if pc.portmembers[0].tSKey == interface.id:
+                
                     interface.add_portchannel(pc)
     
         
 
 def print_interfaces_layout(leafallinterfacesdict,leafs):
     interface_output = ''
-    print('-'*160)
-    print('{:13}{:14}{:5}{:18}{:12}{:26}{:12}{:7}{:28}{}'.format('Port','Status', 'EPGs', 'SFP',  'In/Out Err', 'In/Out Packets', 'PcMode', 'PC #', 'PC/vPC Name','Description' ))
-    print('-'*160)
+    print(('-'*160))
+    print(('{:13}{:14}{:5}{:18}{:12}{:26}{:12}{:7}{:28}{}'.format('Port','Status', 'EPGs', 'SFP',  'In/Out Err', 'In/Out Packets', 'PcMode', 'PC #', 'PC/vPC Name','Description' )))
+    print(('-'*160))
     for leaf,leafinterlist in sorted(leafallinterfacesdict.items()):
         interfaces = gather_l1PhysIf_info(leafinterlist)
         #print(interfaces)
@@ -305,10 +307,13 @@ def print_interfaces_layout(leafallinterfacesdict,leafs):
 
             if column.pc_mbmr:
                 interface_output += ('{:13}{:14}{:5}{:18}{:12}{:26}{:12}{:7}{:28}{}\n'.format(column.id, status, epgs_status,
-                                           str(sfp) , errors, packets, pcstatus + ' ' + pcmode, column.pc_mbmr[0].id, column.pc_mbmr[0],column.descr))#column.pc_mbmr[0].children[0].operVlans))
-            else: 
-                interface_output += ('{:13}{:14}{:5}{:18}{:12}{:26}{:12}{:7}{:28}{}\n'.format(column.id, status, epgs_status,
+                                           str(sfp) , errors, packets, pcstatus + ' ' + pcmode, column.pc_mbmr[0].id, str(column.pc_mbmr[0]),column.descr))#column.pc_mbmr[0].children[0].operVlans))
+            else:
+                try:
+                    interface_output += ('{:13}{:14}{:5}{:18}{:12}{:26}{:12}{:7}{:28}{}\n'.format(column.id, status, epgs_status,
                                            str(sfp),errors, packets , '','','',column.descr))
+                except TypeError as te:
+                    breakpoint()
 
 
     print(interface_output)
@@ -323,7 +328,7 @@ def main(import_apic,import_cookie):
         leafs = leaf_selection(get_All_leafs())
         leafallinterfacesdict = pull_leaf_interfaces(leafs)
         print_interfaces_layout(leafallinterfacesdict,leafs)
-        raw_input('#Press enter to continue...')
+        input('#Press enter to continue...')
     #for leafinterlist in allinterfaceslist:
     #    interfaces = gather_l1PhysIf_info(leafinterlist)
 #
