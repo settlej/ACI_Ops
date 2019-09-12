@@ -19,8 +19,9 @@ import faults_and_logs.most_recent_event_changes as most_recent_event_changes
 import faults_and_logs.alleventsbetweendates as alleventsbetweendates
 import faults_and_logs.alleventsbetweendates_fulldetail as alleventsbetweendates_fulldetail
 import information.endpoint_search as ipendpoint
-import information.routetranslation as epg_troubelshooting
-#import information.routetranslation as routetranslation
+#import information.routetranslation as epg_troubelshooting
+import information.routetranslation as routetranslation
+import information.routetrace as check_routing
 import configuration.create_local_span_session as create_local_span_session
 
 
@@ -163,14 +164,15 @@ def main():
                             '\t ---------------------------------------------------\n' +
                             '\t| 13.) Endpoint Search\n' + 
                             '\t| 14.) Show Leaf/Spine/APIC info (Not Available)\n' +
-                            '\t| 15.) EPG to EPG troubleshooting (alpha)\n' + 
+                            '\t| 15.) EPG to EPG troubleshooting (alpha)\n' +
+                            '\t| 16.) Route lookup to endpoint \n' +
                             '\t ---------------------------------------------------\n\n' +
                             '\t  [CONFIGURATION]\n'
                             '\t ---------------------------------------------------\n' +
-                            '\t| 16.) Configure Local Span\n' + 
-                            '\t| 17.) Create EPGs (Not Available)\n' +
-                            '\t| 18.) Configure interface Descriptions (Not Available)\n' + 
-                            '\t| 19.) Import/Export interface Descriptions (Not Available)\n' + 
+                            '\t| 17.) Configure Local Span\n' + 
+                            '\t| 18.) Create EPGs (Not Available)\n' +
+                            '\t| 19.) Configure interface Descriptions (Not Available)\n' + 
+                            '\t| 20.) Import/Export interface Descriptions (Not Available)\n' + 
                             '\t ---------------------------------------------------\x1b[0m')
             print('\x1b[7')
             print('\x1b[1;33;40m\x1b[5;70H -----------------------------\x1b[0m')
@@ -287,7 +289,7 @@ def main():
                     continue		
             elif choosen == '14':
                 try:
-                    #remove_egps.main(apic,cookie)
+                    routetranslation.main(apic,cookie)
                     keyinterupt = False
                     continue
                 except KeyboardInterrupt as k:
@@ -303,6 +305,14 @@ def main():
                     keyinterrupt = True
                     continue
             elif choosen == '16':
+                try:
+                    check_routing.main(apic,cookie)
+                    keyinterupt = False
+                except KeyboardInterrupt as k:
+                    print('\nExit to Main menu\n')
+                    keyinterrupt = True
+                    continue                
+            elif choosen == '17':
                 try:
                     create_local_span_session.main(apic,cookie)
                     keyinterupt = False
