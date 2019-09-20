@@ -6,12 +6,15 @@ import urllib2
 import ssl
 import json
 import sys
+import threading
+import time
 from localutils.custom_utils import *
 import interfaces.change_interface_state as shut_noshut_interfaces
 import interfaces.assign_epg_interfaces as assign_epg_interfaces
 import interfaces.remove_epgs_interfaces as remove_egps
 #import interfaces.show_interface_epgs as show_epgs
 import interfaces.portsanddescriptions as portsanddescriptions
+import interfaces.interfacecounters as showinterface
 import faults_and_logs.new_important_faults as fault_summary
 import faults_and_logs.most_recent_fault_changes as most_recent_fault_changes
 import faults_and_logs.most_recent_admin_changes as most_recent_admin_changes
@@ -22,6 +25,7 @@ import information.endpoint_search as ipendpoint
 import information.routetranslation as epg_troubleshooting
 import information.routetranslation as routetranslation
 import information.routetrace as check_routing
+
 import configuration.create_local_span_session as create_local_span_session
 
 
@@ -122,9 +126,21 @@ class AuthenticationFailure(Exception):
     """Authentication Failure"""
     pass
 
+def authentication_session(apic, cookie):
+    while True:
+        time.sleep(3)
+        print('auth session deamon')
+    #q = Queue.Queue()
+    #refreshToken()
+
 def main():
     unauthenticated = False
     apic, cookie = localOrRemote()
+    #a = threading.Thread(target=authentication_session, args=(apic,cookie))
+    #a.daemon = True
+    #a.start()
+    #print(a.isDaemon)
+   # raw_input('test')
     keyinterrupt = False
     while True:
         try:
@@ -149,6 +165,7 @@ def main():
                             '\t| 3.)  Add EPGs to interfaces\n' +
                             '\t| 4.)  Remove EPGs from interfaces\n' + 
                             '\t| 5.)  Show interfaces status\n' +
+                            '\t| 55.) Show interface\n' + 
                             '\t| 6.)  Show Endpoints on interface (Not Available)\n' +
                             '\t ---------------------------------------------------\n\n' +
                             '\t  [FAULTS and LOGS]\n'
@@ -218,6 +235,14 @@ def main():
                 try:
                     portsanddescriptions.main(apic,cookie)
                     keyinterupt = False
+                except KeyboardInterrupt as k:
+                    print('\nExit to Main menu\n')
+                    keyinterrupt = True
+                    continue
+            elif choosen == '55':
+                try:
+                    showinterface.main(apic,cookie)
+                    keyinterrupt = False
                 except KeyboardInterrupt as k:
                     print('\nExit to Main menu\n')
                     keyinterrupt = True
