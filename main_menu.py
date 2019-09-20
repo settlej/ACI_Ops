@@ -19,7 +19,7 @@ import faults_and_logs.most_recent_event_changes as most_recent_event_changes
 import faults_and_logs.alleventsbetweendates as alleventsbetweendates
 import faults_and_logs.alleventsbetweendates_fulldetail as alleventsbetweendates_fulldetail
 import information.endpoint_search as ipendpoint
-#import information.routetranslation as epg_troubelshooting
+import information.routetranslation as epg_troubleshooting
 import information.routetranslation as routetranslation
 import information.routetrace as check_routing
 import configuration.create_local_span_session as create_local_span_session
@@ -298,7 +298,7 @@ def main():
                     continue
             elif choosen == '15':
                 try:
-                    epg_troubelshooting.main(apic,cookie)
+                    epg_troubleshooting.main(apic,cookie)
                     keyinterupt = False
                 except KeyboardInterrupt as k:
                     print('\nExit to Main menu\n')
