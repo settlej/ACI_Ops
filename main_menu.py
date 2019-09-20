@@ -6,6 +6,8 @@ import urllib2
 import ssl
 import json
 import sys
+import threading
+import time
 from localutils.custom_utils import *
 import interfaces.change_interface_state as shut_noshut_interfaces
 import interfaces.assign_epg_interfaces as assign_epg_interfaces
@@ -121,9 +123,21 @@ class AuthenticationFailure(Exception):
     """Authentication Failure"""
     pass
 
+def authentication_session(apic, cookie):
+    while True:
+        time.sleep(3)
+        print('auth session deamon')
+    #q = Queue.Queue()
+    #refreshToken()
+
 def main():
     unauthenticated = False
     apic, cookie = localOrRemote()
+    a = threading.Thread(target=authentication_session, args=(apic,cookie))
+    a.daemon = True
+    a.start()
+    print(a.isDaemon)
+   # raw_input('test')
     keyinterrupt = False
     while True:
         try:

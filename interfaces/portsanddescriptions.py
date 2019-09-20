@@ -162,6 +162,7 @@ def gather_l1PhysIf_info(result):
                 elif children.get('rmonEtherStats'):
                     physinterface.add_child(rmonEtherStats(**children['rmonEtherStats']['attributes']))
         listofinterfaces.append(physinterface)
+    print(listofinterfaces)
     return listofinterfaces
 
 def pull_leaf_interfaces(leafs):
