@@ -294,14 +294,14 @@ def main(import_apic,import_cookie):
         user = os.path.expanduser("~")[userpathmarker+1:]
         name = datetime.datetime.now().strftime('%Y:%m:%dT%H:%M:%S') + '_' + user
         direction = 'Destination'
-        chosendestinterfacobject, leaf = physical_selection(all_leaflist,direction)
-        create_span_dest_url(chosendestinterfacobject[0], name, leaf)
+        chosendestinterfaceobject, leaf = physical_selection(all_leaflist,direction)
+        create_span_dest_url(chosendestinterfaceobject[0], name, leaf)
     
 
     
         direction= 'Source'
         chosensourceinterfacobject, leaf = physical_selection(all_leaflist,direction, leaf=leaf)
-        create_source_session_and_port(chosensourceinterfacobject[0],chosendestinterfacobject[0], name, leaf)
+        create_source_session_and_port(chosensourceinterfacobject[0],chosendestinterfaceobject[0], name, leaf)
         cookie = refreshToken(apic, cookie)
         custom_raw_input('\n#Press enter to continue...')
         break
