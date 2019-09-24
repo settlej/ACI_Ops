@@ -152,6 +152,7 @@ def gather_fvCEp_fullinfo(result):
     fvRsCEpToPathEpobject = None
     fvRsHyperobject = None
     fvIplist = []
+    fvRsCEpToPathEplist = []
     for ep in result:
         fvReportingNodes = []
         mac = ep['fvCEp']['attributes']['mac']
@@ -162,12 +163,12 @@ def gather_fvCEp_fullinfo(result):
         ip = ep['fvCEp']['attributes']['ip']
         if ep['fvCEp'].get('children'):
             for ceptopath in ep['fvCEp']['children']:
-                if ceptopath.get('fvRsCEpToPathEp') and ceptopath['fvRsCEpToPathEp']['attributes']['state'] == 'formed':
+                if ceptopath.get('fvRsCEpToPathEp')  and ceptopath['fvRsCEpToPathEp']['attributes']['state'] == 'formed':
                     fvRsCEpToPathEp_tDn = ceptopath['fvRsCEpToPathEp']['attributes']['tDn']
                     fvRsCEpToPathEp_lcC = ceptopath['fvRsCEpToPathEp']['attributes']['lcC']
                     fvRsCEpToPathEp_forceResolve = ceptopath['fvRsCEpToPathEp']['attributes']['forceResolve']
-                    fvRsCEpToPathEpobject = fvRsCEpToPathEp(forceResolve=fvRsCEpToPathEp_forceResolve, 
-                                                            tDn=fvRsCEpToPathEp_tDn, lcC=fvRsCEpToPathEp_lcC)
+                    fvRsCEpToPathEplist.append(fvRsCEpToPathEp(forceResolve=fvRsCEpToPathEp_forceResolve, 
+                                                            tDn=fvRsCEpToPathEp_tDn, lcC=fvRsCEpToPathEp_lcC))
                 elif ceptopath.get('fvIp'):
                     fvIp_addr = ceptopath['fvIp']['attributes']['addr']
                     fvIp_rn = ceptopath['fvIp']['attributes']['rn']
@@ -187,6 +188,13 @@ def gather_fvCEp_fullinfo(result):
                     fvRsHyper_tDn = ceptopath['fvRsHyper']['attributes']['tDn']
                     fvRsHyperobject = fvRsHyper(state=fvRsHyper_state,
                                                 tDn=fvRsHyper_tDn)
+            # VMware learned endpoints have multiple fvRsCEpToPathEp 
+            if fvRsCEpToPathEplist > 1:
+                for path in fvRsCEpToPathEplist:
+                    if 'learned' in path.lcC:
+                        fvRsCEpToPathEpobject = path
+            else:
+                fvRsCEpToPathEpobject = fvRsCEpToPathEplist[0]
         eplist.append(fvCEp(mac=mac, name=name, encap=encap,
                                 lcC=lcC, dn=dn, fvRsVm=fvRsVmobject, fvRsCEpToPathEp=fvRsCEpToPathEpobject, 
                                 ip=ip, fvRsHyper=fvRsHyperobject, fvIplist=fvIplist))
@@ -215,6 +223,7 @@ def readable_dnpath(dnpath):
 
 def display_live_history_info(ipaddressEP, totalcount):
     url = """https://{apic}/mqapi2/troubleshoot.eptracker.json?ep={}&order-by=troubleshootEpTransition.date|desc""".format(ipaddressEP.dn,apic=apic)
+    #logger.info(url)
     result, totalcount = GetResponseData(url)
     if totalcount == '0':
         print('No current IP history found...check event history\n')
@@ -279,9 +288,11 @@ def eventhistory(address):
     #event record code E4209236 is "ip detached event"
     if len(address) == 17:
         url = """https://{apic}/api/node/class/eventRecord.json?query-target-filter=and(eq(eventRecord.code,"E4209236"))&query-target-filter=and(wcard(eventRecord.dn,"cep-{address}"))&order-by=eventRecord.created|desc&page=0&page-size=30""".format(address=address,apic=apic)
+        #logger.info(url)
     elif len(address) >= 7 and len(address) <= 15 :
         url = """https://{apic}/api/node/class/eventRecord.json?query-target-filter=and(eq(eventRecord.code,"E4209236"))&query-target-filter=and(wcard(eventRecord.descr,"{address}$"))&order-by=eventRecord.created|desc&page=0&page-size=30""".format(address=address,apic=apic)
-    result, totalcount = GetResponseData(url)
+        #logger.info(url)
+        result, totalcount = GetResponseData(url)
     print('\n')
     if totalcount == '0':
         print("{:.<45}0\n".format("Searching Event Records"))
@@ -311,9 +322,11 @@ def display_vm_information(endpointobject, compVm):
             #pdb.set_trace()
             if endpointobject.fvRsHyper:
                 url = """https://{apic}/api/node/mo/{}.json""".format(endpointobject.fvRsHyper.tDn,apic=apic)
+                #logger.info(url)
                 result, totalcount = GetResponseData(url)
                 vmhostname = result[0]["compHv"]["attributes"]["name"]
                 url = """https://{apic}/api/node/mo/{}.json""".format(endpointobject.fvRsVm.tDn,apic=apic)
+                #logger.info(url)
                 result, totalcount = GetResponseData(url)
                 vmname = result[0]["compVm"]["attributes"]["name"]
                 vmpowerstate = result[0]["compVm"]["attributes"]["state"]
@@ -352,6 +365,7 @@ def find_and_display_current_location_info(macEP, totalcount, compVm=None):
 
 def vm_search_function(vm_name):
     url = """https://{apic}/api/node/class/compVm.json?query-target-filter=and(eq(compVm.name,"{}"))""".format(vm_name,apic=apic)
+    #logger.info(url)
     result, totalcount = GetResponseData(url)
     if totalcount == '0':
         print('\n')
@@ -361,6 +375,7 @@ def vm_search_function(vm_name):
         print('\n')
     else:
         url = """https://{apic}/api/node/class/fvRsVm.json""".format(apic=apic)
+        #logger.info(url)
         fvRsVm_result, totalcount = GetResponseData(url)
         fvRsVmlist = []
         for vm in fvRsVm_result:
@@ -371,6 +386,7 @@ def vm_search_function(vm_name):
                 fvRsVmlist.append(fvRsVm(state=vmstate,dn=vmdn,tDn=vmtDn))
         compVm_dn = result[0]['compVm']['attributes']['dn']
         url = """https://{apic}/api/mo/{}.json?rsp-subtree=full""".format(compVm_dn, apic=apic)
+        #logger.info(url)
         result, totalcount = GetResponseData(url)
         compVM = gather_compVM_info(result)
         k = filter(lambda x: x in  fvRsVmlist, compVM.compVNiclist)
@@ -399,10 +415,12 @@ def vm_search_function(vm_name):
 def mac_path_function(mac, compVM=None):
     epglist =[]
     url = """https://{apic}/api/node/class/fvCEp.json?query-target-filter=eq(fvCEp.mac,"{}")""".format(mac,apic=apic)
+    #logger.info(url)
     result, totalcount = GetResponseData(url)
     if totalcount == '0' and compVM:
         print('\n')
         url = """https://{apic}/api/node/mo/{}.json""".format(compVM.host_rn_reference,apic=apic)
+        #logger.info(url)
         result, totalcount = GetResponseData(url)
         for vminterface in compVM.compVNiclist:
             if vminterface.mac == mac:
@@ -423,6 +441,7 @@ def mac_path_function(mac, compVM=None):
         fvCEplist = gather_fvCEp_fullinfo(result)
         for fvCEp in fvCEplist:
             url = """https://{apic}/api/node/mo/{}.json?rsp-subtree=full&target-subtree-class=fvCEp,fvRsCEpToPathEp,fvRsHyper,fvRsToNic,fvRsToVm""".format(fvCEp.dn,apic=apic)
+            #logger.info(url)
             result, totalcount = GetResponseData(url)
             completefvCEplist = gather_fvCEp_fullinfo(result)
             #Display current endpoint info
@@ -451,9 +470,11 @@ def mac_path_function(mac, compVM=None):
 def ip_path_function(ipaddr):
     totalcount2 = 1
     url = """https://{apic}/api/node/class/fvCEp.json?rsp-subtree=full&rsp-subtree-include=required&rsp-subtree-filter=eq(fvIp.addr,"{}")""".format(ipaddr,apic=apic)
+    #logger.info(url)
     result, totalcount = GetResponseData(url)
     if totalcount == '0':
         url = """https://{apic}/api/node/class/fvCEp.json?rsp-subtree=full&rsp-subtree-include=required&query-target-filter=eq(fvCEp.ip,"{}")""".format(ipaddr,apic=apic)
+        #logger.info(url)
         result, totalcount2 = GetResponseData(url)
     if totalcount2 == '0' :
         print('\n')
@@ -465,6 +486,7 @@ def ip_path_function(ipaddr):
         fvCEplist = gather_fvCEp_fullinfo(result)
         for fvCEp in fvCEplist:
             url = """https://{apic}/api/node/mo/{}.json?rsp-subtree=full&target-subtree-class=fvCEp,fvRsCEpToPathEp,fvRsHyper,fvRsToNic,fvRsToVm""".format(fvCEp.dn,apic=apic)
+            #logger.info(url)
             result, totalcount = GetResponseData(url)
            # print(result)
             completefvCEplist = gather_fvCEp_fullinfo(result)

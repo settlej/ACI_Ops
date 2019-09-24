@@ -26,6 +26,7 @@ import information.endpoint_search as ipendpoint
 import information.routetranslation as epg_troubleshooting
 import information.routetranslation as routetranslation
 import information.routetrace as check_routing
+import information.show_static_routes as show_static_routes
 
 import configuration.create_local_span_session as create_local_span_session
 
@@ -184,13 +185,14 @@ def main():
                             '\t| 14.) Show Leaf/Spine/APIC info (Not Available)\n' +
                             '\t| 15.) EPG to EPG troubleshooting (alpha)\n' +
                             '\t| 16.) Route lookup to endpoint \n' +
+                            '\t| 17.) Show all static routes\n' + 
                             '\t ---------------------------------------------------\n\n' +
                             '\t  [CONFIGURATION]\n'
                             '\t ---------------------------------------------------\n' +
-                            '\t| 17.) Configure Local Span\n' + 
-                            '\t| 18.) Create EPGs (Not Available)\n' +
-                            '\t| 19.) Configure interface Descriptions (Not Available)\n' + 
-                            '\t| 20.) Import/Export interface Descriptions (Not Available)\n' + 
+                            '\t| 18.) Configure Local Span\n' + 
+                            '\t| 19.) Create EPGs (Not Available)\n' +
+                            '\t| 20.) Configure interface Descriptions (Not Available)\n' + 
+                            '\t| 21.) Import/Export interface Descriptions (Not Available)\n' + 
                             '\t ---------------------------------------------------\x1b[0m')
             print('\x1b[7')
             print('\x1b[1;33;40m\x1b[5;70H -----------------------------\x1b[0m')
@@ -337,8 +339,18 @@ def main():
                 except KeyboardInterrupt as k:
                     print('\nExit to Main menu\n')
                     keyinterrupt = True
-                    continue                
+                    continue      
+
             elif choosen == '17':
+                try:
+                    show_static_routes.main(apic,cookie)
+                    keyinterrupt = False
+                except KeyboardInterrupt as k:
+                    print('\nExit to Main menu\n')
+                    keyinterrupt = True
+                    continue
+
+            elif choosen == '18':
                 try:
                     create_local_span_session.main(apic,cookie)
                     keyinterrupt = False
