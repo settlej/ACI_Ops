@@ -9,7 +9,7 @@ import urllib2
 import json
 import ssl
 import trace
-import pdbi
+import pdb
 import os
 import itertools
 from localutils.custom_utils import *
