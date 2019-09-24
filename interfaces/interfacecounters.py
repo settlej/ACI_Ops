@@ -9,8 +9,9 @@ import urllib2
 import json
 import ssl
 import trace
-import pdbi
+import pdb
 import os
+import time
 import itertools
 from localutils.custom_utils import *
 
@@ -90,8 +91,93 @@ class fabricPathEp(object):
         else:
             return None
 
+class l1PhysIf():
+    def __init__(self, interface):
+        self.interface = interface
+        self.rmonIfIn = None
+        self.rmonEtherStats = None
+        self.l1RsAttEntityPCons = None
+        self.l1RsCdpIfPolCons = None
+        self.ethpmPhysIf = None
+        self.eqptIngrTotal5min = None
+        self.eqptEgrTotal5min = None
+        self.fvDomDef = []
+        self.l1RtMbrIfs = []
+        self.pcAggrMbrIf = []
+    def add_phys_attr(self, kwargs):
+        self.__dict__.update(**kwargs)
+    def __str__(self):
+        return self.interface
+    def __repr__(self):
+        return self.interface
 
-def physical_selection(all_leaflist,direction, leaf=None):
+class rmonIfIn:
+    def __init__(self, **kwargs):
+        self.__dict__.update(kwargs)
+    def __repr__(self):
+        return self.__dict__
+
+class rmonIfOut:
+    def __init__(self, **kwargs):
+        self.__dict__.update(kwargs)
+    def __repr__(self):
+        return self.__dict__
+
+class rmonEtherStats:
+    def __init__(self, **kwargs):
+        self.__dict__.update(kwargs)
+    def __repr__(self):
+        return self.__dict__
+
+class ethpmPhysIf:
+    def __init__(self, **kwargs):
+        self.__dict__.update(kwargs)
+    def __repr__(self):
+        return self.__dict__
+
+class fvDomDef:
+    def __init__(self, **kwargs):
+        self.__dict__.update(kwargs)
+    def __repr__(self):
+        return self.__dict__
+
+class l1RsAttEntityPCons:
+    def __init__(self, **kwargs):
+        self.__dict__.update(kwargs)
+    def __repr__(self):
+        return self.__dict__
+
+class l1RsCdpIfPolCons:
+    def __init__(self, **kwargs):
+        self.__dict__.update(kwargs)
+    def __repr__(self):
+        return self.__dict__
+
+class l1RtMbrIfs:
+    def __init__(self, **kwargs):
+        self.__dict__.update(kwargs)
+    def __repr__(self):
+        return self.__dict__
+
+class pcAggrMbrIf:
+    def __init__(self, **kwargs):
+        self.__dict__.update(kwargs)
+    def __repr__(self):
+        return self.__dict__
+
+class eqptIngrTotal5min:
+    def __init__(self, **kwargs):
+        self.__dict__.update(kwargs)
+    def __repr__(self):
+        return self.__dict__   
+
+class eqptEgrTotal5min:
+    def __init__(self, **kwargs):
+        self.__dict__.update(kwargs)
+    def __repr__(self):
+        return self.__dict__   
+
+def physical_selection(all_leaflist,leaf=None):
     if leaf == None:
         nodelist = [node['fabricNode']['attributes']['id'] for node in all_leaflist]
         nodelist.sort()
@@ -164,14 +250,32 @@ def physical_selection(all_leaflist,direction, leaf=None):
         print('{:6}.) {:42}{}.) {:42}{}.) {}'.format(a,b,c,d,e,f))
     while True:
         #try:
-            selectedinterfaces = custom_raw_input("\nSelect \x1b[1;33;40m{}\x1b[0m interface by number: ".format(direction))
+            selectedinterfaces = custom_raw_input("\nSelect interface(s) by number: ")
             print('\r')
-            import pdb; pdb.set_trace()
+            if selectedinterfaces.strip().lstrip() == '' or '-' in selectedinterfaces or ',' in selectedinterfaces: # or not selectedinterfaces.isdigit():
+                print("\n\x1b[1;37;41mInvalid format or number...Try again\x1b[0m\n")
+                continue
+            intsinglelist = parseandreturnsingelist(selectedinterfaces,finalsortedinterfacelist)
+            if intsinglelist == 'invalid':
+                continue
+            return filter(lambda x: x.number in intsinglelist, finalsortedinterfacelist), leaf
 
-def get_Cookie():
-    global cookie
-    with open('/.aci/.sessions/.token', 'r') as f:
-        cookie = f.read()
+def displayepgs(result):
+    #print(result)
+    if result[0]['l1PhysIf']['attributes']['layer'] == 'Layer3':
+        print(' Layer 3 interface, no layer 2 EPGs\n')
+        return
+    if result[0]['l1PhysIf'].get('children'):
+        for int in result[0]['l1PhysIf']['children']:
+            for epgs in int['pconsCtrlrDeployCtx']['children']:
+                epgpath = epgs['pconsResourceCtx']['attributes']['ctxDn'].split('/')
+                #print(epgpath)
+                tenant = epgpath[1][3:]
+                app = epgpath[2][3:]
+                epg = epgpath[3][4:]
+                print(' {:10}{:15}{}'.format(tenant,app,epg))
+    else:
+        print(' No Epgs found!\n')
 
 
 def main(import_apic,import_cookie):
@@ -186,170 +290,210 @@ def main(import_apic,import_cookie):
             print('\x1b[1;31;40mFailed to retrieve active leafs, make leafs are operational...\x1b[0m')
             custom_raw_input('\n#Press enter to continue...')
             return
-        print("\nWhat is the desired \x1b[1;33;40m'Source and Destination'\x1b[0m leaf for span session?\r")
+        print("\nSelect leaf(s): \r")
 #        desiredleaf = custom_custom_raw_input("\nWhat is the desired \x1b[1;33;40m'Source and Destination'\x1b[0m leaf for span session?\r")
        
         #print("\nWhat is the desired \x1b[1;33;40m'Destination'\x1b[0m leaf for span session?\r")
-        userpath = os.path.expanduser("~")
-        userpathmarker = userpath.rfind('/')
-        user = os.path.expanduser("~")[userpathmarker+1:]
-        name = datetime.datetime.now().strftime('%Y:%m:%dT%H:%M:%S') + '_' + user
-        direction = 'Destination'
-        chosendestinterfacobject, leaf = physical_selection(all_leaflist,direction)
+
+        chosendestinterfaceobject, leaf = physical_selection(all_leaflist)
+        interface =  chosendestinterfaceobject[0].name
+        str(chosendestinterfaceobject[0]).replace('paths','nodes')
+        epgurl = """https://{apic}/api/node-{leaf}/mo/sys/phys-[{interface}].json?rsp-subtree-include=full-deployment&target-node=all&target-path=l1EthIfToEPg""".format(interface=str(interface),leaf=str(leaf),apic=apic)
+        #url = """https://{apic}/api/node/mo/{path}.json?rsp-subtree-include=full-deployment&target-node=all&target-path=l1EthIfToEPg""".format(apic=apic,path=str(chosendestinterfaceobject[0]))
+        #print(url)
+        epgresult, totalcount = GetResponseData(epgurl)
+            
+        url = """https://{apic}/api/node-{leaf}/mo/sys/phys-[{interface}].json?""".format(interface=str(interface),leaf=str(leaf),apic=apic) \
+                  + """query-target=subtree&rsp-subtree-include=stats&target-subtree-class=rmonIfOut,l1PhysIf,""" \
+                  + """rmonIfIn,rmonEtherStats,ethpmPhysIf,l1RsAttEntityPCons,"""\
+                  + """l1RsCdpIfPolCons,l1RtMbrIfs,pcAggrMbrIf,fvDomDef,eqptIngrTotal5min,eqptEgrTotal5min"""
+
+#rsp-subtree-include=full-deployment&target-node=all&target-path=l1EthIfToEPg
+           # query-target=subtree&rsp-subtree-include=stats&target-subtree-class=rmonIfOut,l1PhysIf,rmonIfIn,rmonEtherStats,ethpmPhysIf,l1RsAttEntityPCons,l1RsCdpIfPolCons,l1RtMbrIfs,pcAggrMbrIf,fvDomDef,eqptIngrTotal5min,eqptEgrTotal5min
+        result = GetResponseData(url)
+            #print(result)
+            #https://192.168.255.2/api/node-101/mo/sys/phys-[eth1/12].json?query-target=subtree&target-subtree-class=rmonIfOut,l1PhysIf,rmonIfIn,rmonEtherStats,ethpmPhysIf,l1RsAttEntityPCons,l1RsCdpIfPolCons,l1RtMbrIfs,pcAggrMbrIf,fvDomDef
+            #for x in kk['imdata'][0]['l1PhysIf']['children']:    
+            #     for y in x:
+        os.system('cls') 
+        while True:   
+            interfaceObject = l1PhysIf(interface)
+            for x in result[0]:
+                if x.get('rmonIfIn'):
+                    interfaceObject.rmonIfIn = x['rmonIfIn']['attributes']
+                    #print(x['rmonIfIn']['attributes']['errors'])
+                    #print(x['rmonIfIn']['attributes']['octets'])
+                    #print(x['rmonIfIn']['attributes']['multicastPkts'])
+                elif x.get('rmonIfOut'):
+                    interfaceObject.rmonIfOut = x['rmonIfOut']['attributes']
+                    #print(x['rmonIfOut']['attributes']['multicastPkts'])
+                    #print(x['rmonIfOut']['attributes']['errors'])
+                    #print(x['rmonIfOut']['attributes']['octets'])
+                    #print(x['rmonIfOut']['attributes']['broadcastPkts'])
+                elif x.get('rmonEtherStats'):
+                    interfaceObject.rmonEtherStats =  x['rmonEtherStats']['attributes']
+                    #print(x['rmonEtherStats']['attributes']['cRCAlignErrors'])
+                    #print(x['rmonEtherStats']['attributes']['multicastPkts'])
+                    #print(x['rmonEtherStats']['attributes']['rxGiantPkts'])
+                    #print(x['rmonEtherStats']['attributes']['rxOversizePkts'])
+                    #print(x['rmonEtherStats']['attributes']['tXNoErrors'])
+                elif x.get('ethpmPhysIf'):
+                    interfaceObject.ethpmPhysIf = x['ethpmPhysIf']['attributes']
+                    #print(x['ethpmPhysIf']['attributes']['backplaneMac'])
+                    #print(x['ethpmPhysIf']['attributes']['bundleIndex'])
+                    #print(x['ethpmPhysIf']['attributes']['operVlans'])
+                    #print(x['ethpmPhysIf']['attributes']['allowedVlans'])
+                    #print(x['ethpmPhysIf']['attributes']['operDuplex'])
+                    #print(x['ethpmPhysIf']['attributes']['operSpeed'])
+                    #print(x['ethpmPhysIf']['attributes']['operSt'])
+                elif x.get('l1PhysIf'):
+                    interfaceObject.add_phys_attr(x['l1PhysIf']['attributes'])
+                    for y in x['l1PhysIf']['children']:
+                        if y.get('eqptIngrTotal5min'):
+                            interfaceObject.eqptIngrTotal5min = y['eqptIngrTotal5min']['attributes']
+                        elif y.get('eqptEgrTotal5min'):
+                            interfaceObject.eqptEgrTotal5min = y['eqptEgrTotal5min']['attributes']
+                    #print(x['l1PhysIf']['attributes']['adminSt'])
+                    #print(x['l1PhysIf']['attributes']['autoNeg'])
+                    #print(x['l1PhysIf']['attributes']['layer'])
+                    #print(x['l1PhysIf']['attributes']['mtu'])
+                    #print(x['l1PhysIf']['attributes']['descr'])
+                    #print(x['l1PhysIf']['attributes']['spanMode'])
+                    #print(x['l1PhysIf']['attributes']['switchingSt'])
+                    #print(x['l1PhysIf']['attributes']['usage'])
+                    #print(x['l1PhysIf']['attributes']['speed'])
+                elif x.get('fvDomDef'):
+                    interfaceObject.fvDomDef.append(x['fvDomDef']['attributes'])
+                    #['domPKey']
+                elif x.get('l1RsAttEntityPCons'):
+                    interfaceObject.l1RsAttEntityPCons = x['l1RsAttEntityPCons']['attributes']
+                    #['tDn']
+                elif x.get('l1RsCdpIfPolCons'):
+                    interfaceObject.l1RsCdpIfPolCons = x['l1RsCdpIfPolCons']['attributes']
+                    #['tDn']
+                elif x.get('l1RtMbrIfs'):
+                    interfaceObject.l1RtMbrIfs.append(x['l1RtMbrIfs']['attributes'])
+                    #['tDn']
+                    #print(x['l1RtMbrIfs']['attributes']['tSKey'])
+                elif x.get('pcAggrMbrIf'):
+                    interfaceObject.pcAggrMbrIf.append(x['pcAggrMbrIf']['attributes'])
+                    #['pcMode']
+                    #print(x['pcAggrMbrIf']['attributes']['operSt'])
+            #    if x.get('l1PhysIf'):
+
+
+             #   elif x.get('eqptEgrTotal5min'):
+              #      interfaceObject.eqptEgrTotal5min = x['eqptEgrTotal5min']['attributes']
+
+            #if 
+            #print(url)
+            print('\n {} is {}, line protocol is {}'.format(interface.capitalize(),interfaceObject.adminSt,interfaceObject.ethpmPhysIf['operSt']))
+            print(' Description: {}'.format(interfaceObject.descr))
+            print(' MAC: {}'.format(interfaceObject.ethpmPhysIf['backplaneMac']))
+
+            print(' Speed: {}, Duplex: {}, MTU: {}'.format(interfaceObject.ethpmPhysIf['operSpeed'],interfaceObject.ethpmPhysIf['operDuplex'].upper(),interfaceObject.mtu)) 
+            print(' Auto negotiation: {}'.format(interfaceObject.autoNeg))
+            print(' Operational layer: {}'.format(interfaceObject.layer))
+            print(' Spanning destination interface: {}'.format(interfaceObject.spanMode))
+            if interfaceObject.ethpmPhysIf['bundleIndex'] != 'unspecified':
+                print(' Portchannal #: {}, Po name: (incomplete)'.format(interfaceObject.ethpmPhysIf['bundleIndex']))
+                #if interfaceObject.l1RtMbrIfs:
+                 #   for interf in interfaceObject.l1RtMbrIfs:
+                        #print(i nterf['tDn'])
+                        #print(i nterf['tSKey'])
+                if interfaceObject.pcAggrMbrIf:
+                    for interf in interfaceObject.pcAggrMbrIf:
+                        print('   Port-Channel Type: {}'.format(interf['pcMode']))
+            if interfaceObject.ethpmPhysIf['allowedVlans'] == '':
+                interfaceObject.ethpmPhysIf['allowedVlans'] = 'None,'
+            if interfaceObject.ethpmPhysIf['operVlans'] == '':
+                interfaceObject.ethpmPhysIf['operVlans'] = 'None'
+            print(' Configured internal vlans: {} Working internal vlans: {}'.format(interfaceObject.ethpmPhysIf['allowedVlans'],interfaceObject.ethpmPhysIf['operVlans']))
+            print('')
+            if interfaceObject.eqptEgrTotal5min == None:
+                print(' [5 min] Input packet rate 0, Input Byte rate: 0')
+                print(' [5 min] Output packet rate 0, Output Byte rate: 0')
+            else:
+                print(' [5 min] Input packet rate {}, Input Byte rate: {}'.format(round(float(interfaceObject.eqptIngrTotal5min['pktsRate']),2),round(float(interfaceObject.eqptIngrTotal5min['bytesRate']),2)))
+                print(' [5 min] Output packet rate {}, Output Byte rate: {}'.format(round(float(interfaceObject.eqptEgrTotal5min['pktsRate']),2),round(float(interfaceObject.eqptEgrTotal5min['bytesRate']),2)))
+            print(' RX')
+            print('     input packets {}, bytes {}, broadcasts {}, mutlicasts {}'.format(interfaceObject.rmonEtherStats['tXNoErrors'],interfaceObject.rmonIfIn['octets'],interfaceObject.rmonIfIn['broadcastPkts'],interfaceObject.rmonIfIn['multicastPkts']))
+            print('     input errors {}, giants {}, crc {}, fragments {}, oversize {}'.format(interfaceObject.rmonIfIn['errors'],interfaceObject.rmonEtherStats['rxGiantPkts'],interfaceObject.rmonEtherStats['cRCAlignErrors'],interfaceObject.rmonEtherStats['fragments'],interfaceObject.rmonEtherStats['rxOversizePkts']))
+            print(' TX')
+            print('     output packets {}, bytes {}, broadcasts {}, mutlicasts {}'.format(interfaceObject.rmonEtherStats['rXNoErrors'],interfaceObject.rmonIfOut['octets'],interfaceObject.rmonIfOut['broadcastPkts'],interfaceObject.rmonIfOut['multicastPkts']))
+            print('     output errors {}, collisions {}, jabbers {}, drops {}'.format(interfaceObject.rmonIfOut['errors'],interfaceObject.rmonEtherStats['collisions'],interfaceObject.rmonEtherStats['jabbers'],interfaceObject.rmonEtherStats['dropEvents']))
+            print('')
+            print(' EPGs configured: {}'.format(interfaceObject.switchingSt))
+            #if interfaceObject.switchingSt == 'enabled':
+            print('')
+            print(' {:10}{:15}{}'.format('Tenant','APP','EPG'))
+            print(' ' + '-'*40)
+            displayepgs(epgresult)
+            #    print(' EPGs: ')
+            print(' Configured usage type: {}'.format(interfaceObject.usage))            
+            print('\n Availabe Domains: ')
+            if interfaceObject.fvDomDef:
+                for interf in interfaceObject.fvDomDef:
+                    print(' {}'.format(interf['domPKey']))
+            print('\n Profiles:')
+            if interfaceObject.l1RsAttEntityPCons:
+                print(' {}'.format(interfaceObject.l1RsAttEntityPCons['tDn']))
+            print(' {}'.format(interfaceObject.l1RsCdpIfPolCons['tDn']))
+            #if interfaceObject.l1RtMbrIfs:
+            #    for interf in interfaceObject.l1RtMbrIfs:
+            #        print(interf['tDn'])
+            #        print(interf['tSKey'])
+         #   if interfaceObject.pcAggrMbrIf:
+         #       for interf in interfaceObject.pcAggrMbrIf:
+         #           print(interf['pcMode'])
+         #           print(interf['operSt'])
+       #     print('input errors: {}'.format(interfaceObject.ethpmPhysIf['allowedVlans']))
+       #     print('input errors: {}'.format(interfaceObject.ethpmPhysIf['operDuplex']))
+       #     print('input errors: {}'.format(interfaceObject.ethpmPhysIf['operSpeed']))
+       #     print('input errors: {}'.format(interfaceObject.ethpmPhysIf['operSt']))
+       #     print('input errors: {}'.format(interfaceObject.autoNeg))
+       #     print('input errors: {}'.format(interfaceObject.layer))
+       #     print('input errors: {}'.format(interfaceObject.mtu))
+       #     print('input errors: {}'.format(interfaceObject.descr))
+       #     print('input errors: {}'.format(interfaceObject.spanMode))
+       #     print('input errors: {}'.format(interfaceObject.switchingSt))
+       #     print('input errors: {}'.format(interfaceObject.usage))
+       #     print('input errors: {}'.format(interfaceObject.speed))
+       #     print('input errors: {}'.format(interfaceObject.rmonIfIn['errors']))
+       #     print('input errors: {}'.format(interfaceObject.rmonIfIn['octets']))
+       #     print('input errors: {}'.format(interfaceObject.rmonIfIn['multicastPkts']))
+       #     print('input errors: {}'.format(interfaceObject.rmonIfIn['broadcastPkts']))
+#
+       #     print('input errors: {}'.format(interfaceObject.rmonIfOut['multicastPkts']))
+       #     print('input errors: {}'.format(interfaceObject.rmonIfOut['errors']))
+       #     print('input errors: {}'.format(interfaceObject.rmonIfOut['octets']))
+       #     print('input errors: {}'.format(interfaceObject.rmonIfOut['broadcastPkts']))
+       #     print('input errors: {}'.format(interfaceObject.rmonEtherStats['cRCAlignErrors']))
+       #     print('input errors: {}'.format(interfaceObject.rmonEtherStats['multicastPkts']))
+       #     print('input errors: {}'.format(interfaceObject.rmonEtherStats['rxGiantPkts']))
+       #     print('input errors: {}'.format(interfaceObject.rmonEtherStats['rxOversizePkts']))
+       #     print('input errors: {}'.format(interfaceObject.rmonEtherStats['rXNoErrors']))
+       #     print('input errors: {}'.format(interfaceObject.rmonEtherStats['collisions']))
+       #     print('input errors: {}'.format(interfaceObject.rmonEtherStats['dropEvents']))
+       #     print('input errors: {}'.format(interfaceObject.rmonEtherStats['fragments']))
+       #     print('input errors: {}'.format(interfaceObject.rmonEtherStats['jabbers']))
+       #     print('input errors: {}'.format(interfaceObject.rmonEtherStats['jabbers']))
 
 
 
 
+            epgresult, totalcount = GetResponseData(epgurl)
+            result = GetResponseData(url)
+            time.sleep(6)
+            os.system('cls')
 
-#url = """https://{apic}/api/node-101/mo/sys/phys-[eth1/12].json?""".format(interface=interface,apic=apic) \
-#      + """query-target=subtree&target-subtree-class=rmonIfOut,l1PhysIf,""" \
-#      + """rmonIfIn,rmonEtherStats,ethpmPhysIf,l1RsAttEntityPCons,"""\
-#      + """l1RsCdpIfPolCons,l1RtMbrIfs,pcAggrMbrIf,fvDomDef"""
-#result = GetResponseData()
-#https://192.168.255.2/api/node-101/mo/sys/phys-[eth1/12].json?query-target=subtree&target-subtree-class=rmonIfOut,l1PhysIf,rmonIfIn,rmonEtherStats,ethpmPhysIf,l1RsAttEntityPCons,l1RsCdpIfPolCons,l1RtMbrIfs,pcAggrMbrIf,fvDomDef
-#for x in kk['imdata'][0]['l1PhysIf']['children']:    
-#     for y in x:
-#    
-#class l1PhysIf():
-#    def __init__(self, interface):
-#        self.interface = interface
-#        self.rmonIfIn = None
-#        self.rmonEtherStats = None
-#        self.l1RsAttEntityPCons = None
-#        self.l1RsCdpIfPolCons = None
-#        self.ethpmPhysIf = None
-#        self.fvDomDef = []
-#        self.l1RtMbrIfs = []
-#        self.pcAggrMbrIf = []
-#    def add_phys_attr(self, **kwargs):
-#        self.__dict__.update(kwargs)
-#    def __str__(self):
-#        return self.interface
-#    def __repr__(self):
-#        return self.interface
-#
-#class rmonIfIn:
-#    def __init__(self, **kwargs):
-#        self.__dict__.update(kwargs)
-#    def __repr__(self):
-#        return self.__dict__
-#
-#class rmonIfOut:
-#    def __init__(self, **kwargs):
-#        self.__dict__.update(kwargs)
-#    def __repr__(self):
-#        return self.__dict__
-#
-#class rmonEtherStats:
-#    def __init__(self, **kwargs):
-#        self.__dict__.update(kwargs)
-#    def __repr__(self):
-#        return self.__dict__
-#
-#class ethpmPhysIf:
-#    def __init__(self, **kwargs):
-#        self.__dict__.update(kwargs)
-#    def __repr__(self):
-#        return self.__dict__
-#
-#class fvDomDef:
-#    def __init__(self, **kwargs):
-#        self.__dict__.update(kwargs)
-#    def __repr__(self):
-#        return self.__dict__
-#
-#class l1RsAttEntityPCons:
-#    def __init__(self, **kwargs):
-#        self.__dict__.update(kwargs)
-#    def __repr__(self):
-#        return self.__dict__
-#
-#class l1RsCdpIfPolCons:
-#    def __init__(self, **kwargs):
-#        self.__dict__.update(kwargs)
-#    def __repr__(self):
-#        return self.__dict__
-#
-#class l1RtMbrIfs:
-#    def __init__(self, **kwargs):
-#        self.__dict__.update(kwargs)
-#    def __repr__(self):
-#        return self.__dict__
-#
-#class pcAggrMbrIf:
-#    def __init__(self, **kwargs):
-#        self.__dict__.update(kwargs)
-#    def __repr__(self):
-#        return self.__dict__
-#
-#
-#
-#interfaceObject = l1PhysIf(interface)
-#
-#for x in result:
-#    if x.get('rmonIfIn'):
-#        interfaceObject.rmonIfIn = x['rmonIfIn']['attributes']
-#        #print(x['rmonIfIn']['attributes']['errors'])
-#        #print(x['rmonIfIn']['attributes']['octets'])
-#        #print(x['rmonIfIn']['attributes']['multicastPkts'])
-#    if x.get('rmonIfOut'):
-#        interfaceObject.rmonIfOut = x['rmonIfOut']['attributes']
-#        #print(x['rmonIfOut']['attributes']['multicastPkts'])
-#        #print(x['rmonIfOut']['attributes']['errors'])
-#        #print(x['rmonIfOut']['attributes']['octets'])
-#        #print(x['rmonIfOut']['attributes']['broadcastPkts'])
-#    if x.get('rmonEtherStats'):
-#        interfaceObject.rmonEtherStats =  x['rmonEtherStats']['attributes']
-#        #print(x['rmonEtherStats']['attributes']['cRCAlignErrors'])
-#        #print(x['rmonEtherStats']['attributes']['multicastPkts'])
-#        #print(x['rmonEtherStats']['attributes']['rxGiantPkts'])
-#        #print(x['rmonEtherStats']['attributes']['rxOversizePkts'])
-#        #print(x['rmonEtherStats']['attributes']['tXNoErrors'])
-#    if x.get('ethpmPhysIf'):
-#        interfaceObject.ethpmPhysIf = x['ethpmPhysIf']['attributes']
-#        #print(x['ethpmPhysIf']['attributes']['backplaneMac'])
-#        #print(x['ethpmPhysIf']['attributes']['bundleIndex'])
-#        #print(x['ethpmPhysIf']['attributes']['operVlans'])
-#        #print(x['ethpmPhysIf']['attributes']['allowedVlans'])
-#        #print(x['ethpmPhysIf']['attributes']['operDuplex'])
-#        #print(x['ethpmPhysIf']['attributes']['operSpeed'])
-#        #print(x['ethpmPhysIf']['attributes']['operSt'])
-#    if x.get('l1PhysIf'):
-#        interfaceObject.add_phys_attr(x['l1PhysIf']['attributes'])
-#        #print(x['l1PhysIf']['attributes']['adminSt'])
-#        #print(x['l1PhysIf']['attributes']['autoNeg'])
-#        #print(x['l1PhysIf']['attributes']['layer'])
-#        #print(x['l1PhysIf']['attributes']['mtu'])
-#        #print(x['l1PhysIf']['attributes']['descr'])
-#        #print(x['l1PhysIf']['attributes']['spanMode'])
-#        #print(x['l1PhysIf']['attributes']['switchingSt'])
-#        #print(x['l1PhysIf']['attributes']['usage'])
-#        #print(x['l1PhysIf']['attributes']['speed'])
-#    if x.get('fvDomDef'):
-#        interfaceObject.fvDomDef.append(x['fvDomDef']['attributes'])
-#        #['domPKey']
-#    if x.get('l1RsAttEntityPCons'):
-#        interfaceObject.l1RsAttEntityPCons = x['l1RsAttEntityPCons']['attributes']
-#        #['tDn']
-#    if x.get('l1RsCdpIfPolCons'):
-#        interfaceObject.l1RsCdpIfPolCons = x['l1RsCdpIfPolCons']['attributes']
-#        #['tDn']
-#    if x.get('l1RtMbrIfs'):
-#        interfaceObject.l1RtMbrIf.append(x['l1RtMbrIfs']['attributes'])
-#        #['tDn']
-#        #print(x['l1RtMbrIfs']['attributes']['tSKey'])
-#    if x.get('pcAggrMbrIf'):
-#        interfaceObject.pcAggrMbrIf.append(x['pcAggrMbrIf']['attributes'])
-#        #['pcMode']
-#        #print(x['pcAggrMbrIf']['attributes']['operSt'])
-#
 #
 #
 #
 #
 #
 #['rmonifIn']['attributes'][errors'] == rx inpur errors
-#if x.get('rmonIfIn'):
+#elif x.get('rmonIfIn'):
 #    print(x['rmonIfIn']['attributes']['bytes']) == rx bytes
 #    print(x['rmonIfIn']['attributes']['multicastPkts'] == rx mulitcast packets
 #if x.get('rmonIfOut'):
