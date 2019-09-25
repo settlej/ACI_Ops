@@ -21,7 +21,33 @@ import itertools
 import threading
 import Queue
 from localutils.custom_utils import *
+import logging
 
+# Create a custom logger
+# Allows logging to state detailed info such as module where code is running and 
+# specifiy logging levels for file vs console.  Set default level to DEBUG to allow more
+# grainular logging levels
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
+# Define logging handler for file and console logging.  Console logging can be desplayed during
+# program run time, similar to print.  Program can display or write to log file if more debug 
+# info needed.  DEBUG is lowest and will display all logging messages in program.  
+c_handler = logging.StreamHandler()
+f_handler = logging.FileHandler('file.log')
+c_handler.setLevel(logging.WARNING)
+f_handler.setLevel(logging.DEBUG)
+
+# Create formatters and add it to handlers.  This creates custom logging format such as timestamp,
+# module running, function, debug level, and custom text info (message) like print.
+c_format = logging.Formatter('%(name)s - %(levelname)s - %(message)s')
+f_format = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(funcName)s - %(message)s')
+c_handler.setFormatter(c_format)
+f_handler.setFormatter(f_format)
+
+# Add handlers to the parent custom logger
+logger.addHandler(c_handler)
+logger.addHandler(f_handler)
 
 #############################################################################################################################################
 #                               What does this def do period
@@ -31,19 +57,19 @@ from localutils.custom_utils import *
 #                               Date Last time modify
 #############################################################################################################################################
 
-def GetRequest(url, icookie):
-    # Function to Perform HTTP Get REST calls and return server recieved data in an http object
-    method = "GET"
-    # icookie comes from the GetResponseData fuction that references 'cookie' which is a global variable from reading /.aci/.sessions/.token
-    cookies = 'APIC-cookie=' + icookie
-    # create urllib2 object to add headers and cookies
-    request = urllib2.Request(url)
-    # Function needs APIC cookie for authentication and what content format you need in returned http object (example JSON)
-    # need to add header one at a time in urllib2
-    request.add_header("cookie", cookies)
-    request.add_header("Content-Type", "application/json")
-    request.add_header('Accept', 'application/json')
-    return urllib2.urlopen(request, context=ssl._create_unverified_context())
+#def GetRequest(url, icookie):
+#    # Function to Perform HTTP Get REST calls and return server recieved data in an http object
+#    method = "GET"
+#    # icookie comes from the GetResponseData fuction that references 'cookie' which is a global variable from reading /.aci/.sessions/.token
+#    cookies = 'APIC-cookie=' + icookie
+#    # create urllib2 object to add headers and cookies
+#    request = urllib2.Request(url)
+#    # Function needs APIC cookie for authentication and what content format you need in returned http object (example JSON)
+#    # need to add header one at a time in urllib2
+#    request.add_header("cookie", cookies)
+#    request.add_header("Content-Type", "application/json")
+#    request.add_header('Accept', 'application/json')
+#    return urllib2.urlopen(request, context=ssl._create_unverified_context())
 
 #############################################################################################################################################
 #                               What does this def do period
@@ -53,19 +79,19 @@ def GetRequest(url, icookie):
 #                               Date Last time modify
 #############################################################################################################################################
 
-def POSTRequest(url, data, icookie):
-    # Function to Perform HTTP POST call to update and create objects and return server data in an http object
-    # POST in urllib2 is special because it doesn't exist as a built-in method for the urllib2 object you need to make a function (aka lambda) and refrence this method
-    method = "POST"
-    # icookie comes from the PostandGetResponseData fuction that references 'cookie' which is a global variable from reading /.aci/.sessions/.token
-    cookies = 'APIC-cookie=' + icookie
-    # notice 'data' is going to added to the urllib2 object, unlike GET requests
-    request = urllib2.Request(url, data)
-    # Function needs APIC cookie for authentication and what content format you need in returned http object (example JSON)
-    # need to add header one at a time in urllib2
-    request.add_header("cookie", cookies)
-    request.get_method = lambda: method
-    return urllib2.urlopen(request, context=ssl._create_unverified_context())
+#def POSTRequest(url, data, icookie):
+#    # Function to Perform HTTP POST call to update and create objects and return server data in an http object
+#    # POST in urllib2 is special because it doesn't exist as a built-in method for the urllib2 object you need to make a function (aka lambda) and refrence this method
+#    method = "POST"
+#    # icookie comes from the PostandGetResponseData fuction that references 'cookie' which is a global variable from reading /.aci/.sessions/.token
+#    cookies = 'APIC-cookie=' + icookie
+#    # notice 'data' is going to added to the urllib2 object, unlike GET requests
+#    request = urllib2.Request(url, data)
+#    # Function needs APIC cookie for authentication and what content format you need in returned http object (example JSON)
+#    # need to add header one at a time in urllib2
+#    request.add_header("cookie", cookies)
+#    request.get_method = lambda: method
+#    return urllib2.urlopen(request, context=ssl._create_unverified_context())
 
 #############################################################################################################################################
 #                               What does this def do period
@@ -83,19 +109,70 @@ def POSTRequest(url, data, icookie):
 #    result = json.loads(response.read()) # here for this
 #    # return only infomation inside the dictionary under 'imdata'
 #    return result['imdata'] #here for this
-def GetResponseData(url):
-    response = GetRequest(url, cookie)
-    result = json.loads(response.read())
-    return result['imdata'], result["totalCount"]
+#def GetResponseData(url):
+#    response = GetRequest(url, cookie)
+#    result = json.loads(response.read())
+#    return result['imdata'], result["totalCount"]
+#
+#def PostandGetResponseData(url, data):
+#    # Fuction to submit JSON and load it into Python Dictionary format and present all JSON inside the 'imdata' level
+#    # Perform a POSTRequest function to perform a POST REST call to server and provide response data
+#    response = POSTRequest(url, data, cookie)
+#    # the 'response' is an urllib2 object that needs to be read for JSON data, this loads the JSON to Python Dictionary format
+#    result = json.loads(response.read())
+#    # return only infomation inside the dictionary under 'imdata'
+#    return result['imdata']
 
-def PostandGetResponseData(url, data):
-    # Fuction to submit JSON and load it into Python Dictionary format and present all JSON inside the 'imdata' level
-    # Perform a POSTRequest function to perform a POST REST call to server and provide response data
-    response = POSTRequest(url, data, cookie)
-    # the 'response' is an urllib2 object that needs to be read for JSON data, this loads the JSON to Python Dictionary format
-    result = json.loads(response.read())
-    # return only infomation inside the dictionary under 'imdata'
-    return result['imdata']
+
+#def POSTRequest(url, data, icookie):
+#    # Function to Perform HTTP POST call to update and create objects and return server data in an http object
+#    # POST in urllib2 is special because it doesn't exist as a built-in method for the urllib2 object you need to make a function (aka lambda) and refrence this method
+#    method = "POST"
+#    # icookie comes from the PostandGetResponseData fuction that references 'cookie' which is a global variable from reading /.aci/.sessions/.token
+#    cookies = 'APIC-cookie=' + icookie
+#    # notice 'data' is going to added to the urllib2 object, unlike GET requests
+#    request = urllib2.Request(url, data)
+#    # Function needs APIC cookie for authentication and what content format you need in returned http object (example JSON)
+#    # need to add header one at a time in urllib2
+#    request.add_header("cookie", cookies)
+#    request.add_header("Content-type", "application/json")
+#    request.add_header('Accept', 'application/json')
+#    request.get_method = lambda: method
+#    #opener = urllib2.build_opener()
+#    #opener.addheaders =[("Content-type", "application/json"),("cookie", cookies),('Accept', 'application/json')]
+#    #return opener.open(url,context=ssl._create_unverified_context())
+#    try:
+#        return urllib2.urlopen(request, context=ssl._create_unverified_context()), None
+#    except urllib2.HTTPError as httpe:
+#        #print('url')
+#        failure_reason = json.loads(httpe.read())
+#        failure_info = failure_reason['imdata'][0]['error']['attributes']['text'].strip()
+#        return 'invalid', failure_info
+#    except urllib2.URLError as urle:
+#        #print(urle.code)
+#        #print(urle.read())
+#        failure_reason = json.loads(urle.read())
+#        #print(url)
+#        #print('EPG ' + url[45:-4])
+#        #print((failure_reason['imdata'][0]['error']['attributes']['text']).strip())
+#        return 'invalid', failure_reason
+#
+
+#def PostandGetResponseData(url, data):
+#    # Fuction to submit JSON and load it into Python Dictionary format and present all JSON inside the 'imdata' level
+#    # Perform a POSTRequest function to perform a POST REST call to server and provide response data
+#    response, error = POSTRequest(url, data, cookie)
+#    #print(error)
+#    if response is 'invalid':
+#        return 'invalid', error
+#    # the 'response' is an urllib2 object that needs to be read for JSON data, this loads the JSON to Python Dictionary format
+#    result = json.loads(response.read())
+#    # return only infomation inside the dictionary under 'imdata'
+#    return result['imdata'], None
+
+
+
+
 
 def get_Cookie():
     global cookie
@@ -168,7 +245,7 @@ def get_All_EGPs():
     ##get_Cookie()
     epgdict = {}
     url = """https://{apic}/api/node/class/fvAEPg.json""".format(apic=apic)
-    result, totalCount = GetResponseData(url)
+    result = GetResponseData(url, cookie)
     #print(json.dumps(result, indent=2))
     epglist = [epg['fvAEPg']['attributes']['dn'] for epg in result]
             #epgdict[epg['fvAEPg']['attributes']['name']] = epg['fvAEPg']['attributes']['dn']
@@ -178,19 +255,19 @@ def get_All_EGPs():
 def get_All_PCs():
     url = """https://{apic}/api/node/class/fabricPathEp.json?query-target-filter=and(not(wcard(fabricPathEp.dn,%22__ui_%22)),""" \
           """eq(fabricPathEp.lagT,"link"))""".format(apic=apic)
-    result, totalCount = GetResponseData(url)
+    result = GetResponseData(url, cookie)
     return result
 
 def get_All_vPCs():
     url = """https://{apic}/api/node/class/fabricPathEp.json?query-target-filter=and(not(wcard(fabricPathEp.dn,%22__ui_%22)),""" \
           """and(eq(fabricPathEp.lagT,"node"),wcard(fabricPathEp.dn,"^topology/pod-[\d]*/protpaths-")))""".format(apic=apic)
-    result, totalCount = GetResponseData(url)
+    result = GetResponseData(url, cookie)
     return result
 
 def get_All_leafs():
     url = """https://{apic}/api/node/class/fabricNode.json?query-target-filter=and(not(wcard(fabricNode.dn,%22__ui_%22)),""" \
           """and(eq(fabricNode.role,"leaf"),eq(fabricNode.fabricSt,"active"),ne(fabricNode.nodeType,"virtual")))""".format(apic=apic)
-    result, totalCount = GetResponseData(url)
+    result = GetResponseData(url, cookie)
     #print(result)
     return result
 
@@ -248,7 +325,7 @@ def physical_selection(all_leaflist, allepglist):
         url = """https://{apic}/api/node/class/fabricPathEp.json?query-target-filter=and(not(wcard(fabricPathEp.dn,%22__ui_%22)),""" \
               """and(eq(fabricPathEp.lagT,"not-aggregated"),eq(fabricPathEp.pathT,"leaf"),wcard(fabricPathEp.dn,"topology/pod-1/paths-{leaf}/"),""" \
               """not(or(wcard(fabricPathEp.name,"^tunnel"),wcard(fabricPathEp.name,"^vfc")))))&order-by=fabricPathEp.dn|desc""".format(leaf=leaf,apic=apic)
-        result, totalcount = GetResponseData(url)
+        result = GetResponseData(url, cookie)
         compoundedleafresult.append(result)
     result = compoundedleafresult
     interfacelist = []
@@ -332,7 +409,7 @@ def postshut(interface,queue):
         url = 'https://{apic}/api/node/mo/uni/fabric/outofsvc.json'.format(apic=apic)
         # data is the 'POST' data sent in the REST call to 'blacklist' (shutdown) on a normal interface
         data = """'{{"fabricRsOosPath":{{"attributes":{{"tDn":"{interface}","lc":"blacklist"}},"children":[]}}}}'""".format(interface=interface)
-        result =  PostandGetResponseData(url, data)
+        result, error =  PostandGetResponseData(url, data, cookie)
         if result == []:
             queue.put('[Complete] shut ' + interface.name)
 
@@ -354,7 +431,7 @@ def postnoshut(interface,queue):
         url = 'https://{apic}/api/node/mo/uni/fabric/outofsvc.json'.format(apic=apic)
         # data is the 'POST' data sent in the REST call to delete object from 'blacklist' (no shut)
         data = """'{{"fabricRsOosPath":{{"attributes":{{"dn":"uni/fabric/outofsvc/rsoosPath-[{interface}]","status":"deleted"}},"children":[]}}}}'""".format(interface=interface)
-        result =  PostandGetResponseData(url, data)
+        result, error =  PostandGetResponseData(url, data, cookie)
         if result == []:
             queue.put('[Complete] no shut ' + interface.name)
 

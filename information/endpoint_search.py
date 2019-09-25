@@ -14,22 +14,28 @@ from localutils.custom_utils import *
 import logging
 
 # Create a custom logger
+# Allows logging to state detailed info such as module where code is running and 
+# specifiy logging levels for file vs console.  Set default level to DEBUG to allow more
+# grainular logging levels
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
-# Create handlers
+# Define logging handler for file and console logging.  Console logging can be desplayed during
+# program run time, similar to print.  Program can display or write to log file if more debug 
+# info needed.  DEBUG is lowest and will display all logging messages in program.  
 c_handler = logging.StreamHandler()
 f_handler = logging.FileHandler('file.log')
 c_handler.setLevel(logging.WARNING)
 f_handler.setLevel(logging.DEBUG)
 
-# Create formatters and add it to handlers
+# Create formatters and add it to handlers.  This creates custom logging format such as timestamp,
+# module running, function, debug level, and custom text info (message) like print.
 c_format = logging.Formatter('%(name)s - %(levelname)s - %(message)s')
 f_format = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(funcName)s - %(message)s')
 c_handler.setFormatter(c_format)
 f_handler.setFormatter(f_format)
 
-# Add handlers to the logger
+# Add handlers to the parent custom logger
 logger.addHandler(c_handler)
 logger.addHandler(f_handler)
 
@@ -47,6 +53,8 @@ def GetResponseData(url):
     result = json.loads(response.read())
     return result['imdata'], result["totalCount"]
 
+# custom data class to contain all layers relating to endpoint json representation
+# as well as parsed and easy callable feilds based on names. 
 class fvCEp():
     def __init__(self, mac=None, name=None, encap=None,
                  lcC=None, dn=None, fvRsVm=None, fvRsHyper=None,

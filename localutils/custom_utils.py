@@ -27,20 +27,69 @@ def refreshToken(apic,icookie):
     result = json.loads(response.read())
     return result["imdata"][0]["aaaLogin"]["attributes"]["token"]
 
-
 def GetRequest(url, icookie):
+    # Function to Perform HTTP Get REST calls and return server recieved data in an http object
     method = "GET"
+    # icookie comes from the GetResponseData fuction that references 'cookie' which is a global variable from reading /.aci/.sessions/.token
     cookies = 'APIC-cookie=' + icookie
+    # create urllib2 object to add headers and cookies
     request = urllib2.Request(url)
+    # Function needs APIC cookie for authentication and what content format you need in returned http object (example JSON)
+    # need to add header one at a time in urllib2
     request.add_header("cookie", cookies)
     request.add_header("Content-Type", "application/json")
     request.add_header('Accept', 'application/json')
     return urllib2.urlopen(request, context=ssl._create_unverified_context())
 
-def GetResponseData(url, cookie):
-    response = GetRequest(url, cookie)
-    result = json.loads(response.read())
-    return result['imdata'], result["totalCount"]
+def GetResponseData(url, cookie, return_count=False):
+    # Fuction to take JSON and load it into Python Dictionary format and present all JSON inside the 'imdata' level
+    # Perform a GetRequest function to perform a GET REST call to server and provide response data
+    response = GetRequest(url, cookie) # here for this
+    # the 'response' is an urllib2 object that needs to be read for JSON data, this loads the JSON to Python Dictionary format
+    result = json.loads(response.read()) # here for this
+    # return only infomation inside the dictionary under 'imdata'
+    if return_count == True:
+        return result
+    else:
+        return result['imdata'] #here for this
+
+def PostandGetResponseData(url, data, cookie):
+    # Fuction to submit JSON and load it into Python Dictionary format and present all JSON inside the 'imdata' level
+    # Perform a POSTRequest function to perform a POST REST call to server and provide response data
+    response, error = POSTRequest(url, data, cookie)
+    # the 'response' is an urllib2 object that needs to be read for JSON data, this loads the JSON to Python Dictionary format
+        # return only infomation inside the dictionary under 'imdata'.  If response is a string rether than a urllib object return str with error
+    if isinstance(response,str):
+        return response, error
+    else:
+        result = json.loads(response.read())
+        return result['imdata'], error
+
+def POSTRequest(url, data, icookie):
+    # Function to Perform HTTP POST call to update and create objects and return server data in an http object
+    # POST in urllib2 is special because it doesn't exist as a built-in method for the urllib2 object you need to make a function (aka lambda) and refrence this method
+    method = "POST"
+    # icookie comes from the PostandGetResponseData fuction that references 'cookie' which is a global variable from reading /.aci/.sessions/.token
+    cookies = 'APIC-cookie=' + icookie
+    # notice 'data' is going to added to the urllib2 object, unlike GET requests
+    request = urllib2.Request(url, data)
+    # Function needs APIC cookie for authentication and what content format you need in returned http object (example JSON)
+    # need to add header one at a time in urllib2
+    request.add_header("cookie", cookies)
+    request.add_header("Content-type", "application/json")
+    request.add_header('Accept', 'application/json')
+    # Mandate the urllib request is a POST instead of default GET request
+    request.get_method = lambda: method
+    try:
+        return urllib2.urlopen(request, context=ssl._create_unverified_context()), None
+    except urllib2.HTTPError as httpe:
+        failure_reason = json.loads(httpe.read())
+        failure_reason = failure_reason['imdata'][0]['error']['attributes']['text'].strip()
+        return 'invalid', failure_reason
+    except urllib2.URLError as urle:
+        #print(urle.code)
+        failure_reason = json.loads(urle.read())
+        return 'invalid', failure_reason
 #
 ##def getCookie():
 ##    global cookie
@@ -222,3 +271,42 @@ def GetResponseData(url, cookie):
 #    #print(result)
 #    return result
 #
+def get_All_EGPs(apic, cookie, return_count=False):
+    url = """https://{apic}/api/node/class/fvAEPg.json""".format(apic=apic)
+    if return_count == True:
+        result, totalcount = GetResponseData(url, cookie, return_count=True)
+        return [epg['fvAEPg']['attributes']['dn'] for epg in result], totalcount
+    else:
+        result = GetResponseData(url, cookie)
+        return [epg['fvAEPg']['attributes']['dn'] for epg in result]
+
+def get_All_PCs(apic, cookie, return_count=False):
+    url = """https://{apic}/api/node/class/fabricPathEp.json?query-target-filter=and(not(wcard(fabricPathEp.dn,%22__ui_%22)),""" \
+          """eq(fabricPathEp.lagT,"link"))""".format(apic=apic)
+    if return_count == True:
+        result, totalcount = GetResponseData(url, cookie, return_count=True)
+        return result, totalcount
+    else:
+        result = GetResponseData(url, cookie)
+        return result
+
+def get_All_vPCs(apic, cookie, return_count=False):
+    url = """https://{apic}/api/node/class/fabricPathEp.json?query-target-filter=and(not(wcard(fabricPathEp.dn,%22__ui_%22)),""" \
+          """and(eq(fabricPathEp.lagT,"node"),wcard(fabricPathEp.dn,"^topology/pod-[\d]*/protpaths-")))""".format(apic=apic)
+    if return_count == True:
+        result, totalcount = GetResponseData(url, cookie, return_count=True)
+        return result, totalcount
+    else:
+        result = GetResponseData(url, cookie)
+        return result
+
+
+def get_All_leafs(apic, cookie, return_count=False):
+    url = """https://{apic}/api/node/class/fabricNode.json?query-target-filter=and(not(wcard(fabricNode.dn,%22__ui_%22)),""" \
+          """and(eq(fabricNode.role,"leaf"),eq(fabricNode.fabricSt,"active"),ne(fabricNode.nodeType,"virtual")))""".format(apic=apic)
+    if return_count == True:
+        result, totalcount = GetResponseData(url, cookie, return_count=True)
+        return result, totalcount
+    else:
+        result = GetResponseData(url, cookie)
+        return result
