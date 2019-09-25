@@ -263,7 +263,7 @@ def vlan_and_url_generating(epgsinglelist,numepgdict,choseninterfaceobjectlist):
                          "tDn":"{}","status":"created"}},"children":[]}}}}'""".format(interface.dn,vlan=vlan)
             #print(fvRsPa)
             urlmodify = namedtuple('urlmodify', ('url', 'interface', 'data'))
-            urllist.append(urlmodify(url, str(interface), data))
+            urllist.append(urlmodify(url, interface, data))
            # urldict[uniquenumber] = (url, interface.dn, fvRsPa)
     return urllist
 
@@ -336,9 +336,9 @@ def port_channel_selection(allpclist,allepglist):
             logger.debug(error)
             interfacepath = re.search(r'\[.*\]', error)
             if 'already exists' in error:
-                print('\x1b[1;37;41mFailure\x1b[0m for ' + shorturl + ' > ' + url.interface + ' -- EPG already on Interface ' )    
+                print('\x1b[1;37;41mFailure\x1b[0m for ' + shorturl + ' > ' + str(url.interface) + ' -- EPG already on Interface ' )    
             elif 'AttrBased EPG' in error:
-                print('\x1b[1;37;41mFailure\x1b[0m for ' + shorturl + ' > ' + url.interface + ' -- Attribute EPGs need special static attirbutes')    
+                print('\x1b[1;37;41mFailure\x1b[0m for ' + shorturl + ' > ' + str(url.interface) + ' -- Attribute EPGs need special static attirbutes')    
             else:
                 print('\x1b[1;37;41mFailure\x1b[0m for ' + shorturl + '\t -- ' + error)  
         else:

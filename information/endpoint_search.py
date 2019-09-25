@@ -18,7 +18,7 @@ import logging
 # specifiy logging levels for file vs console.  Set default level to DEBUG to allow more
 # grainular logging levels
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 # Define logging handler for file and console logging.  Console logging can be desplayed during
 # program run time, similar to print.  Program can display or write to log file if more debug 
@@ -39,20 +39,6 @@ f_handler.setFormatter(f_format)
 logger.addHandler(c_handler)
 logger.addHandler(f_handler)
 
-
-def GetRequest(url, icookie):
-    method = "GET"
-    cookies = 'APIC-cookie=' + icookie
-    request = urllib2.Request(url)
-    request.add_header("cookie", cookies)
-    request.add_header("Content-Type", "application/json")
-    request.add_header('Accept', 'application/json')
-    return urllib2.urlopen(request, context=ssl._create_unverified_context())
-def GetResponseData(url):
-    response = GetRequest(url, cookie)
-    result = json.loads(response.read())
-    return result['imdata'], result["totalCount"]
-
 # custom data class to contain all layers relating to endpoint json representation
 # as well as parsed and easy callable feilds based on names. 
 class fvCEp():
@@ -68,7 +54,6 @@ class fvCEp():
         self.fvRsVm = fvRsVm
         self.fvRsHyper = fvRsHyper
         self.ip = ip
-        #self.iplist = iplist
         self.fvIplist = fvIplist
         self.fvRsCEpToPathEp = fvRsCEpToPathEp
     def __repr__(self):
@@ -168,11 +153,6 @@ class compEpPConn():
     def __repr__(self):
         return self.epgPKey
 
-def get_Cookie():
-    global cookie
-    with open('/.aci/.sessions/.token', 'r') as f:
-        cookie = f.read()
-
 def gather_fvCEp_fullinfo(result):
     eplist = []
     fvRsVmobject = None
@@ -196,7 +176,6 @@ def gather_fvCEp_fullinfo(result):
                     fvRsCEpToPathEp_forceResolve = ceptopath['fvRsCEpToPathEp']['attributes']['forceResolve']
                     fvRsCEpToPathEplist.append(fvRsCEpToPathEp(forceResolve=fvRsCEpToPathEp_forceResolve, 
                                                             tDn=fvRsCEpToPathEp_tDn, lcC=fvRsCEpToPathEp_lcC))
-    
                 elif ceptopath.get('fvIp'):
                     fvIp_addr = ceptopath['fvIp']['attributes']['addr']
                     fvIp_rn = ceptopath['fvIp']['attributes']['rn']
@@ -216,7 +195,7 @@ def gather_fvCEp_fullinfo(result):
                     fvRsHyper_tDn = ceptopath['fvRsHyper']['attributes']['tDn']
                     fvRsHyperobject = fvRsHyper(state=fvRsHyper_state,
                                                 tDn=fvRsHyper_tDn)
-            # VMware learned endpoints have multiple fvRsCEpToPathEp 
+        # VMware learned endpoints have multiple fvRsCEpToPathEp 
         if len(fvRsCEpToPathEplist) > 1:
             for path in fvRsCEpToPathEplist:
                 if 'learned' in path.lcC:
@@ -254,7 +233,7 @@ def readable_dnpath(dnpath):
 def display_live_history_info(ipaddressEP, totalcount):
     url = """https://{apic}/mqapi2/troubleshoot.eptracker.json?ep={}&order-by=troubleshootEpTransition.date|desc""".format(ipaddressEP.dn,apic=apic)
     logger.info(str(url))
-    result, totalcount = GetResponseData(url)
+    result, totalcount = GetResponseData(url, cookie, return_count=True)
     if totalcount == '0':
         print('No current IP history found...check event history\n')
     else:
@@ -322,7 +301,7 @@ def eventhistory(address):
     elif len(address) >= 7 and len(address) <= 15 :
         url = """https://{apic}/api/node/class/eventRecord.json?query-target-filter=and(eq(eventRecord.code,"E4209236"))&query-target-filter=and(wcard(eventRecord.descr,"{address}$"))&order-by=eventRecord.created|desc&page=0&page-size=30""".format(address=address,apic=apic)
         logger.info(url)
-    result, totalcount = GetResponseData(url)
+    result, totalcount = GetResponseData(url, cookie, return_count=True)
     print('\n')
     if totalcount == '0':
         print("{:.<45}0\n".format("Searching Event Records"))
@@ -351,11 +330,11 @@ def display_vm_information(endpointobject, compVm):
             if endpointobject.fvRsHyper:
                 url = """https://{apic}/api/node/mo/{}.json""".format(endpointobject.fvRsHyper.tDn,apic=apic)
                 logger.info(url)
-                result, totalcount = GetResponseData(url)
+                result, totalcount = GetResponseData(url, cookie, return_count=True)
                 vmhostname = result[0]["compHv"]["attributes"]["name"]
                 url = """https://{apic}/api/node/mo/{}.json""".format(endpointobject.fvRsVm.tDn,apic=apic)
                 logger.info(url)
-                result, totalcount = GetResponseData(url)
+                result, totalcount = GetResponseData(url, cookie, return_count=True)
                 vmname = result[0]["compVm"]["attributes"]["name"]
                 vmpowerstate = result[0]["compVm"]["attributes"]["state"]
                 if vmhostname == '\x1b[1;37;41m****OLD INFORMATION PHASING OUT****\x1b[0m':
@@ -394,7 +373,7 @@ def find_and_display_current_location_info(macEP, totalcount, compVm=None):
 def vm_search_function(vm_name):
     url = """https://{apic}/api/node/class/compVm.json?query-target-filter=and(eq(compVm.name,"{}"))""".format(vm_name,apic=apic)
     logger.info(url)
-    result, totalcount = GetResponseData(url)
+    result, totalcount = GetResponseData(url, cookie, return_count=True)
     if totalcount == '0':
         print('\n')
         print("{:26}\t{:15}\t{:18}\t{}".format("Date", "encap-vlan", "Ip Address", "Mac Address"))
@@ -404,7 +383,7 @@ def vm_search_function(vm_name):
     else:
         url = """https://{apic}/api/node/class/fvRsVm.json""".format(apic=apic)
         logger.info(url)
-        fvRsVm_result, totalcount = GetResponseData(url)
+        fvRsVm_result, totalcount = GetResponseData(url, cookie, return_count=True)
         fvRsVmlist = []
         for vm in fvRsVm_result:
             vmstate = vm['fvRsVm']['attributes']['state']
@@ -415,7 +394,7 @@ def vm_search_function(vm_name):
         compVm_dn = result[0]['compVm']['attributes']['dn']
         url = """https://{apic}/api/mo/{}.json?rsp-subtree=full""".format(compVm_dn, apic=apic)
         logger.info(url)
-        result, totalcount = GetResponseData(url)
+        result, totalcount = GetResponseData(url, cookie, return_count=True)
         compVM = gather_compVM_info(result)
         k = filter(lambda x: x in  fvRsVmlist, compVM.compVNiclist)
         if len(compVM.compVNiclist) == 1:
@@ -445,12 +424,13 @@ def mac_path_function(mac, compVM=None):
     epglist =[]
     url = """https://{apic}/api/node/class/fvCEp.json?rsp-subtree=full&query-target-filter=eq(fvCEp.mac,"{}")""".format(mac,apic=apic)
     logger.info(url)
-    result, totalcount = GetResponseData(url)
+    result, totalcount = GetResponseData(url, cookie, return_count=True)
     if totalcount == '0' and compVM:
         print('\n')
         url = """https://{apic}/api/node/mo/{}.json""".format(compVM.host_rn_reference,apic=apic)
         logger.info(url)
-        result, totalcount = GetResponseData(url)
+        result, totalcount = GetResponseData(url, cookie, return_count=True)
+        logger.debug(result, totalcount)
         for vminterface in compVM.compVNiclist:
             if vminterface.mac == mac:
                 print("{:26}\t{:15}\t{:18}\t{}".format("Date", "encap-vlan", "Ip Address", "Mac Address"))
@@ -471,7 +451,7 @@ def mac_path_function(mac, compVM=None):
         for fvCEp in fvCEplist:
             url = """https://{apic}/api/node/mo/{}.json?rsp-subtree=full&target-subtree-class=fvCEp,fvRsCEpToPathEp,fvRsHyper,fvRsToNic,fvRsToVm""".format(fvCEp.dn,apic=apic)
             logger.info(url)
-            result, totalcount = GetResponseData(url)
+            result, totalcount = GetResponseData(url, cookie, return_count=True)
             completefvCEplist = gather_fvCEp_fullinfo(result)
             #Display current endpoint info
             find_and_display_current_location_info(completefvCEplist[0], totalcount,compVM)
@@ -500,11 +480,11 @@ def ip_path_function(ipaddr):
     totalcount2 = 1
     url = """https://{apic}/api/node/class/fvCEp.json?rsp-subtree=full&rsp-subtree-include=required&rsp-subtree-filter=eq(fvIp.addr,"{}")""".format(ipaddr,apic=apic)
     logger.info(url)
-    result, totalcount = GetResponseData(url)
+    result, totalcount = GetResponseData(url, cookie, return_count=True)
     if totalcount == '0':
         url = """https://{apic}/api/node/class/fvCEp.json?rsp-subtree=full&rsp-subtree-include=required&query-target-filter=eq(fvCEp.ip,"{}")""".format(ipaddr,apic=apic)
         logger.info(url)
-        result, totalcount2 = GetResponseData(url)
+        result, totalcount2 = GetResponseData(url, cookie, return_count=True)
     if totalcount2 == '0' :
         print('\n')
         print("{:26}\t{:15}\t{:18}\t{}".format("Date", "encap-vlan", "Ip Address", "Mac Address"))
@@ -516,7 +496,7 @@ def ip_path_function(ipaddr):
         for fvCEp in fvCEplist:
             url = """https://{apic}/api/node/mo/{}.json?rsp-subtree=full&target-subtree-class=fvCEp,fvRsCEpToPathEp,fvRsHyper,fvRsToNic,fvRsToVm""".format(fvCEp.dn,apic=apic)
             logger.info(url)
-            result, totalcount = GetResponseData(url)
+            result, totalcount = GetResponseData(url, cookie, return_count=True)
            # print(result)
             completefvCEplist = gather_fvCEp_fullinfo(result)
             #Display current endpoint info
@@ -535,13 +515,17 @@ def main(import_apic,import_cookie):
     while True:
         clear_screen()
         search = custom_raw_input("\nWhat is the IP, MAC, or VM name?: ")
+        logger.debug('raw_input: {}'.format(search))
         if re.match("[0-9a-f]{2}([-:]?)[0-9a-f]{2}(\\1[0-9a-f]{2}){4}$", search.lower()):
+            logger.debug('Matched MAC lookup')
             endpoint = search.upper()
             mac_path_function(endpoint)
         elif re.match(r"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$",search):
+            logger.debug('Matched IP lookup')
             endpoint = search
             ip_path_function(endpoint)
         else:
+            logger.debug('Matched VM lookup')
             endpoint = search
             endpoint = vm_search_function(endpoint)
         while True:

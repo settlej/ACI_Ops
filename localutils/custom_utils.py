@@ -3,6 +3,33 @@ import datetime
 import json
 import urllib2
 import ssl
+import logging
+
+# Create a custom logger
+# Allows logging to state detailed info such as module where code is running and 
+# specifiy logging levels for file vs console.  Set default level to DEBUG to allow more
+# grainular logging levels
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.CRITICAL)
+
+# Define logging handler for file and console logging.  Console logging can be desplayed during
+# program run time, similar to print.  Program can display or write to log file if more debug 
+# info needed.  DEBUG is lowest and will display all logging messages in program.  
+c_handler = logging.StreamHandler()
+f_handler = logging.FileHandler('file.log')
+c_handler.setLevel(logging.CRITICAL)
+f_handler.setLevel(logging.DEBUG)
+
+# Create formatters and add it to handlers.  This creates custom logging format such as timestamp,
+# module running, function, debug level, and custom text info (message) like print.
+c_format = logging.Formatter('%(name)s - %(levelname)s - %(message)s')
+f_format = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(funcName)s - %(message)s')
+c_handler.setFormatter(c_format)
+f_handler.setFormatter(f_format)
+
+# Add handlers to the parent custom logger
+logger.addHandler(c_handler)
+logger.addHandler(f_handler)
 
 def custom_raw_input(inputstr):
     r = raw_input(inputstr)
@@ -48,8 +75,9 @@ def GetResponseData(url, cookie, return_count=False):
     # the 'response' is an urllib2 object that needs to be read for JSON data, this loads the JSON to Python Dictionary format
     result = json.loads(response.read()) # here for this
     # return only infomation inside the dictionary under 'imdata'
+    logger.debug(result)
     if return_count == True:
-        return result
+        return result['imdata'], result['totalCount']
     else:
         return result['imdata'] #here for this
 

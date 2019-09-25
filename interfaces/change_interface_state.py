@@ -28,7 +28,7 @@ import logging
 # specifiy logging levels for file vs console.  Set default level to DEBUG to allow more
 # grainular logging levels
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 # Define logging handler for file and console logging.  Console logging can be desplayed during
 # program run time, similar to print.  Program can display or write to log file if more debug 
@@ -171,15 +171,6 @@ logger.addHandler(f_handler)
 #    return result['imdata'], None
 
 
-
-
-
-def get_Cookie():
-    global cookie
-    with open('/.aci/.sessions/.token', 'r') as f:
-        cookie = f.read()
-
-
 class fabricPathEp(object):
     def __init__(self, descr=None, dn=None,name=None, number=None):
         self.name = name
@@ -207,17 +198,11 @@ def grouper(iterable, n, fillvalue=''):
     args = [iter(iterable)] * n  # creates list * n so args is a list of iters for iterable
     return itertools.izip_longest(*args, fillvalue=fillvalue)
 
-#def clear_screen():
-#    if os.name == 'posix':
-#        clear_screen()
-#    else:
-#        os.system('cls')
-
 def menu():
     while True:
         clear_screen()
-        print("\nSelect interface type for shut/noshut/bounce: \n" + \
-          "\n\t1.) Physical Interfaces: \n" + \
+        print("\nSelect interface type for shut/noshut/bounce: \n\n" + \
+          "\t1.) Physical Interfaces: \n" + \
           "\t2.) PC Interfaces: \n" + \
           "\t3.) VPC Interfaces: \n")
         selection = custom_raw_input("Select number: ")
@@ -240,37 +225,6 @@ class pcObject():
             return self.name
         else:
             return None
-
-def get_All_EGPs():
-    ##get_Cookie()
-    epgdict = {}
-    url = """https://{apic}/api/node/class/fvAEPg.json""".format(apic=apic)
-    result = GetResponseData(url, cookie)
-    #print(json.dumps(result, indent=2))
-    epglist = [epg['fvAEPg']['attributes']['dn'] for epg in result]
-            #epgdict[epg['fvAEPg']['attributes']['name']] = epg['fvAEPg']['attributes']['dn']
-    #    epglist.append(epg['fvAEPg']['attributes']['dn'])
-    return epglist
-
-def get_All_PCs():
-    url = """https://{apic}/api/node/class/fabricPathEp.json?query-target-filter=and(not(wcard(fabricPathEp.dn,%22__ui_%22)),""" \
-          """eq(fabricPathEp.lagT,"link"))""".format(apic=apic)
-    result = GetResponseData(url, cookie)
-    return result
-
-def get_All_vPCs():
-    url = """https://{apic}/api/node/class/fabricPathEp.json?query-target-filter=and(not(wcard(fabricPathEp.dn,%22__ui_%22)),""" \
-          """and(eq(fabricPathEp.lagT,"node"),wcard(fabricPathEp.dn,"^topology/pod-[\d]*/protpaths-")))""".format(apic=apic)
-    result = GetResponseData(url, cookie)
-    return result
-
-def get_All_leafs():
-    url = """https://{apic}/api/node/class/fabricNode.json?query-target-filter=and(not(wcard(fabricNode.dn,%22__ui_%22)),""" \
-          """and(eq(fabricNode.role,"leaf"),eq(fabricNode.fabricSt,"active"),ne(fabricNode.nodeType,"virtual")))""".format(apic=apic)
-    result = GetResponseData(url, cookie)
-    #print(result)
-    return result
-
 
 def parseandreturnsingelist(liststring, collectionlist):
     try:
@@ -468,10 +422,10 @@ def main(import_apic, import_cookie):
         global cookie
         cookie = import_cookie
         apic = import_apic
-        allepglist = get_All_EGPs()
-        allpclist = get_All_PCs()
-        allvpclist = get_All_vPCs()
-        all_leaflist = get_All_leafs()
+        allepglist = get_All_EGPs(apic,cookie)
+        allpclist = get_All_PCs(apic,cookie)
+        allvpclist = get_All_vPCs(apic,cookie)
+        all_leaflist = get_All_leafs(apic,cookie)
     
         selection = menu()
     

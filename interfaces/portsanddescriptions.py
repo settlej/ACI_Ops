@@ -12,30 +12,56 @@ import trace
 import pdb
 import os
 from localutils.custom_utils import *
+import logging
 
-def GetRequest(url, icookie):
-    method = "GET"
-    cookies = 'APIC-cookie=' + icookie
-    request = urllib2.Request(url)
-    request.add_header("cookie", cookies)
-    request.add_header("Content-Type", "application/json")
-    request.add_header('Accept', 'application/json')
-    return urllib2.urlopen(request, context=ssl._create_unverified_context())
-def GetResponseData(url):
-    response = GetRequest(url, cookie)
-    result = json.loads(response.read())
-    return result['imdata'], result["totalCount"]
+# Create a custom logger
+# Allows logging to state detailed info such as module where code is running and 
+# specifiy logging levels for file vs console.  Set default level to DEBUG to allow more
+# grainular logging levels
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
-def get_Cookie():
-    global cookie
-    with open('/.aci/.sessions/.token', 'r') as f:
-        cookie = f.read()
+# Define logging handler for file and console logging.  Console logging can be desplayed during
+# program run time, similar to print.  Program can display or write to log file if more debug 
+# info needed.  DEBUG is lowest and will display all logging messages in program.  
+c_handler = logging.StreamHandler()
+f_handler = logging.FileHandler('file.log')
+c_handler.setLevel(logging.CRITICAL)
+f_handler.setLevel(logging.DEBUG)
 
-def get_All_leafs():
-    url = """https://{apic}/api/node/class/fabricNode.json?query-target-filter=and(not(wcard(fabricNode.dn,%22__ui_%22)),""" \
-          """and(eq(fabricNode.role,"leaf"),eq(fabricNode.fabricSt,"active"),ne(fabricNode.nodeType,"virtual")))""".format(apic=apic)
-    result, totalCount = GetResponseData(url)
-    return result
+# Create formatters and add it to handlers.  This creates custom logging format such as timestamp,
+# module running, function, debug level, and custom text info (message) like print.
+c_format = logging.Formatter('%(name)s - %(levelname)s - %(message)s')
+f_format = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(funcName)s - %(message)s')
+c_handler.setFormatter(c_format)
+f_handler.setFormatter(f_format)
+
+# Add handlers to the parent custom logger
+logger.addHandler(c_handler)
+logger.addHandler(f_handler)
+#def GetRequest(url, icookie):
+#    method = "GET"
+#    cookies = 'APIC-cookie=' + icookie
+#    request = urllib2.Request(url)
+#    request.add_header("cookie", cookies)
+#    request.add_header("Content-Type", "application/json")
+#    request.add_header('Accept', 'application/json')
+#    return urllib2.urlopen(request, context=ssl._create_unverified_context())
+#def GetResponseData(url, cookie):
+#    response = GetRequest(url, cookie)
+#    result = json.loads(response.read())
+#    return result['imdata'], result"]
+#
+#def get_Cookie():
+#    global cookie
+#    with open('/.aci/.sessions/.token', 'r') as f:
+#        cookie = f.read()
+#
+#def get_All_leafs():
+#    url = """https://{apic}/api/node/class/fabricNode.json?query-target-filter=and(not(wcard(fabricNode.dn,%22__ui_%22)),""" \
+#          """and(eq(fabricNode.role,"leaf"),eq(fabricNode.fabricSt,"active"),ne(fabricNode.nodeType,"virtual")))""".format(apic=apic)
+#    result = GetResponseData(url, cookie)
+#    return result
 
 class l1PhysIf():
     def __init__(self, **kwargs):
@@ -171,7 +197,7 @@ def pull_leaf_interfaces(leafs):
         url = """https://{apic}/api/node-{}/class/l1PhysIf.json?rsp-subtree-class=rmonIfIn,rmonIfOut,pcAggrMbrIf,ethpmPhysIf,l1PhysIf,rmonEtherStats&rsp-subtree=full""".format(leaf,apic=apic)
       #  url = """https://{apic}/api/class/l1PhysIf.json?rsp-subtree-class=rmonIfIn,pcAggrMbrIf,ethpmPhysIf,l1PhysIf&rsp-subtree=full""".format(leaf)
         #print(url)
-        result, totalcount = GetResponseData(url)
+        result = GetResponseData(url, cookie)
         leafdictwithresults[leaf] = result
         #leaf_interface_collection.append(leafdictwithresults)
     #for l in sorted(leafdictwithresults):
@@ -206,7 +232,7 @@ def match_port_channels_to_interfaces(interfaces, leaf):
     url = """https://{apic}/api/node/class/topology/pod-1/node-{}/pcAggrIf.json?rsp-subtree-include=relations&target-subtree-class=pcAggrIf,"""\
            """ethpmAggrIf&rsp-subtree=children&rsp-subtree-class=pcRsMbrIfs,ethpmAggrIf""".format(leaf,apic=apic)
   #  https://192.168.255.2/api/node/class/topology/pod-1/node-101/pcAggrIf.json?&target-subtree-class=pcAggrIf,ethpmAggrIf&rsp-subtree=children&rsp-subtree-class=pcRsMbrIfs,ethpmAggrIf
-    result, totalcount = GetResponseData(url)
+    result = GetResponseData(url, cookie)
     #print(result)
     for pc in result:
         pcinterface = pcAggrIf(**pc['pcAggrIf']['attributes'])
@@ -320,7 +346,7 @@ def main(import_apic,import_cookie):
         cookie = import_cookie
         apic = import_apic
         clear_screen()
-        leafs = leaf_selection(get_All_leafs())
+        leafs = leaf_selection(get_All_leafs(apic, cookie))
         leafallinterfacesdict = pull_leaf_interfaces(leafs)
         print_interfaces_layout(leafallinterfacesdict,leafs)
         raw_input('#Press enter to continue...')

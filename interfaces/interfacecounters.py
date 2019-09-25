@@ -14,45 +14,53 @@ import os
 import time
 import itertools
 from localutils.custom_utils import *
+import logging
 
 # Create a custom logger
+# Allows logging to state detailed info such as module where code is running and 
+# specifiy logging levels for file vs console.  Set default level to DEBUG to allow more
+# grainular logging levels
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
-# Create handlers
+# Define logging handler for file and console logging.  Console logging can be desplayed during
+# program run time, similar to print.  Program can display or write to log file if more debug 
+# info needed.  DEBUG is lowest and will display all logging messages in program.  
 c_handler = logging.StreamHandler()
 f_handler = logging.FileHandler('file.log')
-c_handler.setLevel(logging.WARNING)
-f_handler.setLevel(logging.ERROR)
+c_handler.setLevel(logging.CRITICAL)
+f_handler.setLevel(logging.DEBUG)
 
-# Create formatters and add it to handlers
+# Create formatters and add it to handlers.  This creates custom logging format such as timestamp,
+# module running, function, debug level, and custom text info (message) like print.
 c_format = logging.Formatter('%(name)s - %(levelname)s - %(message)s')
-f_format = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+f_format = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(funcName)s - %(message)s')
 c_handler.setFormatter(c_format)
 f_handler.setFormatter(f_format)
 
-# Add handlers to the logger
+# Add handlers to the parent custom logger
 logger.addHandler(c_handler)
 logger.addHandler(f_handler)
 
 
-def GetRequest(url, icookie):
-    method = "GET"
-    cookies = 'APIC-cookie=' + icookie
-    request = urllib2.Request(url)
-    request.add_header("cookie", cookies)
-    request.add_header("Content-Type", "application/json")
-    request.add_header('Accept', 'application/json')
-    return urllib2.urlopen(request, context=ssl._create_unverified_context())
-def GetResponseData(url):
-    response = GetRequest(url, cookie)
-    result = json.loads(response.read())
-    return result['imdata'], result["totalCount"]
-
-def get_All_leafs():
-    url = """https://{apic}/api/node/class/fabricNode.json?query-target-filter=and(not(wcard(fabricNode.dn,%22__ui_%22)),""" \
-          """and(eq(fabricNode.role,"leaf"),eq(fabricNode.fabricSt,"active"),ne(fabricNode.nodeType,"virtual")))""".format(apic=apic)
-    result, totalCount = GetResponseData(url)
-    return result
+#def GetRequest(url, icookie):
+#    method = "GET"
+#    cookies = 'APIC-cookie=' + icookie
+#    request = urllib2.Request(url)
+#    request.add_header("cookie", cookies)
+#    request.add_header("Content-Type", "application/json")
+#    request.add_header('Accept', 'application/json')
+#    return urllib2.urlopen(request, context=ssl._create_unverified_context())
+#def GetResponseData(url):
+#    response = GetRequest(url, cookie)
+#    result = json.loads(response.read())
+#    return result['imdata'], result["totalCount"]
+#
+#def get_All_leafs():
+#    url = """https://{apic}/api/node/class/fabricNode.json?query-target-filter=and(not(wcard(fabricNode.dn,%22__ui_%22)),""" \
+#          """and(eq(fabricNode.role,"leaf"),eq(fabricNode.fabricSt,"active"),ne(fabricNode.nodeType,"virtual")))""".format(apic=apic)
+#    result, totalCount = GetResponseData(url)
+#    return result
 
 def goodspacing(column):
     if column.fex:
@@ -131,71 +139,71 @@ class l1PhysIf():
     def __repr__(self):
         return self.interface
 
-class rmonIfIn:
-    def __init__(self, **kwargs):
-        self.__dict__.update(kwargs)
-    def __repr__(self):
-        return self.__dict__
-
-class rmonIfOut:
-    def __init__(self, **kwargs):
-        self.__dict__.update(kwargs)
-    def __repr__(self):
-        return self.__dict__
-
-class rmonEtherStats:
-    def __init__(self, **kwargs):
-        self.__dict__.update(kwargs)
-    def __repr__(self):
-        return self.__dict__
-
-class ethpmPhysIf:
-    def __init__(self, **kwargs):
-        self.__dict__.update(kwargs)
-    def __repr__(self):
-        return self.__dict__
-
-class fvDomDef:
-    def __init__(self, **kwargs):
-        self.__dict__.update(kwargs)
-    def __repr__(self):
-        return self.__dict__
-
-class l1RsAttEntityPCons:
-    def __init__(self, **kwargs):
-        self.__dict__.update(kwargs)
-    def __repr__(self):
-        return self.__dict__
-
-class l1RsCdpIfPolCons:
-    def __init__(self, **kwargs):
-        self.__dict__.update(kwargs)
-    def __repr__(self):
-        return self.__dict__
-
-class l1RtMbrIfs:
-    def __init__(self, **kwargs):
-        self.__dict__.update(kwargs)
-    def __repr__(self):
-        return self.__dict__
-
-class pcAggrMbrIf:
-    def __init__(self, **kwargs):
-        self.__dict__.update(kwargs)
-    def __repr__(self):
-        return self.__dict__
-
-class eqptIngrTotal5min:
-    def __init__(self, **kwargs):
-        self.__dict__.update(kwargs)
-    def __repr__(self):
-        return self.__dict__   
-
-class eqptEgrTotal5min:
-    def __init__(self, **kwargs):
-        self.__dict__.update(kwargs)
-    def __repr__(self):
-        return self.__dict__   
+#class rmonIfIn:
+#    def __init__(self, **kwargs):
+#        self.__dict__.update(kwargs)
+#    def __repr__(self):
+#        return self.__dict__
+#
+#class rmonIfOut:
+#    def __init__(self, **kwargs):
+#        self.__dict__.update(kwargs)
+#    def __repr__(self):
+#        return self.__dict__
+#
+#class rmonEtherStats:
+#    def __init__(self, **kwargs):
+#        self.__dict__.update(kwargs)
+#    def __repr__(self):
+#        return self.__dict__
+#
+#class ethpmPhysIf:
+#    def __init__(self, **kwargs):
+#        self.__dict__.update(kwargs)
+#    def __repr__(self):
+#        return self.__dict__
+#
+#class fvDomDef:
+#    def __init__(self, **kwargs):
+#        self.__dict__.update(kwargs)
+#    def __repr__(self):
+#        return self.__dict__
+#
+#class l1RsAttEntityPCons:
+#    def __init__(self, **kwargs):
+#        self.__dict__.update(kwargs)
+#    def __repr__(self):
+#        return self.__dict__
+#
+#class l1RsCdpIfPolCons:
+#    def __init__(self, **kwargs):
+#        self.__dict__.update(kwargs)
+#    def __repr__(self):
+#        return self.__dict__
+#
+#class l1RtMbrIfs:
+#    def __init__(self, **kwargs):
+#        self.__dict__.update(kwargs)
+#    def __repr__(self):
+#        return self.__dict__
+#
+#class pcAggrMbrIf:
+#    def __init__(self, **kwargs):
+#        self.__dict__.update(kwargs)
+#    def __repr__(self):
+#        return self.__dict__
+#
+#class eqptIngrTotal5min:
+#    def __init__(self, **kwargs):
+#        self.__dict__.update(kwargs)
+#    def __repr__(self):
+#        return self.__dict__   
+#
+#class eqptEgrTotal5min:
+#    def __init__(self, **kwargs):
+#        self.__dict__.update(kwargs)
+#    def __repr__(self):
+#        return self.__dict__   
 
 def physical_selection(all_leaflist,leaf=None):
     if leaf == None:
@@ -225,7 +233,7 @@ def physical_selection(all_leaflist,leaf=None):
         url = """https://{apic}/api/node/class/fabricPathEp.json?query-target-filter=and(not(wcard(fabricPathEp.dn,%22__ui_%22)),""" \
               """and(eq(fabricPathEp.lagT,"not-aggregated"),eq(fabricPathEp.pathT,"leaf"),wcard(fabricPathEp.dn,"topology/pod-1/paths-{leaf}/"),""" \
               """not(or(wcard(fabricPathEp.name,"^tunnel"),wcard(fabricPathEp.name,"^vfc")))))&order-by=fabricPathEp.dn|desc""".format(leaf=leaf,apic=apic)
-        result, totalcount = GetResponseData(url)
+        result = GetResponseData(url, cookie)
         compoundedleafresult.append(result)
     result = compoundedleafresult
     interfacelist = []
@@ -305,7 +313,7 @@ def main(import_apic,import_cookie):
     apic = import_apic
     while True:
 
-        all_leaflist = get_All_leafs()
+        all_leaflist = get_All_leafs(apic,cookie)
         if all_leaflist == []:
             print('\x1b[1;31;40mFailed to retrieve active leafs, make leafs are operational...\x1b[0m')
             custom_raw_input('\n#Press enter to continue...')
@@ -321,7 +329,7 @@ def main(import_apic,import_cookie):
         epgurl = """https://{apic}/api/node-{leaf}/mo/sys/phys-[{interface}].json?rsp-subtree-include=full-deployment&target-node=all&target-path=l1EthIfToEPg""".format(interface=str(interface),leaf=str(leaf),apic=apic)
         #url = """https://{apic}/api/node/mo/{path}.json?rsp-subtree-include=full-deployment&target-node=all&target-path=l1EthIfToEPg""".format(apic=apic,path=str(chosendestinterfaceobject[0]))
         #print(url)
-        epgresult, totalcount = GetResponseData(epgurl)
+        epgresult = GetResponseData(epgurl, cookie)
             
         url = """https://{apic}/api/node-{leaf}/mo/sys/phys-[{interface}].json?""".format(interface=str(interface),leaf=str(leaf),apic=apic) \
                   + """query-target=subtree&rsp-subtree-include=stats&target-subtree-class=rmonIfOut,l1PhysIf,""" \
@@ -330,42 +338,23 @@ def main(import_apic,import_cookie):
 
 #rsp-subtree-include=full-deployment&target-node=all&target-path=l1EthIfToEPg
            # query-target=subtree&rsp-subtree-include=stats&target-subtree-class=rmonIfOut,l1PhysIf,rmonIfIn,rmonEtherStats,ethpmPhysIf,l1RsAttEntityPCons,l1RsCdpIfPolCons,l1RtMbrIfs,pcAggrMbrIf,fvDomDef,eqptIngrTotal5min,eqptEgrTotal5min
-        result = GetResponseData(url)
+        result = GetResponseData(url, cookie)
             #print(result)
             #https://192.168.255.2/api/node-101/mo/sys/phys-[eth1/12].json?query-target=subtree&target-subtree-class=rmonIfOut,l1PhysIf,rmonIfIn,rmonEtherStats,ethpmPhysIf,l1RsAttEntityPCons,l1RsCdpIfPolCons,l1RtMbrIfs,pcAggrMbrIf,fvDomDef
             #for x in kk['imdata'][0]['l1PhysIf']['children']:    
             #     for y in x:
-        os.system('cls') 
+        clear_screen() 
         while True:   
             interfaceObject = l1PhysIf(interface)
-            for x in result[0]:
+            for x in result:
                 if x.get('rmonIfIn'):
                     interfaceObject.rmonIfIn = x['rmonIfIn']['attributes']
-                    #print(x['rmonIfIn']['attributes']['errors'])
-                    #print(x['rmonIfIn']['attributes']['octets'])
-                    #print(x['rmonIfIn']['attributes']['multicastPkts'])
                 elif x.get('rmonIfOut'):
                     interfaceObject.rmonIfOut = x['rmonIfOut']['attributes']
-                    #print(x['rmonIfOut']['attributes']['multicastPkts'])
-                    #print(x['rmonIfOut']['attributes']['errors'])
-                    #print(x['rmonIfOut']['attributes']['octets'])
-                    #print(x['rmonIfOut']['attributes']['broadcastPkts'])
                 elif x.get('rmonEtherStats'):
                     interfaceObject.rmonEtherStats =  x['rmonEtherStats']['attributes']
-                    #print(x['rmonEtherStats']['attributes']['cRCAlignErrors'])
-                    #print(x['rmonEtherStats']['attributes']['multicastPkts'])
-                    #print(x['rmonEtherStats']['attributes']['rxGiantPkts'])
-                    #print(x['rmonEtherStats']['attributes']['rxOversizePkts'])
-                    #print(x['rmonEtherStats']['attributes']['tXNoErrors'])
                 elif x.get('ethpmPhysIf'):
                     interfaceObject.ethpmPhysIf = x['ethpmPhysIf']['attributes']
-                    #print(x['ethpmPhysIf']['attributes']['backplaneMac'])
-                    #print(x['ethpmPhysIf']['attributes']['bundleIndex'])
-                    #print(x['ethpmPhysIf']['attributes']['operVlans'])
-                    #print(x['ethpmPhysIf']['attributes']['allowedVlans'])
-                    #print(x['ethpmPhysIf']['attributes']['operDuplex'])
-                    #print(x['ethpmPhysIf']['attributes']['operSpeed'])
-                    #print(x['ethpmPhysIf']['attributes']['operSt'])
                 elif x.get('l1PhysIf'):
                     interfaceObject.add_phys_attr(x['l1PhysIf']['attributes'])
                     for y in x['l1PhysIf']['children']:
@@ -373,44 +362,19 @@ def main(import_apic,import_cookie):
                             interfaceObject.eqptIngrTotal5min = y['eqptIngrTotal5min']['attributes']
                         elif y.get('eqptEgrTotal5min'):
                             interfaceObject.eqptEgrTotal5min = y['eqptEgrTotal5min']['attributes']
-                    #print(x['l1PhysIf']['attributes']['adminSt'])
-                    #print(x['l1PhysIf']['attributes']['autoNeg'])
-                    #print(x['l1PhysIf']['attributes']['layer'])
-                    #print(x['l1PhysIf']['attributes']['mtu'])
-                    #print(x['l1PhysIf']['attributes']['descr'])
-                    #print(x['l1PhysIf']['attributes']['spanMode'])
-                    #print(x['l1PhysIf']['attributes']['switchingSt'])
-                    #print(x['l1PhysIf']['attributes']['usage'])
-                    #print(x['l1PhysIf']['attributes']['speed'])
                 elif x.get('fvDomDef'):
                     interfaceObject.fvDomDef.append(x['fvDomDef']['attributes'])
-                    #['domPKey']
                 elif x.get('l1RsAttEntityPCons'):
                     interfaceObject.l1RsAttEntityPCons = x['l1RsAttEntityPCons']['attributes']
-                    #['tDn']
                 elif x.get('l1RsCdpIfPolCons'):
                     interfaceObject.l1RsCdpIfPolCons = x['l1RsCdpIfPolCons']['attributes']
-                    #['tDn']
                 elif x.get('l1RtMbrIfs'):
                     interfaceObject.l1RtMbrIfs.append(x['l1RtMbrIfs']['attributes'])
-                    #['tDn']
-                    #print(x['l1RtMbrIfs']['attributes']['tSKey'])
                 elif x.get('pcAggrMbrIf'):
                     interfaceObject.pcAggrMbrIf.append(x['pcAggrMbrIf']['attributes'])
-                    #['pcMode']
-                    #print(x['pcAggrMbrIf']['attributes']['operSt'])
-            #    if x.get('l1PhysIf'):
-
-
-             #   elif x.get('eqptEgrTotal5min'):
-              #      interfaceObject.eqptEgrTotal5min = x['eqptEgrTotal5min']['attributes']
-
-            #if 
-            #print(url)
             print('\n {} is {}, line protocol is {}'.format(interface.capitalize(),interfaceObject.adminSt,interfaceObject.ethpmPhysIf['operSt']))
             print(' Description: {}'.format(interfaceObject.descr))
             print(' MAC: {}'.format(interfaceObject.ethpmPhysIf['backplaneMac']))
-
             print(' Speed: {}, Duplex: {}, MTU: {}'.format(interfaceObject.ethpmPhysIf['operSpeed'],interfaceObject.ethpmPhysIf['operDuplex'].upper(),interfaceObject.mtu)) 
             print(' Auto negotiation: {}'.format(interfaceObject.autoNeg))
             print(' Operational layer: {}'.format(interfaceObject.layer))
@@ -419,8 +383,8 @@ def main(import_apic,import_cookie):
                 print(' Portchannal #: {}, Po name: (incomplete)'.format(interfaceObject.ethpmPhysIf['bundleIndex']))
                 #if interfaceObject.l1RtMbrIfs:
                  #   for interf in interfaceObject.l1RtMbrIfs:
-                        #print(i nterf['tDn'])
-                        #print(i nterf['tSKey'])
+                        #print(interf['tDn'])
+                        #print(interf['tSKey'])
                 if interfaceObject.pcAggrMbrIf:
                     for interf in interfaceObject.pcAggrMbrIf:
                         print('   Port-Channel Type: {}'.format(interf['pcMode']))
@@ -467,51 +431,11 @@ def main(import_apic,import_cookie):
          #       for interf in interfaceObject.pcAggrMbrIf:
          #           print(interf['pcMode'])
          #           print(interf['operSt'])
-       #     print('input errors: {}'.format(interfaceObject.ethpmPhysIf['allowedVlans']))
-       #     print('input errors: {}'.format(interfaceObject.ethpmPhysIf['operDuplex']))
-       #     print('input errors: {}'.format(interfaceObject.ethpmPhysIf['operSpeed']))
-       #     print('input errors: {}'.format(interfaceObject.ethpmPhysIf['operSt']))
-       #     print('input errors: {}'.format(interfaceObject.autoNeg))
-       #     print('input errors: {}'.format(interfaceObject.layer))
-       #     print('input errors: {}'.format(interfaceObject.mtu))
-       #     print('input errors: {}'.format(interfaceObject.descr))
-       #     print('input errors: {}'.format(interfaceObject.spanMode))
-       #     print('input errors: {}'.format(interfaceObject.switchingSt))
-       #     print('input errors: {}'.format(interfaceObject.usage))
-       #     print('input errors: {}'.format(interfaceObject.speed))
-       #     print('input errors: {}'.format(interfaceObject.rmonIfIn['errors']))
-       #     print('input errors: {}'.format(interfaceObject.rmonIfIn['octets']))
-       #     print('input errors: {}'.format(interfaceObject.rmonIfIn['multicastPkts']))
-       #     print('input errors: {}'.format(interfaceObject.rmonIfIn['broadcastPkts']))
-#
-       #     print('input errors: {}'.format(interfaceObject.rmonIfOut['multicastPkts']))
-       #     print('input errors: {}'.format(interfaceObject.rmonIfOut['errors']))
-       #     print('input errors: {}'.format(interfaceObject.rmonIfOut['octets']))
-       #     print('input errors: {}'.format(interfaceObject.rmonIfOut['broadcastPkts']))
-       #     print('input errors: {}'.format(interfaceObject.rmonEtherStats['cRCAlignErrors']))
-       #     print('input errors: {}'.format(interfaceObject.rmonEtherStats['multicastPkts']))
-       #     print('input errors: {}'.format(interfaceObject.rmonEtherStats['rxGiantPkts']))
-       #     print('input errors: {}'.format(interfaceObject.rmonEtherStats['rxOversizePkts']))
-       #     print('input errors: {}'.format(interfaceObject.rmonEtherStats['rXNoErrors']))
-       #     print('input errors: {}'.format(interfaceObject.rmonEtherStats['collisions']))
-       #     print('input errors: {}'.format(interfaceObject.rmonEtherStats['dropEvents']))
-       #     print('input errors: {}'.format(interfaceObject.rmonEtherStats['fragments']))
-       #     print('input errors: {}'.format(interfaceObject.rmonEtherStats['jabbers']))
-       #     print('input errors: {}'.format(interfaceObject.rmonEtherStats['jabbers']))
-
-
-
-
-            epgresult, totalcount = GetResponseData(epgurl)
-            result = GetResponseData(url)
+            epgresult = GetResponseData(epgurl, cookie)
+            result = GetResponseData(url, cookie)
             time.sleep(6)
-            os.system('cls')
+            clear_screen()
 
-#
-#
-#
-#
-#
 #['rmonifIn']['attributes'][errors'] == rx inpur errors
 #elif x.get('rmonIfIn'):
 #    print(x['rmonIfIn']['attributes']['bytes']) == rx bytes
