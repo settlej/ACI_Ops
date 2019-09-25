@@ -27,48 +27,76 @@ import information.routetranslation as epg_troubleshooting
 import information.routetranslation as routetranslation
 import information.routetrace as check_routing
 import information.show_static_routes as show_static_routes
-
 import configuration.create_local_span_session as create_local_span_session
 
 
 
 
-
+# getToken is used if application is run on local machine and not directly on APIC server
+# apic key word will be a string ipaddress
 def getToken(apic, user, pwd):
+    # Set ssl certificate to automatically verify and proceed 
     ssl._create_default_https_context = ssl._create_unverified_context
+    # url POST request to login to APIC and recieve cookie hash
     url = "https://{apic}/api/aaaLogin.json".format(apic=apic)
+    # POST Login requires user creds provided in the data section of url request
     payload = '{"aaaUser":{"attributes":{"name":"%(user)s","pwd":"%(pwd)s"}}}' % {"pwd":pwd,"user":user}
     request = urllib2.Request(url, data=payload)
+    # If APIC is unreachable within 4 sec cancel URL request to server, prevents long timeouts on wrong input
     response = urllib2.urlopen(request, timeout=4)
+    # If successful response transfer informaton to a dictionary format using 'loads'
     token = json.loads(response.read())
+    # Set global variable to access 'cookie' everywhere in current module
     global cookie
     cookie = token["imdata"][0]["aaaLogin"]["attributes"]["token"]
     #return cookie
 
+# Allows automatic APIC session cookie for URL requests if ssh to server 
+# and program run directly on server, prevents two logins
 def getCookie():
+    # location of session token/cookie, open as read-only
     with open('/.aci/.sessions/.token', 'r') as f:
+        # Set global variable to access 'cookie' everywhere in current module
         global cookie
         cookie = f.read()
-        return cookie
+        # Currently unnecessary but 'return' provided until decision for global to be removed or not 
+        return cookie # str
 
+# Test if script is run on APIC or on local computer
 def localOrRemote():
+    # If path exisits the program is running on APIC server and bypass login
     if os.path.isfile('/.aci/.sessions/.token'):
+        # APIC requires IP in urlpath to use a loopback address with said token above
         apic = "localhost"
+        # Set global variable to access 'cookie' everywhere in current module
         global cookie
         cookie = getCookie()
-        return apic, cookie
+        # return apic hostname and discovered cookie
+        return apic, cookie # str , str
     else:
+        # if '.token' file doesn't exist than prompt APIC ip and username/password login.
+        # Set defaults variables before login, allow variable to change if login attempts fail.
+        # if both are False the first to 'if' conditions will not match, cause haven't attempted login.
         unauthenticated = False
         timedout = False
+        # error value required to prevent Exception stating error variable not defined for use below
         error = ''
+        # Loop for login Attempts, requires 'break' to exit loop
         while True:
+            # Clear console ouput creating clean login screen for login attempt
             clear_screen()
             if unauthenticated:
+                # print error reason after cleared console screen
                 print(error)
+                # reset unauthenticated to prevent 'if' capture if failure is a different reason
                 unauthenticated = False
+            # Server doesn't respond in time to login request (unreachable default 4 sec)
             elif timedout:
+                # print error reason after cleared console screen
                 print(error)
+                # reask IP in cause IP typed incorrectly
                 apic = raw_input("Enter IP address or FQDN of APIC: ")
+                # reset time
                 timedout = False
             else:
                 print(error)

@@ -10,10 +10,29 @@ import json
 import ssl
 import trace
 import os
-import pdb
 from localutils.custom_utils import *
+import logging
 
-#ipaddr = None
+# Create a custom logger
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
+# Create handlers
+c_handler = logging.StreamHandler()
+f_handler = logging.FileHandler('file.log')
+c_handler.setLevel(logging.WARNING)
+f_handler.setLevel(logging.DEBUG)
+
+# Create formatters and add it to handlers
+c_format = logging.Formatter('%(name)s - %(levelname)s - %(message)s')
+f_format = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(funcName)s - %(message)s')
+c_handler.setFormatter(c_format)
+f_handler.setFormatter(f_format)
+
+# Add handlers to the logger
+logger.addHandler(c_handler)
+logger.addHandler(f_handler)
+
 
 def GetRequest(url, icookie):
     method = "GET"
@@ -223,7 +242,7 @@ def readable_dnpath(dnpath):
 
 def display_live_history_info(ipaddressEP, totalcount):
     url = """https://{apic}/mqapi2/troubleshoot.eptracker.json?ep={}&order-by=troubleshootEpTransition.date|desc""".format(ipaddressEP.dn,apic=apic)
-    #logger.info(url)
+    logger.info(str(url))
     result, totalcount = GetResponseData(url)
     if totalcount == '0':
         print('No current IP history found...check event history\n')
@@ -288,10 +307,10 @@ def eventhistory(address):
     #event record code E4209236 is "ip detached event"
     if len(address) == 17:
         url = """https://{apic}/api/node/class/eventRecord.json?query-target-filter=and(eq(eventRecord.code,"E4209236"))&query-target-filter=and(wcard(eventRecord.dn,"cep-{address}"))&order-by=eventRecord.created|desc&page=0&page-size=30""".format(address=address,apic=apic)
-        #logger.info(url)
+        logger.info(url)
     elif len(address) >= 7 and len(address) <= 15 :
         url = """https://{apic}/api/node/class/eventRecord.json?query-target-filter=and(eq(eventRecord.code,"E4209236"))&query-target-filter=and(wcard(eventRecord.descr,"{address}$"))&order-by=eventRecord.created|desc&page=0&page-size=30""".format(address=address,apic=apic)
-        #logger.info(url)
+        logger.info(url)
         result, totalcount = GetResponseData(url)
     print('\n')
     if totalcount == '0':
@@ -322,11 +341,11 @@ def display_vm_information(endpointobject, compVm):
             #pdb.set_trace()
             if endpointobject.fvRsHyper:
                 url = """https://{apic}/api/node/mo/{}.json""".format(endpointobject.fvRsHyper.tDn,apic=apic)
-                #logger.info(url)
+                logger.info(url)
                 result, totalcount = GetResponseData(url)
                 vmhostname = result[0]["compHv"]["attributes"]["name"]
                 url = """https://{apic}/api/node/mo/{}.json""".format(endpointobject.fvRsVm.tDn,apic=apic)
-                #logger.info(url)
+                logger.info(url)
                 result, totalcount = GetResponseData(url)
                 vmname = result[0]["compVm"]["attributes"]["name"]
                 vmpowerstate = result[0]["compVm"]["attributes"]["state"]
@@ -365,7 +384,7 @@ def find_and_display_current_location_info(macEP, totalcount, compVm=None):
 
 def vm_search_function(vm_name):
     url = """https://{apic}/api/node/class/compVm.json?query-target-filter=and(eq(compVm.name,"{}"))""".format(vm_name,apic=apic)
-    #logger.info(url)
+    logger.info(url)
     result, totalcount = GetResponseData(url)
     if totalcount == '0':
         print('\n')
@@ -375,7 +394,7 @@ def vm_search_function(vm_name):
         print('\n')
     else:
         url = """https://{apic}/api/node/class/fvRsVm.json""".format(apic=apic)
-        #logger.info(url)
+        logger.info(url)
         fvRsVm_result, totalcount = GetResponseData(url)
         fvRsVmlist = []
         for vm in fvRsVm_result:
@@ -386,7 +405,7 @@ def vm_search_function(vm_name):
                 fvRsVmlist.append(fvRsVm(state=vmstate,dn=vmdn,tDn=vmtDn))
         compVm_dn = result[0]['compVm']['attributes']['dn']
         url = """https://{apic}/api/mo/{}.json?rsp-subtree=full""".format(compVm_dn, apic=apic)
-        #logger.info(url)
+        logger.info(url)
         result, totalcount = GetResponseData(url)
         compVM = gather_compVM_info(result)
         k = filter(lambda x: x in  fvRsVmlist, compVM.compVNiclist)
@@ -415,12 +434,12 @@ def vm_search_function(vm_name):
 def mac_path_function(mac, compVM=None):
     epglist =[]
     url = """https://{apic}/api/node/class/fvCEp.json?query-target-filter=eq(fvCEp.mac,"{}")""".format(mac,apic=apic)
-    #logger.info(url)
+    logger.info(url)
     result, totalcount = GetResponseData(url)
     if totalcount == '0' and compVM:
         print('\n')
         url = """https://{apic}/api/node/mo/{}.json""".format(compVM.host_rn_reference,apic=apic)
-        #logger.info(url)
+        logger.info(url)
         result, totalcount = GetResponseData(url)
         for vminterface in compVM.compVNiclist:
             if vminterface.mac == mac:
@@ -441,7 +460,7 @@ def mac_path_function(mac, compVM=None):
         fvCEplist = gather_fvCEp_fullinfo(result)
         for fvCEp in fvCEplist:
             url = """https://{apic}/api/node/mo/{}.json?rsp-subtree=full&target-subtree-class=fvCEp,fvRsCEpToPathEp,fvRsHyper,fvRsToNic,fvRsToVm""".format(fvCEp.dn,apic=apic)
-            #logger.info(url)
+            logger.info(url)
             result, totalcount = GetResponseData(url)
             completefvCEplist = gather_fvCEp_fullinfo(result)
             #Display current endpoint info
@@ -470,11 +489,11 @@ def mac_path_function(mac, compVM=None):
 def ip_path_function(ipaddr):
     totalcount2 = 1
     url = """https://{apic}/api/node/class/fvCEp.json?rsp-subtree=full&rsp-subtree-include=required&rsp-subtree-filter=eq(fvIp.addr,"{}")""".format(ipaddr,apic=apic)
-    #logger.info(url)
+    logger.info(url)
     result, totalcount = GetResponseData(url)
     if totalcount == '0':
         url = """https://{apic}/api/node/class/fvCEp.json?rsp-subtree=full&rsp-subtree-include=required&query-target-filter=eq(fvCEp.ip,"{}")""".format(ipaddr,apic=apic)
-        #logger.info(url)
+        logger.info(url)
         result, totalcount2 = GetResponseData(url)
     if totalcount2 == '0' :
         print('\n')
@@ -486,7 +505,7 @@ def ip_path_function(ipaddr):
         fvCEplist = gather_fvCEp_fullinfo(result)
         for fvCEp in fvCEplist:
             url = """https://{apic}/api/node/mo/{}.json?rsp-subtree=full&target-subtree-class=fvCEp,fvRsCEpToPathEp,fvRsHyper,fvRsToNic,fvRsToVm""".format(fvCEp.dn,apic=apic)
-            #logger.info(url)
+            logger.info(url)
             result, totalcount = GetResponseData(url)
            # print(result)
             completefvCEplist = gather_fvCEp_fullinfo(result)

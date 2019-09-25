@@ -9,6 +9,7 @@ import urllib2
 import json
 import ssl
 import os
+import logging
 import ipaddress
 from collections import namedtuple
 from localutils.custom_utils import *
