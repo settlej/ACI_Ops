@@ -196,6 +196,7 @@ def gather_fvCEp_fullinfo(result):
                     fvRsCEpToPathEp_forceResolve = ceptopath['fvRsCEpToPathEp']['attributes']['forceResolve']
                     fvRsCEpToPathEplist.append(fvRsCEpToPathEp(forceResolve=fvRsCEpToPathEp_forceResolve, 
                                                             tDn=fvRsCEpToPathEp_tDn, lcC=fvRsCEpToPathEp_lcC))
+    
                 elif ceptopath.get('fvIp'):
                     fvIp_addr = ceptopath['fvIp']['attributes']['addr']
                     fvIp_rn = ceptopath['fvIp']['attributes']['rn']
@@ -216,12 +217,14 @@ def gather_fvCEp_fullinfo(result):
                     fvRsHyperobject = fvRsHyper(state=fvRsHyper_state,
                                                 tDn=fvRsHyper_tDn)
             # VMware learned endpoints have multiple fvRsCEpToPathEp 
-            if fvRsCEpToPathEplist > 1:
-                for path in fvRsCEpToPathEplist:
-                    if 'learned' in path.lcC:
-                        fvRsCEpToPathEpobject = path
-            else:
-                fvRsCEpToPathEpobject = fvRsCEpToPathEplist[0]
+        if len(fvRsCEpToPathEplist) > 1:
+            for path in fvRsCEpToPathEplist:
+                if 'learned' in path.lcC:
+                    fvRsCEpToPathEpobject = path
+        elif len(fvRsCEpToPathEplist) == 1:
+            fvRsCEpToPathEpobject = fvRsCEpToPathEplist[0]
+        else:
+            fvRsCEpToPathEpobject = None
         eplist.append(fvCEp(mac=mac, name=name, encap=encap,
                                 lcC=lcC, dn=dn, fvRsVm=fvRsVmobject, fvRsCEpToPathEp=fvRsCEpToPathEpobject, 
                                 ip=ip, fvRsHyper=fvRsHyperobject, fvIplist=fvIplist))
@@ -319,7 +322,7 @@ def eventhistory(address):
     elif len(address) >= 7 and len(address) <= 15 :
         url = """https://{apic}/api/node/class/eventRecord.json?query-target-filter=and(eq(eventRecord.code,"E4209236"))&query-target-filter=and(wcard(eventRecord.descr,"{address}$"))&order-by=eventRecord.created|desc&page=0&page-size=30""".format(address=address,apic=apic)
         logger.info(url)
-        result, totalcount = GetResponseData(url)
+    result, totalcount = GetResponseData(url)
     print('\n')
     if totalcount == '0':
         print("{:.<45}0\n".format("Searching Event Records"))
@@ -343,10 +346,8 @@ def eventhistory(address):
 
 
 def display_vm_information(endpointobject, compVm):
-        #pdb.set_trace()
         if endpointobject.fvRsVm:
             vmhostname = '\x1b[1;37;41m****OLD INFORMATION PHASING OUT****\x1b[0m'
-            #pdb.set_trace()
             if endpointobject.fvRsHyper:
                 url = """https://{apic}/api/node/mo/{}.json""".format(endpointobject.fvRsHyper.tDn,apic=apic)
                 logger.info(url)
@@ -419,6 +420,7 @@ def vm_search_function(vm_name):
         k = filter(lambda x: x in  fvRsVmlist, compVM.compVNiclist)
         if len(compVM.compVNiclist) == 1:
             mac_path_function(compVM.compVNiclist[0].mac, compVM=compVM)
+            return compVM.compVNiclist[0].mac
         else:
             compVM.compVNiclist = sorted(compVM.compVNiclist, key=lambda x: x.name)
             print('\n')
@@ -441,7 +443,7 @@ def vm_search_function(vm_name):
 
 def mac_path_function(mac, compVM=None):
     epglist =[]
-    url = """https://{apic}/api/node/class/fvCEp.json?query-target-filter=eq(fvCEp.mac,"{}")""".format(mac,apic=apic)
+    url = """https://{apic}/api/node/class/fvCEp.json?rsp-subtree=full&query-target-filter=eq(fvCEp.mac,"{}")""".format(mac,apic=apic)
     logger.info(url)
     result, totalcount = GetResponseData(url)
     if totalcount == '0' and compVM:
