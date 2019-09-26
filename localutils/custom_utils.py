@@ -37,6 +37,7 @@ def custom_raw_input(inputstr):
         raise KeyboardInterrupt
     else:
         return r
+        
 def clear_screen():
     if os.name == 'posix':
         os.system('clear')
@@ -53,6 +54,24 @@ def refreshToken(apic,icookie):
     response = urllib2.urlopen(request, timeout=4)
     result = json.loads(response.read())
     return result["imdata"][0]["aaaLogin"]["attributes"]["token"]
+
+#############################################################################################################################################
+#                               What does this program do
+#                               What are you trying to accomplish
+#                               Who program the damn thing
+#                               What version you are on
+#                               Date Created
+#                               Date Last time modify
+#############################################################################################################################################
+
+#############################################################################################################################################
+#                               What does this def do period
+#                               Who program the damn thing
+#                               What version you are on
+#                               Date Created
+#                               Date Last time modify
+#############################################################################################################################################
+
 
 def GetRequest(url, icookie):
     # Function to Perform HTTP Get REST calls and return server recieved data in an http object
@@ -118,6 +137,21 @@ def POSTRequest(url, data, icookie):
         #print(urle.code)
         failure_reason = json.loads(urle.read())
         return 'invalid', failure_reason
+
+def interface_menu():
+    while True:
+        clear_screen()
+        print("\nSelect interface for removing EPGs: \n\n" + \
+          "\t1.) Physical Interfaces: \n" + \
+          "\t2.) PC Interfaces: \n" + \
+          "\t3.) VPC Interfaces: \n")
+        selection = custom_raw_input("Select number: ")
+        print('\r')
+        if selection.isdigit() and selection != '' and 1 <= int(selection) <= 3:
+            break
+        else:
+            continue
+    return selection 
 #
 ##def getCookie():
 ##    global cookie

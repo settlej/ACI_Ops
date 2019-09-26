@@ -49,7 +49,7 @@ def getToken(apic, user, pwd):
     # Set global variable to access 'cookie' everywhere in current module
     global cookie
     cookie = token["imdata"][0]["aaaLogin"]["attributes"]["token"]
-    #return cookie
+    return cookie
 
 # Allows automatic APIC session cookie for URL requests if ssh to server 
 # and program run directly on server, prevents two logins
@@ -74,53 +74,60 @@ def localOrRemote():
         # return apic hostname and discovered cookie
         return apic, cookie # str , str
     else:
-        # if '.token' file doesn't exist than prompt APIC ip and username/password login.
-        # Set defaults variables before login, allow variable to change if login attempts fail.
-        # if both are False the first to 'if' conditions will not match, cause haven't attempted login.
-        unauthenticated = False
-        timedout = False
-        # error value required to prevent Exception stating error variable not defined for use below
-        error = ''
-        # Loop for login Attempts, requires 'break' to exit loop
-        while True:
-            # Clear console ouput creating clean login screen for login attempt
-            clear_screen()
-            if unauthenticated:
-                # print error reason after cleared console screen
-                print(error)
-                # reset unauthenticated to prevent 'if' capture if failure is a different reason
-                unauthenticated = False
-            # Server doesn't respond in time to login request (unreachable default 4 sec)
-            elif timedout:
-                # print error reason after cleared console screen
-                print(error)
-                # reask IP in cause IP typed incorrectly
-                apic = raw_input("Enter IP address or FQDN of APIC: ")
-                # reset time
-                timedout = False
-            else:
-                print(error)
-                apic = raw_input("\nEnter IP address or FQDN of APIC: ")
-            try:
-                user = raw_input('\nUsername: ')
-                pwd = getpass.getpass('Password: ')
-                getToken(apic, user,pwd)
-            except urllib2.HTTPError as auth:
-                unauthenticated = True
-                error = '\n\x1b[1;31;40mAuthentication failed\x1b[0m\n'
-                continue
-            except urllib2.URLError as e:
-                timedout = True
-                error = "\n\x1b[1;31;40mThere was an '%s' error connecting to APIC '%s'\x1b[0m\n" % (e.reason,apic)
-                continue
-            except KeyboardInterrupt as k:
-                print("\nEnding Program\n")
-                exit()
-            except Exception as e:
-                print(e)
-                print("\n\x1b[1;31;40mError has occured, please try again\x1b[0m\n")
-                continue
-            break
+        if os.environ.get('apic'):
+            user = os.environ.get('user')
+            pwd = os.environ.get('pass')
+            apic = os.environ.get('apic')
+            cookie = getToken(apic,user,pwd)
+            return apic, cookie
+        else:    
+            # if '.token' file doesn't exist than prompt APIC ip and username/password login.
+            # Set defaults variables before login, allow variable to change if login attempts fail.
+            # if both are False the first to 'if' conditions will not match, cause haven't attempted login.
+            unauthenticated = False
+            timedout = False
+            # error value required to prevent Exception stating error variable not defined for use below
+            error = ''
+            # Loop for login Attempts, requires 'break' to exit loop
+            while True:
+                # Clear console ouput creating clean login screen for login attempt
+                clear_screen()
+                if unauthenticated:
+                    # print error reason after cleared console screen
+                    print(error)
+                    # reset unauthenticated to prevent 'if' capture if failure is a different reason
+                    unauthenticated = False
+                # Server doesn't respond in time to login request (unreachable default 4 sec)
+                elif timedout:
+                    # print error reason after cleared console screen
+                    print(error)
+                    # reask IP in cause IP typed incorrectly
+                    apic = raw_input("Enter IP address or FQDN of APIC: ")
+                    # reset time
+                    timedout = False
+                else:
+                    print(error)
+                    apic = raw_input("\nEnter IP address or FQDN of APIC: ")
+                try:
+                    user = raw_input('\nUsername: ')
+                    pwd = getpass.getpass('Password: ')
+                    getToken(apic, user,pwd)
+                except urllib2.HTTPError as auth:
+                    unauthenticated = True
+                    error = '\n\x1b[1;31;40mAuthentication failed\x1b[0m\n'
+                    continue
+                except urllib2.URLError as e:
+                    timedout = True
+                    error = "\n\x1b[1;31;40mThere was an '%s' error connecting to APIC '%s'\x1b[0m\n" % (e.reason,apic)
+                    continue
+                except KeyboardInterrupt as k:
+                    print("\nEnding Program\n")
+                    exit()
+                except Exception as e:
+                    print(e)
+                    print("\n\x1b[1;31;40mError has occured, please try again\x1b[0m\n")
+                    continue
+                break
     return apic, cookie
 
 def reauthenticate(apic, error):

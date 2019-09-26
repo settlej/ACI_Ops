@@ -39,29 +39,6 @@ f_handler.setFormatter(f_format)
 # Add handlers to the parent custom logger
 logger.addHandler(c_handler)
 logger.addHandler(f_handler)
-#def GetRequest(url, icookie):
-#    method = "GET"
-#    cookies = 'APIC-cookie=' + icookie
-#    request = urllib2.Request(url)
-#    request.add_header("cookie", cookies)
-#    request.add_header("Content-Type", "application/json")
-#    request.add_header('Accept', 'application/json')
-#    return urllib2.urlopen(request, context=ssl._create_unverified_context())
-#def GetResponseData(url, cookie):
-#    response = GetRequest(url, cookie)
-#    result = json.loads(response.read())
-#    return result['imdata'], result"]
-#
-#def get_Cookie():
-#    global cookie
-#    with open('/.aci/.sessions/.token', 'r') as f:
-#        cookie = f.read()
-#
-#def get_All_leafs():
-#    url = """https://{apic}/api/node/class/fabricNode.json?query-target-filter=and(not(wcard(fabricNode.dn,%22__ui_%22)),""" \
-#          """and(eq(fabricNode.role,"leaf"),eq(fabricNode.fabricSt,"active"),ne(fabricNode.nodeType,"virtual")))""".format(apic=apic)
-#    result = GetResponseData(url, cookie)
-#    return result
 
 class l1PhysIf():
     def __init__(self, **kwargs):

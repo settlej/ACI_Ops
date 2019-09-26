@@ -1,12 +1,4 @@
 #!/bin//python
-#############################################################################################################################################
-#                               What does this program do
-#                               What are you trying to accomplish
-#                               Who program the damn thing
-#                               What version you are on
-#                               Date Created
-#                               Date Last time modify
-#############################################################################################################################################
 
 import re
 try:
@@ -21,87 +13,33 @@ import itertools
 import threading
 import Queue
 from localutils.custom_utils import *
+import logging
 
+# Create a custom logger
+# Allows logging to state detailed info such as module where code is running and 
+# specifiy logging levels for file vs console.  Set default level to DEBUG to allow more
+# grainular logging levels
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
-#############################################################################################################################################
-#                               What does this def do period
-#                               Who program the damn thing
-#                               What version you are on
-#                               Date Created
-#                               Date Last time modify
-#############################################################################################################################################
+# Define logging handler for file and console logging.  Console logging can be desplayed during
+# program run time, similar to print.  Program can display or write to log file if more debug 
+# info needed.  DEBUG is lowest and will display all logging messages in program.  
+c_handler = logging.StreamHandler()
+f_handler = logging.FileHandler('file.log')
+c_handler.setLevel(logging.CRITICAL)
+f_handler.setLevel(logging.DEBUG)
 
-def GetRequest(url, icookie):
-    # Function to Perform HTTP Get REST calls and return server recieved data in an http object
-    method = "GET"
-    # icookie comes from the GetResponseData fuction that references 'cookie' which is a global variable from reading /.aci/.sessions/.token
-    cookies = 'APIC-cookie=' + icookie
-    # create urllib2 object to add headers and cookies
-    request = urllib2.Request(url)
-    # Function needs APIC cookie for authentication and what content format you need in returned http object (example JSON)
-    # need to add header one at a time in urllib2
-    request.add_header("cookie", cookies)
-    request.add_header("Content-Type", "application/json")
-    request.add_header('Accept', 'application/json')
-    return urllib2.urlopen(request, context=ssl._create_unverified_context())
+# Create formatters and add it to handlers.  This creates custom logging format such as timestamp,
+# module running, function, debug level, and custom text info (message) like print.
+c_format = logging.Formatter('%(name)s - %(levelname)s - %(message)s')
+f_format = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(funcName)s - %(message)s')
+c_handler.setFormatter(c_format)
+f_handler.setFormatter(f_format)
 
-#############################################################################################################################################
-#                               What does this def do period
-#                               Who program the damn thing
-#                               What version you are on
-#                               Date Created
-#                               Date Last time modify
-#############################################################################################################################################
-
-def POSTRequest(url, data, icookie):
-    # Function to Perform HTTP POST call to update and create objects and return server data in an http object
-    # POST in urllib2 is special because it doesn't exist as a built-in method for the urllib2 object you need to make a function (aka lambda) and refrence this method
-    method = "POST"
-    # icookie comes from the PostandGetResponseData fuction that references 'cookie' which is a global variable from reading /.aci/.sessions/.token
-    cookies = 'APIC-cookie=' + icookie
-    # notice 'data' is going to added to the urllib2 object, unlike GET requests
-    request = urllib2.Request(url, data)
-    # Function needs APIC cookie for authentication and what content format you need in returned http object (example JSON)
-    # need to add header one at a time in urllib2
-    request.add_header("cookie", cookies)
-    request.get_method = lambda: method
-    return urllib2.urlopen(request, context=ssl._create_unverified_context())
-
-#############################################################################################################################################
-#                               What does this def do period
-#                               Who program the damn thing
-#                               What version you are on
-#                               Date Created
-#                               Date Last time modify
-#############################################################################################################################################
-
-#def GetResponseData(url):
-#    # Fuction to take JSON and load it into Python Dictionary format and present all JSON inside the 'imdata' level
-#    # Perform a GetRequest function to perform a GET REST call to server and provide response data
-#    response = GetRequest(url, cookie) # here for this
-#    # the 'response' is an urllib2 object that needs to be read for JSON data, this loads the JSON to Python Dictionary format
-#    result = json.loads(response.read()) # here for this
-#    # return only infomation inside the dictionary under 'imdata'
-#    return result['imdata'] #here for this
-def GetResponseData(url):
-    response = GetRequest(url, cookie)
-    result = json.loads(response.read())
-    return result['imdata'], result["totalCount"]
-
-def PostandGetResponseData(url, data):
-    # Fuction to submit JSON and load it into Python Dictionary format and present all JSON inside the 'imdata' level
-    # Perform a POSTRequest function to perform a POST REST call to server and provide response data
-    response = POSTRequest(url, data, cookie)
-    # the 'response' is an urllib2 object that needs to be read for JSON data, this loads the JSON to Python Dictionary format
-    result = json.loads(response.read())
-    # return only infomation inside the dictionary under 'imdata'
-    return result['imdata']
-
-def get_Cookie():
-    global cookie
-    with open('/.aci/.sessions/.token', 'r') as f:
-        cookie = f.read()
-
+# Add handlers to the parent custom logger
+logger.addHandler(c_handler)
+logger.addHandler(f_handler)
 
 class fabricPathEp(object):
     def __init__(self, descr=None, dn=None,name=None, number=None):
@@ -133,20 +71,20 @@ def grouper(iterable, n, fillvalue=''):
 
 
 
-def menu():
-    while True:
-        clear_screen()
-        print("\nSelect interface for removing EPGs: \n" + \
-          "\n\t1.) Physical Interfaces: \n" + \
-          "\t2.) PC Interfaces: \n" + \
-          "\t3.) VPC Interfaces: \n")
-        selection = custom_raw_input("Select number: ")
-        print('\r')
-        if selection.isdigit() and selection != '' and 1 <= int(selection) <= 3:
-            break
-        else:
-            continue
-    return selection 
+#def menu():
+#    while True:
+#        clear_screen()
+#        print("\nSelect interface for removing EPGs: \n\n" + \
+#          "\t1.) Physical Interfaces: \n" + \
+#          "\t2.) PC Interfaces: \n" + \
+#          "\t3.) VPC Interfaces: \n")
+#        selection = custom_raw_input("Select number: ")
+#        print('\r')
+#        if selection.isdigit() and selection != '' and 1 <= int(selection) <= 3:
+#            break
+#        else:
+#            continue
+#    return selection 
 
 class pcObject():
     def __init__(self, name=None, dn=None, number=None):
@@ -160,36 +98,6 @@ class pcObject():
             return self.name
         else:
             return None
-
-def get_All_EGPs():
-    #get_Cookie()
-    epgdict = {}
-    url = """https://{apic}/api/node/class/fvAEPg.json""".format(apic=apic)
-    result, totalCount = GetResponseData(url)
-    #print(json.dumps(result, indent=2))
-    epglist = [epg['fvAEPg']['attributes']['dn'] for epg in result]
-            #epgdict[epg['fvAEPg']['attributes']['name']] = epg['fvAEPg']['attributes']['dn']
-    #    epglist.append(epg['fvAEPg']['attributes']['dn'])
-    return epglist
-
-def get_All_PCs():
-    url = """https://{apic}/api/node/class/fabricPathEp.json?query-target-filter=and(not(wcard(fabricPathEp.dn,%22__ui_%22)),""" \
-          """eq(fabricPathEp.lagT,"link"))""".format(apic=apic)
-    result, totalCount = GetResponseData(url)
-    return result
-
-def get_All_vPCs():
-    url = """https://{apic}/api/node/class/fabricPathEp.json?query-target-filter=and(not(wcard(fabricPathEp.dn,%22__ui_%22)),""" \
-          """and(eq(fabricPathEp.lagT,"node"),wcard(fabricPathEp.dn,"^topology/pod-[\d]*/protpaths-")))""".format(apic=apic)
-    result, totalCount = GetResponseData(url)
-    return result
-
-def get_All_leafs():
-    url = """https://{apic}/api/node/class/fabricNode.json?query-target-filter=and(not(wcard(fabricNode.dn,%22__ui_%22)),""" \
-          """and(eq(fabricNode.role,"leaf"),eq(fabricNode.fabricSt,"active"),ne(fabricNode.nodeType,"virtual")))""".format(apic=apic)
-    result, totalCount = GetResponseData(url)
-    #print(result)
-    return result
 
 
 def parseandreturnsingelist(liststring, collectionlist):
@@ -245,7 +153,7 @@ def physical_selection(all_leaflist, allepglist):
         url = """https://{apic}/api/node/class/fabricPathEp.json?query-target-filter=and(not(wcard(fabricPathEp.dn,%22__ui_%22)),""" \
               """and(eq(fabricPathEp.lagT,"not-aggregated"),eq(fabricPathEp.pathT,"leaf"),wcard(fabricPathEp.dn,"topology/pod-1/paths-{leaf}/"),""" \
               """not(or(wcard(fabricPathEp.name,"^tunnel"),wcard(fabricPathEp.name,"^vfc")))))&order-by=fabricPathEp.dn|desc""".format(leaf=leaf,apic=apic)
-        result, totalcount = GetResponseData(url)
+        result = GetResponseData(url,cookie)
         compoundedleafresult.append(result)
     result = compoundedleafresult
     interfacelist = []
@@ -332,9 +240,9 @@ def postremove(interface,queue):
         # data is the 'POST' data sent in the REST call to 'blacklist' (shutdown) on a normal interface
         data = """'{{"fvRsPathAtt":{{"attributes":{{"dn":"{rspathAtt}","status":"deleted"}},"children":[]}}}}'""".format(rspathAtt=interface_epg)
         #print(data)
-        result =  PostandGetResponseData(url, data)
+        result =  PostandGetResponseData(url, data, cookie)
         #print(result)
-        if result == []:
+        if result[0] == []:
             print(interface_epg[:interface_epg.find('rspathAtt')-1] + ' removed from ' + interface.name)
             #queue.put(interface_epg + ' removed from ' + interface.name)
 
@@ -379,19 +287,19 @@ def main(import_apic,import_cookie):
         global cookie
         cookie = import_cookie
         apic = import_apic
-        allepglist = get_All_EGPs()
-        allpclist = get_All_PCs()
-        allvpclist = get_All_vPCs()
-        all_leaflist = get_All_leafs()
+        allepglist = get_All_EGPs(apic,cookie)
+        allpclist = get_All_PCs(apic,cookie)
+        allvpclist = get_All_vPCs(apic,cookie)
+        all_leaflist = get_All_leafs(apic,cookie)
     
-        selection = menu()
+        selection = interface_menu()
     
         if selection == '1':
             interfaces = physical_selection(all_leaflist, allepglist)
-            #print(interfaces)
+            print(interfaces)
             for interface in interfaces:
                 url = 'https://{apic}/api/node/class/fvRsPathAtt.json?query-target-filter=and(eq(fvRsPathAtt.tDn," {interface}"))&order-by=fvRsPathAtt.modTs|desc'.format(interface=interface,apic=apic)
-                result, totalcount = GetResponseData(url)
+                result = GetResponseData(url,cookie)
                 for epg in result:
                     interface.epgs.append(epg['fvRsPathAtt']['attributes']['dn'])
                 print('\n')
@@ -405,7 +313,7 @@ def main(import_apic,import_cookie):
           #      for number in sorted(pcsinglelist):
           #          data = """{{"fvRsPathAtt":{{"attributes":{{"encap":"{vlan}","instrImedcy":"immediate","tDn":"{}","status":"created"}},"children":[]}}}}""".format(numepgdict[number],vlan=vlan)
           #          print(data)
-            #result, totalcount = PostandGetResponseData(url, data)
+            #result = PostandGetResponseData(url, data, cookie)
             option = custom_raw_input(("Would you like to do?\n\
                         \n1.) remove epgs\
                         \nSelect a number: "))
@@ -420,7 +328,7 @@ def main(import_apic,import_cookie):
           #      for number in sorted(pcsinglelist):
           #          data = """{{"fvRsPathAtt":{{"attributes":{{"encap":"{vlan}","instrImedcy":"immediate","tDn":"{}","status":"created"}},"children":[]}}}}""".format(numepgdict[number],vlan=vlan)
           #          print(data)
-            #result, totalcount = PostandGetResponseData(url, data)
+            #result = PostandGetResponseData(url, data, cookie)
             option = custom_raw_input(("Would you like to do?\n\
                         \n1.) shut\
                         \n2.) no shut\

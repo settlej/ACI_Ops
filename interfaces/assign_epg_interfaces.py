@@ -13,6 +13,8 @@ import datetime
 import itertools
 import trace
 import pdb
+import threading
+import Queue
 from collections import namedtuple
 from localutils.custom_utils import *
 import logging
@@ -136,20 +138,20 @@ def grouper(iterable, n, fillvalue=''):
 
 
 
-def menu():
-    while True:
-        clear_screen()
-        print("\nSelect interface for adding EPGs: \n" + \
-          "\n\t1.) Physical Interfaces: \n" + \
-          "\t2.) PC Interfaces: \n" + \
-          "\t3.) VPC Interfaces: \n")
-        selection = custom_raw_input("Select number: ")
-        print('\r')
-        if selection.isdigit() and selection != '' and 1 <= int(selection) <= 3:
-            break
-        else:
-            continue
-    return selection 
+#def menu():
+#    while True:
+#        clear_screen()
+#        print("\nSelect interface for adding EPGs: \n" + \
+#          "\n\t1.) Physical Interfaces: \n" + \
+#          "\t2.) PC Interfaces: \n" + \
+#          "\t3.) VPC Interfaces: \n")
+#        selection = custom_raw_input("Select number: ")
+#        print('\r')
+#        if selection.isdigit() and selection != '' and 1 <= int(selection) <= 3:
+#            break
+#        else:
+#            continue
+#    return selection 
 
 #def get_All_EGPs():
 #    #get_Cookie()
@@ -256,7 +258,7 @@ def vlan_and_url_generating(epgsinglelist,numepgdict,choseninterfaceobjectlist):
                    break
                 else:
                     print('Invalid vlan number')
-            except:
+            except ValueError:
                 continue
         for interface in sorted(choseninterfaceobjectlist):
             data = """'{{"fvRsPathAtt":{{"attributes":{{"encap":"vlan-{vlan}","instrImedcy":"immediate",\
@@ -279,6 +281,39 @@ class pcObject():
             return self.name
         else:
             return None
+
+def add_egps_to_interfaces(urllist, interfacetype):
+    queue = Queue.Queue()
+    threadlist = []
+    queuelist = []
+    for url in urllist:
+        t = threading.Thread(target=submit_add_post_request, args=(url,interfacetype,queue))
+        t.start()
+        threadlist.append(t)
+    for t in threadlist:
+        t.join()
+        queuelist.append(queue.get())
+    for q in sorted(queuelist):
+        print(q)
+
+def submit_add_post_request(url,interfacetype,queue):
+    result, error = PostandGetResponseData(url.url, url.data,cookie)
+    shorturl = url.url[30:-5]
+    if error == None and result == []:
+        finalresult = 'Success for ' + shorturl + ' > ' + str(url.interface)
+        queue.put(finalresult)
+        logger.debug('{} modify: {}'.format(interfacetype, finalresult))
+    elif result == 'invalid':
+        logger.error('{} modify: {}'.format(interfacetype, error))
+        interfacepath = re.search(r'\[.*\]', error)
+        if 'already exists' in error:
+            queue.put('\x1b[1;37;41mFailure\x1b[0m ' + shorturl + ' > ' + url.interface.dn + '\t -- EPG already on Interface ')# + interfacepath.group())    
+        else:
+            queue.put('\x1b[1;37;41mFailure\x1b[0m ' + shorturl + '\t -- ' + error)
+    else:
+        logger.error('{} modify: {}'.format(interfacetype, error))
+        print(error)
+
 
 def port_channel_selection(allpclist,allepglist):
     pcobjectlist = []
@@ -325,25 +360,25 @@ def port_channel_selection(allpclist,allepglist):
         except ValueError as v:
             print("\n\x1b[1;37;41mInvalid format and/or range...Try again\x1b[0m\n")
     urllist =  vlan_and_url_generating(epgsinglelist,numepgdict,choseninterfaceobjectlist)
-    for url in urllist:
-        result, error = PostandGetResponseData(url.url, url.data, cookie)
-        shorturl = url.url[30:-5]
-        if error == None and result == []:
-            finalresult = 'Success for ' + shorturl + ' > ' + str(url.interface)
-            print(finalresult)
-            logger.debug('Port-Channel modify: ' + finalresult)
-        elif result == 'invalid':
-            logger.debug(error)
-            interfacepath = re.search(r'\[.*\]', error)
-            if 'already exists' in error:
-                print('\x1b[1;37;41mFailure\x1b[0m for ' + shorturl + ' > ' + str(url.interface) + ' -- EPG already on Interface ' )    
-            elif 'AttrBased EPG' in error:
-                print('\x1b[1;37;41mFailure\x1b[0m for ' + shorturl + ' > ' + str(url.interface) + ' -- Attribute EPGs need special static attirbutes')    
-            else:
-                print('\x1b[1;37;41mFailure\x1b[0m for ' + shorturl + '\t -- ' + error)  
-        else:
-            print(error)
-            logger.error('Port-Channel modify: ' + error)
+    add_egps_to_interfaces(urllist, 'Port-Channel')
+#        result, error = PostandGetResponseData(url.url, url.data, cookie)
+#        shorturl = url.url[30:-5]
+#        if error == None and result == []:
+#            finalresult = 'Success for ' + shorturl + ' > ' + str(url.interface)
+#            print(finalresult)
+#            logger.debug('Port-Channel modify: ' + finalresult)
+#        elif result == 'invalid':
+#            logger.debug(error)
+#            interfacepath = re.search(r'\[.*\]', error)
+#            if 'already exists' in error:
+#                print('\x1b[1;37;41mFailure\x1b[0m for ' + shorturl + ' > ' + str(url.interface) + ' -- EPG already on Interface ' )    
+#            elif 'AttrBased EPG' in error:
+#                print('\x1b[1;37;41mFailure\x1b[0m for ' + shorturl + ' > ' + str(url.interface) + ' -- Attribute EPGs need special static attirbutes')    
+#            else:
+#                print('\x1b[1;37;41mFailure\x1b[0m for ' + shorturl + '\t -- ' + error)  
+#        else:
+#            print(error)
+#            logger.error('Port-Channel modify: ' + error)
 
 
 def physical_selection(all_leaflist, allepglist):
@@ -469,7 +504,7 @@ def main(import_apic,import_cookie):
         allvpclist = get_All_vPCs(apic,cookie)
         all_leaflist = get_All_leafs(apic,cookie)
     
-        selection = menu()
+        selection = interface_menu()
     
         if selection == '1':
             physical_selection(all_leaflist, allepglist)
