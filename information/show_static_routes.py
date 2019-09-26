@@ -13,26 +13,40 @@ import logging
 import ipaddress
 from collections import namedtuple
 from localutils.custom_utils import *
+import logging
 
-def GetRequest(url, icookie):
-    method = "GET"
-    cookies = 'APIC-cookie=' + icookie
-    request = urllib2.Request(url)
-    request.add_header("cookie", cookies)
-    request.add_header("Content-trig", "application/json")
-    request.add_header('Accept', 'application/json')
-    return urllib2.urlopen(request, context=ssl._create_unverified_context())
-def GetResponseData(url):
-    response = GetRequest(url, cookie)
-    result = json.loads(response.read())
-    return result['imdata'], result["totalCount"]
+# Create a custom logger
+# Allows logging to state detailed info such as module where code is running and 
+# specifiy logging levels for file vs console.  Set default level to DEBUG to allow more
+# grainular logging levels
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.CRITICAL)
+
+# Define logging handler for file and console logging.  Console logging can be desplayed during
+# program run time, similar to print.  Program can display or write to log file if more debug 
+# info needed.  DEBUG is lowest and will display all logging messages in program.  
+c_handler = logging.StreamHandler()
+f_handler = logging.FileHandler('file.log')
+c_handler.setLevel(logging.CRITICAL)
+f_handler.setLevel(logging.DEBUG)
+
+# Create formatters and add it to handlers.  This creates custom logging format such as timestamp,
+# module running, function, debug level, and custom text info (message) like print.
+c_format = logging.Formatter('%(name)s - %(levelname)s - %(message)s')
+f_format = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(funcName)s - %(message)s')
+c_handler.setFormatter(c_format)
+f_handler.setFormatter(f_format)
+
+# Add handlers to the parent custom logger
+logger.addHandler(c_handler)
+logger.addHandler(f_handler)
 
 #def get_all_static_routes():
 #    url = """https://{apic}/api/node/class/ipRouteP.json""".format(apic=apic)
 ##def get_static_routes(*tenants):
 ##    for tenant in tenants:
 ##        url = """https://{apic}/api/mo/ni/SI.json?target-subtree-class=l3extRsExtx&query-target-filter=eq(l3extRsEctx.tnFvCtxName,"SI")&query-target=subtree
-#    results, totalcount = GetResponseData(url)
+#    results = GetResponseData(url,cookie)
 #    return results
 #def parse_static_route_dn(results):
 #    for entry in results:
@@ -46,7 +60,7 @@ def GetResponseData(url):
 #        print(tenant, l3out, location, route)
 def get_all_l3extRsNodeL3OutAtt():
     url = """https://{apic}/api/node/class/l3extRsNodeL3OutAtt.json""".format(apic=apic)
-    results, totalcount = GetResponseData(url)
+    results = GetResponseData(url,cookie)
     nodelist = []
     for result in results:
         node = result['l3extRsNodeL3OutAtt']['attributes']['tDn']
@@ -67,7 +81,7 @@ def main(import_apic,import_cookie):
     noderoutelist = []
     for node in nodelist:
         url = """https://{apic}/api/node/mo/{node}.json?query-target=children&target-subtree-class=ipRouteP""".format(apic=apic,node=node.dn)
-        result, totalamount = GetResponseData(url)
+        result = GetResponseData(url,cookie)
         noderoutelist.append((node.node, result))
         for iproute in result:
             print(iproute['ipRouteP']['attributes']['descr'], iproute['ipRouteP']['attributes']['ip'])

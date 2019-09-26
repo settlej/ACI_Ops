@@ -24,7 +24,7 @@ import logging
 # specifiy logging levels for file vs console.  Set default level to DEBUG to allow more
 # grainular logging levels
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.CRITICAL)
 
 # Define logging handler for file and console logging.  Console logging can be desplayed during
 # program run time, similar to print.  Program can display or write to log file if more debug 
@@ -44,69 +44,7 @@ f_handler.setFormatter(f_format)
 # Add handlers to the parent custom logger
 logger.addHandler(c_handler)
 logger.addHandler(f_handler)
-#def GetRequest(url, icookie):
-#    method = "GET"
-#    cookies = 'APIC-cookie=' + icookie
-#    request = urllib2.Request(url)
-#    request.add_header("cookie", cookies)
-#    request.add_header("Content-type", "application/json")
-#    request.add_header('Accept', 'application/json')
-#    return urllib2.urlopen(request, context=ssl._create_unverified_cef GetResponseData(url, cookie):
-#    response = GetRequest(url, cookie)
-#    result = json.loads(response.read())
-#    return result['imdata'], result["totalCount"]
-#
-#def POSTRequest(url, data, icookie):
-#    # Function to Perform HTTP POST call to update and create objects and return server data in an http object
-#    # POST in urllib2 is special because it doesn't exist as a built-in method for the urllib2 object you need to make a function (aka lambda) and refrence this method
-#    method = "POST"
-#    # icookie comes from the PostandGetResponseData fuction that references 'cookie' which is a global variable from reading /.aci/.sessions/.token
-#    cookies = 'APIC-cookie=' + icookie
-#    # notice 'data' is going to added to the urllib2 object, unlike GET requests
-#    request = urllib2.Request(url, data)
-#    # Function needs APIC cookie for authentication and what content format you need in returned http object (example JSON)
-#    # need to add header one at a time in urllib2
-#    request.add_header("cookie", cookies)
-#    request.add_header("Content-type", "application/json")
-#    request.add_header('Accept', 'application/json')
-#    request.get_method = lambda: method
-#    #opener = urllib2.build_opener()
-#    #opener.addheaders =[("Content-type", "application/json"),("cookie", cookies),('Accept', 'application/json')]
-#    #return opener.open(url,context=ssl._create_unverified_context())
-#    try:
-#        return urllib2.urlopen(request, context=ssl._create_unverified_context()), None
-#    except urllib2.HTTPError as httpe:
-#        #print('url')
-#        failure_reason = json.loads(httpe.read())
-#        failure_info = failure_reason['imdata'][0]['error']['attributes']['text'].strip()
-#        return 'invalid', failure_info
-#    except urllib2.URLError as urle:
-#        #print(urle.code)
-#        #print(urle.read())
-#        failure_reason = json.loads(urle.read())
-#        #print(url)
-#        #print('EPG ' + url[45:-4])
-#        #print((failure_reason['imdata'][0]['error']['attributes']['text']).strip())
-#        return 'invalid', failure_reason
-#
-#
-#def PostandGetResponseData(url, data):
-#    # Fuction to submit JSON and load it into Python Dictionary format and present all JSON inside the 'imdata' level
-#    # Perform a POSTRequest function to perform a POST REST call to server and provide response data
-#    response, error = POSTRequest(url, data, cookie)
-#    #print(error)
-#    if response is 'invalid':
-#        return 'invalid', error
-#    # the 'response' is an urllib2 object that needs to be read for JSON data, this loads the JSON to Python Dictionary format
-#    result = json.loads(response.read())
-#    # return only infomation inside the dictionary under 'imdata'
-#    return result['imdata'], None
 
-
-#def get_Cookie():
-#    global cookie
-#    with open('/.aci/.sessions/.token', 'r') as f:
-#        cookie = f.read()
 
 
 class fabricPathEp(object):
@@ -135,53 +73,6 @@ def grouper(iterable, n, fillvalue=''):
     # grouper('ABCDEFG', 3, 'x') --> ABC DEF Gxx"
     args = [iter(iterable)] * n  # creates list * n so args is a list of iters for iterable
     return itertools.izip_longest(*args, fillvalue=fillvalue)
-
-
-
-#def menu():
-#    while True:
-#        clear_screen()
-#        print("\nSelect interface for adding EPGs: \n" + \
-#          "\n\t1.) Physical Interfaces: \n" + \
-#          "\t2.) PC Interfaces: \n" + \
-#          "\t3.) VPC Interfaces: \n")
-#        selection = custom_raw_input("Select number: ")
-#        print('\r')
-#        if selection.isdigit() and selection != '' and 1 <= int(selection) <= 3:
-#            break
-#        else:
-#            continue
-#    return selection 
-
-#def get_All_EGPs():
-#    #get_Cookie()
-#    epgdict = {}
-#    url = """https://{apic}/api/node/class/fvAEPg.json""".format(apic=apic)
-#    result = GetResponseData(url, cookie)
-#    #print(json.dumps(result, indent=2))
-#    epglist = [epg['fvAEPg']['attributes']['dn'] for epg in result]
-#            #epgdict[epg['fvAEPg']['attributes']['name']] = epg['fvAEPg']['attributes']['dn']
-#    #    epglist.append(epg['fvAEPg']['attributes']['dn'])
-#    return epglist
-#
-#def get_All_PCs():
-#    url = """https://{apic}/api/node/class/fabricPathEp.json?query-target-filter=and(not(wcard(fabricPathEp.dn,%22__ui_%22)),""" \
-#          """eq(fabricPathEp.lagT,"link"))""".format(apic=apic)
-#    result = GetResponseData(url, cookie)
-#    return result
-#
-#def get_All_vPCs():
-#    url = """https://{apic}/api/node/class/fabricPathEp.json?query-target-filter=and(not(wcard(fabricPathEp.dn,%22__ui_%22)),""" \
-#          """and(eq(fabricPathEp.lagT,"node"),wcard(fabricPathEp.dn,"^topology/pod-[\d]*/protpaths-")))""".format(apic=apic)
-#    result = GetResponseData(url, cookie)
-#    return result
-#
-#def get_All_leafs():
-#    url = """https://{apic}/api/node/class/fabricNode.json?query-target-filter=and(not(wcard(fabricNode.dn,%22__ui_%22)),""" \
-#          """and(eq(fabricNode.role,"leaf"),eq(fabricNode.fabricSt,"active"),ne(fabricNode.nodeType,"virtual")))""".format(apic=apic)
-#    result = GetResponseData(url, cookie)
-#    #print(result)
-#    return result
 
 
 def parseandreturnsingelist(liststring, collectionlist):

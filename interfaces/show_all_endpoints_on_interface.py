@@ -14,20 +14,33 @@ import time
 import itertools
 import ipaddress
 from localutils.custom_utils import *
+import logging
 
+# Create a custom logger
+# Allows logging to state detailed info such as module where code is running and 
+# specifiy logging levels for file vs console.  Set default level to DEBUG to allow more
+# grainular logging levels
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.CRITICAL)
 
-def GetRequest(url, icookie):
-    method = "GET"
-    cookies = 'APIC-cookie=' + icookie
-    request = urllib2.Request(url)
-    request.add_header("cookie", cookies)
-    request.add_header("Content-Type", "application/json")
-    request.add_header('Accept', 'application/json')
-    return urllib2.urlopen(request, context=ssl._create_unverified_context())
-def GetResponseData(url):
-    response = GetRequest(url, cookie)
-    result = json.loads(response.read())
-    return result['imdata'], result["totalCount"]
+# Define logging handler for file and console logging.  Console logging can be desplayed during
+# program run time, similar to print.  Program can display or write to log file if more debug 
+# info needed.  DEBUG is lowest and will display all logging messages in program.  
+c_handler = logging.StreamHandler()
+f_handler = logging.FileHandler('file.log')
+c_handler.setLevel(logging.CRITICAL)
+f_handler.setLevel(logging.DEBUG)
+
+# Create formatters and add it to handlers.  This creates custom logging format such as timestamp,
+# module running, function, debug level, and custom text info (message) like print.
+c_format = logging.Formatter('%(name)s - %(levelname)s - %(message)s')
+f_format = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(funcName)s - %(message)s')
+c_handler.setFormatter(c_format)
+f_handler.setFormatter(f_format)
+
+# Add handlers to the parent custom logger
+logger.addHandler(c_handler)
+logger.addHandler(f_handler)
 
 class fvCEp():
     def __init__(self, mac=None, name=None, encap=None,
@@ -149,7 +162,7 @@ def gather_fvCEp_fullinfo(result):
 
 def mac_path_function():
     url = """https://{apic}/api/node/class/fvCEp.json?rsp-subtree=full&target-subtree-class=fvCEp,fvRsCEpToPathEp""".format(apic=apic)
-    result, totalcount = GetResponseData(url)
+    result = GetResponseData(url,cookie)
     fvCEplist = gather_fvCEp_fullinfo(result)
     return fvCEplist
     #for x in fvCEplist:
@@ -157,7 +170,7 @@ def mac_path_function():
     #    print("{},{},{},{}".format(x.mac,x.ip,x.fvIplist,x.fvRsCEpToPathEp))
     #print(totalcount)
     #for fvCEp in fvCEplist:
-    #        result, totalcount = GetResponseData(url)
+    #        result = GetResponseData(url,cookie)
     #        completefvCEplist = gather_fvCEp_fullinfo(result)
     #        #print(completefvCEplist)
     #        #Display current endpoint info
@@ -194,7 +207,7 @@ def physical_selection(all_leaflist,leaf=None):
         url = """https://{apic}/api/node/class/fabricPathEp.json?query-target-filter=and(not(wcard(fabricPathEp.dn,%22__ui_%22)),""" \
               """and(eq(fabricPathEp.lagT,"not-aggregated"),eq(fabricPathEp.pathT,"leaf"),wcard(fabricPathEp.dn,"topology/pod-1/paths-{leaf}/"),""" \
               """not(or(wcard(fabricPathEp.name,"^tunnel"),wcard(fabricPathEp.name,"^vfc")))))&order-by=fabricPathEp.dn|desc""".format(leaf=leaf,apic=apic)
-        result, totalcount = GetResponseData(url)
+        result = GetResponseData(url,cookie)
         compoundedleafresult.append(result)
     result = compoundedleafresult
     interfacelist = []
@@ -252,7 +265,7 @@ def physical_selection(all_leaflist,leaf=None):
 def get_All_leafs():
     url = """https://{apic}/api/node/class/fabricNode.json?query-target-filter=and(not(wcard(fabricNode.dn,%22__ui_%22)),""" \
           """and(eq(fabricNode.role,"leaf"),eq(fabricNode.fabricSt,"active"),ne(fabricNode.nodeType,"virtual")))""".format(apic=apic)
-    result, totalCount = GetResponseData(url)
+    result = GetResponseData(url,cookie)
     return result
 
 def goodspacing(column):
@@ -331,7 +344,7 @@ def get_All_EGPs():
     #get_Cookie()
     epgdict = {}
     url = """https://{apic}/api/node/class/fvAEPg.json""".format(apic=apic)
-    result, totalCount = GetResponseData(url)
+    result = GetResponseData(url,cookie)
     #print(json.dumps(result, indent=2))
     epglist = [epg['fvAEPg']['attributes']['dn'] for epg in result]
             #epgdict[epg['fvAEPg']['attributes']['name']] = epg['fvAEPg']['attributes']['dn']
@@ -341,13 +354,13 @@ def get_All_EGPs():
 def get_All_PCs():
     url = """https://{apic}/api/node/class/fabricPathEp.json?query-target-filter=and(not(wcard(fabricPathEp.dn,%22__ui_%22)),""" \
           """eq(fabricPathEp.lagT,"link"))""".format(apic=apic)
-    result, totalCount = GetResponseData(url)
+    result = GetResponseData(url,cookie)
     return result
 
 def get_All_vPCs():
     url = """https://{apic}/api/node/class/fabricPathEp.json?query-target-filter=and(not(wcard(fabricPathEp.dn,%22__ui_%22)),""" \
           """and(eq(fabricPathEp.lagT,"node"),wcard(fabricPathEp.dn,"^topology/pod-[\d]*/protpaths-")))""".format(apic=apic)
-    result, totalCount = GetResponseData(url)
+    result = GetResponseData(url,cookie)
     return result
 
 

@@ -1,13 +1,4 @@
 #!/bin//python
-#############################################################################################################################################
-#                               What does this program do
-#                               What are you trying to accomplish
-#                               Who program the damn thing
-#                               What version you are on
-#                               Date Created
-#                               Date Last time modify
-#############################################################################################################################################
-
 import re
 try:
     import readline
@@ -28,14 +19,14 @@ import logging
 # specifiy logging levels for file vs console.  Set default level to DEBUG to allow more
 # grainular logging levels
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.CRITICAL)
 
 # Define logging handler for file and console logging.  Console logging can be desplayed during
 # program run time, similar to print.  Program can display or write to log file if more debug 
 # info needed.  DEBUG is lowest and will display all logging messages in program.  
 c_handler = logging.StreamHandler()
 f_handler = logging.FileHandler('file.log')
-c_handler.setLevel(logging.WARNING)
+c_handler.setLevel(logging.CRITICAL)
 f_handler.setLevel(logging.DEBUG)
 
 # Create formatters and add it to handlers.  This creates custom logging format such as timestamp,
@@ -48,127 +39,6 @@ f_handler.setFormatter(f_format)
 # Add handlers to the parent custom logger
 logger.addHandler(c_handler)
 logger.addHandler(f_handler)
-
-#############################################################################################################################################
-#                               What does this def do period
-#                               Who program the damn thing
-#                               What version you are on
-#                               Date Created
-#                               Date Last time modify
-#############################################################################################################################################
-
-#def GetRequest(url, icookie):
-#    # Function to Perform HTTP Get REST calls and return server recieved data in an http object
-#    method = "GET"
-#    # icookie comes from the GetResponseData fuction that references 'cookie' which is a global variable from reading /.aci/.sessions/.token
-#    cookies = 'APIC-cookie=' + icookie
-#    # create urllib2 object to add headers and cookies
-#    request = urllib2.Request(url)
-#    # Function needs APIC cookie for authentication and what content format you need in returned http object (example JSON)
-#    # need to add header one at a time in urllib2
-#    request.add_header("cookie", cookies)
-#    request.add_header("Content-Type", "application/json")
-#    request.add_header('Accept', 'application/json')
-#    return urllib2.urlopen(request, context=ssl._create_unverified_context())
-
-#############################################################################################################################################
-#                               What does this def do period
-#                               Who program the damn thing
-#                               What version you are on
-#                               Date Created
-#                               Date Last time modify
-#############################################################################################################################################
-
-#def POSTRequest(url, data, icookie):
-#    # Function to Perform HTTP POST call to update and create objects and return server data in an http object
-#    # POST in urllib2 is special because it doesn't exist as a built-in method for the urllib2 object you need to make a function (aka lambda) and refrence this method
-#    method = "POST"
-#    # icookie comes from the PostandGetResponseData fuction that references 'cookie' which is a global variable from reading /.aci/.sessions/.token
-#    cookies = 'APIC-cookie=' + icookie
-#    # notice 'data' is going to added to the urllib2 object, unlike GET requests
-#    request = urllib2.Request(url, data)
-#    # Function needs APIC cookie for authentication and what content format you need in returned http object (example JSON)
-#    # need to add header one at a time in urllib2
-#    request.add_header("cookie", cookies)
-#    request.get_method = lambda: method
-#    return urllib2.urlopen(request, context=ssl._create_unverified_context())
-
-#############################################################################################################################################
-#                               What does this def do period
-#                               Who program the damn thing
-#                               What version you are on
-#                               Date Created
-#                               Date Last time modify
-#############################################################################################################################################
-
-#def GetResponseData(url):
-#    # Fuction to take JSON and load it into Python Dictionary format and present all JSON inside the 'imdata' level
-#    # Perform a GetRequest function to perform a GET REST call to server and provide response data
-#    response = GetRequest(url, cookie) # here for this
-#    # the 'response' is an urllib2 object that needs to be read for JSON data, this loads the JSON to Python Dictionary format
-#    result = json.loads(response.read()) # here for this
-#    # return only infomation inside the dictionary under 'imdata'
-#    return result['imdata'] #here for this
-#def GetResponseData(url):
-#    response = GetRequest(url, cookie)
-#    result = json.loads(response.read())
-#    return result['imdata'], result["totalCount"]
-#
-#def PostandGetResponseData(url, data):
-#    # Fuction to submit JSON and load it into Python Dictionary format and present all JSON inside the 'imdata' level
-#    # Perform a POSTRequest function to perform a POST REST call to server and provide response data
-#    response = POSTRequest(url, data, cookie)
-#    # the 'response' is an urllib2 object that needs to be read for JSON data, this loads the JSON to Python Dictionary format
-#    result = json.loads(response.read())
-#    # return only infomation inside the dictionary under 'imdata'
-#    return result['imdata']
-
-
-#def POSTRequest(url, data, icookie):
-#    # Function to Perform HTTP POST call to update and create objects and return server data in an http object
-#    # POST in urllib2 is special because it doesn't exist as a built-in method for the urllib2 object you need to make a function (aka lambda) and refrence this method
-#    method = "POST"
-#    # icookie comes from the PostandGetResponseData fuction that references 'cookie' which is a global variable from reading /.aci/.sessions/.token
-#    cookies = 'APIC-cookie=' + icookie
-#    # notice 'data' is going to added to the urllib2 object, unlike GET requests
-#    request = urllib2.Request(url, data)
-#    # Function needs APIC cookie for authentication and what content format you need in returned http object (example JSON)
-#    # need to add header one at a time in urllib2
-#    request.add_header("cookie", cookies)
-#    request.add_header("Content-type", "application/json")
-#    request.add_header('Accept', 'application/json')
-#    request.get_method = lambda: method
-#    #opener = urllib2.build_opener()
-#    #opener.addheaders =[("Content-type", "application/json"),("cookie", cookies),('Accept', 'application/json')]
-#    #return opener.open(url,context=ssl._create_unverified_context())
-#    try:
-#        return urllib2.urlopen(request, context=ssl._create_unverified_context()), None
-#    except urllib2.HTTPError as httpe:
-#        #print('url')
-#        failure_reason = json.loads(httpe.read())
-#        failure_info = failure_reason['imdata'][0]['error']['attributes']['text'].strip()
-#        return 'invalid', failure_info
-#    except urllib2.URLError as urle:
-#        #print(urle.code)
-#        #print(urle.read())
-#        failure_reason = json.loads(urle.read())
-#        #print(url)
-#        #print('EPG ' + url[45:-4])
-#        #print((failure_reason['imdata'][0]['error']['attributes']['text']).strip())
-#        return 'invalid', failure_reason
-#
-
-#def PostandGetResponseData(url, data):
-#    # Fuction to submit JSON and load it into Python Dictionary format and present all JSON inside the 'imdata' level
-#    # Perform a POSTRequest function to perform a POST REST call to server and provide response data
-#    response, error = POSTRequest(url, data, cookie)
-#    #print(error)
-#    if response is 'invalid':
-#        return 'invalid', error
-#    # the 'response' is an urllib2 object that needs to be read for JSON data, this loads the JSON to Python Dictionary format
-#    result = json.loads(response.read())
-#    # return only infomation inside the dictionary under 'imdata'
-#    return result['imdata'], None
 
 
 class fabricPathEp(object):
@@ -197,21 +67,6 @@ def grouper(iterable, n, fillvalue=''):
     # grouper('ABCDEFG', 3, 'x') --> ABC DEF Gxx"
     args = [iter(iterable)] * n  # creates list * n so args is a list of iters for iterable
     return itertools.izip_longest(*args, fillvalue=fillvalue)
-
-def menu():
-    while True:
-        clear_screen()
-        print("\nSelect interface type for shut/noshut/bounce: \n\n" + \
-          "\t1.) Physical Interfaces: \n" + \
-          "\t2.) PC Interfaces: \n" + \
-          "\t3.) VPC Interfaces: \n")
-        selection = custom_raw_input("Select number: ")
-        print('\r')
-        if selection.isdigit() and selection != '' and 1 <= int(selection) <= 3:
-            break
-        else:
-            continue
-    return selection 
 
 class pcObject():
     def __init__(self, name=None, dn=None, number=None):
@@ -396,7 +251,7 @@ def port_channel_selection(allpclist,allepglist):
                                      dn = pc['fabricPathEp']['attributes']['dn'] ))
     print("\n{:>4} |  {}".format("#","Port-Channel Name"))
     print("-"* 65)
-    for num,pc in enumerate(sorted(pcobjectlist),1):
+    for num,pc in enumerate(sorted(pcobjectlist, key=lambda x: x.name),1):
         print("{:>4}.) {}".format(num,pc.name))
         pc.number = num
     while True:
@@ -427,7 +282,7 @@ def main(import_apic, import_cookie):
         allvpclist = get_All_vPCs(apic,cookie)
         all_leaflist = get_All_leafs(apic,cookie)
     
-        selection = menu()
+        selection = interface_menu()
     
         if selection == '1':
             interfaces = physical_selection(all_leaflist, allepglist)

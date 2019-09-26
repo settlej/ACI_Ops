@@ -20,7 +20,7 @@ import logging
 # specifiy logging levels for file vs console.  Set default level to DEBUG to allow more
 # grainular logging levels
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.CRITICAL)
 
 # Define logging handler for file and console logging.  Console logging can be desplayed during
 # program run time, similar to print.  Program can display or write to log file if more debug 

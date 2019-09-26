@@ -76,7 +76,7 @@ def localOrRemote():
     else:
         if os.environ.get('apic'):
             user = os.environ.get('user')
-            pwd = os.environ.get('pass')
+            pwd = os.environ.get('password')
             apic = os.environ.get('apic')
             cookie = getToken(apic,user,pwd)
             return apic, cookie

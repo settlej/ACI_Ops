@@ -11,35 +11,10 @@ import ssl
 import os
 import datetime
 from localutils.custom_utils import *
+import logging
 
-
-def GetRequest(url, icookie):
-    method = "GET"
-    cookies = 'APIC-cookie=' + icookie
-    request = urllib2.Request(url)
-    request.add_header("cookie", cookies)
-    request.add_header("Content-Type", "application/json")
-    request.add_header('Accept', 'application/json')
-    return urllib2.urlopen(request, context=ssl._create_unverified_context())
-def GetResponseData(url):
-    response = GetRequest(url, cookie)
-    result = json.loads(response.read())
-    return result['imdata'], result["totalCount"]
-
-#def getCookie():
-#    global cookie
-#    with open('/.aci/.sessions/.token', 'r') as f:
-#        cookie = f.read()
-
-def displaycurrenttime():
-    currenttime = datetime.datetime.now()
-    return str(currenttime)[:-3]
-
-def time_difference(fault_time):
-    currenttime = datetime.datetime.now()
-    ref_fault_time = datetime.datetime.strptime(fault_time, '%Y-%m-%d %H:%M:%S.%f')
-    return str(currenttime - ref_fault_time)[:-7]
-
+logger = create_logger()
+logger.setLevel(logging.DEBUG)
 
 def askrefresh():
     while True:
@@ -50,15 +25,14 @@ def askrefresh():
             return False
         else:
             continue
-    
 
 def gatheranddisplayrecentfaults():
     while True:
-        #getCookie()
         clear_screen()
-        print("Current time = " + displaycurrenttime())
+        current_time = get_APIC_clock(apic,cookie)
+        print("Current time = " + current_time)
         url = """https://{apic}/api/node/class/faultInfo.json?query-target-filter=and(ne(faultInfo.severity,"cleared"))&order-by=faultInfo.lastTransition|desc&page=0&page-size=100""".format(apic=apic)
-        result, totalcount = GetResponseData(url)
+        result = GetResponseData(url,cookie)
         print('\n{:>5}   {:26}{:20}{:18}{:18}{}'.format('#','Time','Time Difference', 'Type','Fault-State','Fault Summary'))
         print('-'*175)
         faultdict = {}
@@ -74,7 +48,7 @@ def gatheranddisplayrecentfaults():
                 faulttype = fault['faultInst']['attributes']['type']
                 faultstate = fault['faultInst']['attributes']['lc']
                 faultdn = fault['faultInst']['attributes']['dn']
-                diff_time = time_difference(faultlastTransition[:-6])
+                diff_time = time_difference(current_time, faultlastTransition[:-6])
                 faultdict[num] = [faultlastTransition[:-6],faulttype,faultstate,faultdn,faultdescr]
                 print('{:5}.) {:26}{:20}{:18}{:18}{}'.format(num,faultlastTransition[:-6],diff_time,faulttype,faultstate,summaryfaultdescr))
             else:
@@ -88,7 +62,7 @@ def gatheranddisplayrecentfaults():
                 faulttype = fault['faultDelegate']['attributes']['type']
                 faultstate = fault['faultDelegate']['attributes']['lc']
                 faultdn = fault['faultDelegate']['attributes']['dn']
-                diff_time = time_difference(faultlastTransition[:-6])
+                diff_time = time_difference(current_time, faultlastTransition[:-6])
                 faultdict[num] = [faultlastTransition[:-6],faulttype,faultstate,faultdn,faultdescr]
                 print('{:5}.) {:26}{:20}{:18}{:18}{}'.format(num,faultlastTransition[:-6],diff_time,faulttype,faultstate,summaryfaultdescr))
         while True:
@@ -101,7 +75,7 @@ def gatheranddisplayrecentfaults():
                 print('\x1b[41;1mInvalid, number does not exist...try again\x1b[0m\n') 
         if moredetails == '':
             continue
-        diff_time = time_difference(faultdict[int(moredetails)][0])
+        diff_time = time_difference(current_time, faultdict[int(moredetails)][0])
         print('\n\n{:26}{:20}{:18}{:18}{}'.format('Time','Time Difference', 'Type','Fault-State','Object-Affected'))
         print('-'*120)
         print('{:26}{:20}{:18}{:18}{}\n'.format(faultdict[int(moredetails)][0],diff_time, faultdict[int(moredetails)][1],faultdict[int(moredetails)][2],'/'.join(str(faultdict[int(moredetails)][3]).split('/')[:-1])))

@@ -11,29 +11,10 @@ import ssl
 import os
 import datetime
 from localutils.custom_utils import *
+import logging
 
-def GetRequest(url, icookie):
-    method = "GET"
-    cookies = 'APIC-cookie=' + icookie
-    request = urllib2.Request(url)
-    request.add_header("cookie", cookies)
-    request.add_header("Content-trig", "application/json")
-    request.add_header('Accept', 'application/json')
-    return urllib2.urlopen(request, context=ssl._create_unverified_context())
-def GetResponseData(url):
-    response = GetRequest(url, cookie)
-    result = json.loads(response.read())
-    return result['imdata'], result["totalCount"]
-
-def get_Cookie():
-    global cookie
-    with open('/.aci/.sessions/.token', 'r') as f:
-        cookie = f.read()
-
-def displaycurrenttime():
-    currenttime = datetime.datetime.now()
-    return str(currenttime)[:-7]
-
+logger = create_logger()
+logger.setLevel(logging.DEBUG)
 
 def ask_refresh():
     while True:
@@ -51,7 +32,8 @@ def get_and_seperate_dates():
     while True:
         if userdatefailure == True:
             clear_screen()
-        print("Current time = " + displaycurrenttime())
+        current_time = get_APIC_clock(apic,cookie)
+        print("Current time = " + current_time)
         print("\nBetween Dates (Oldest -> Latest) \n\n[Format: yyyy-mm-ddThh:mm:ss - yyyy-mm-ddThh:mm:ss ]\n\n")
         if userdatefailure == True:
             print("\x1b[1;37;41mIncorrect Date/Format, Please try again\x1b[0m\n\n")
@@ -77,7 +59,7 @@ def get_and_seperate_dates():
         if oldandnewdatesseperated[0] > oldandnewdatesseperated[1]:
             userdatefailure = True
             continue
-        if oldandnewdatesseperated[1] > displaycurrenttime():
+        if oldandnewdatesseperated[1] > current_time:
             userdatefailure = True
             futuredate = True
             continue
@@ -194,20 +176,19 @@ def eventgather(eventresult):
 
 def gather_and_display_related_events():
     while True:
-        #get_Cookie()
         clear_screen()
         date1,time1,date2,time2 = get_and_seperate_dates()
         print('\nGathering Audit Logs...')
         url = """https://{apic}/api//class/aaaModLR.json?query-target-filter=and(gt(aaaModLR.created,"{}T{}"),lt(aaaModLR.created,"{}T{}"))&order-by=aaaModLR.created|desc""".format(date1,time1,date2,time2,apic=apic)
-        auditresult, totalcount = GetResponseData(url)
+        auditresult = GetResponseData(url,cookie)
         list1 = auditgather(auditresult)
         print('Gathering Fault Logs...')
         url = """https://{apic}/api/node/class/faultRecord.json?query-target-filter=and(gt(faultRecord.created,"{}T{}"),lt(faultRecord.created,"{}T{}"))&order-by=faultRecord.created|desc""".format(date1,time1,date2,time2,apic=apic)
-        faultresult, totalcount = GetResponseData(url)
+        faultresult = GetResponseData(url,cookie)
         list2 = faultgather(faultresult)
         print('Gathering Event Logs...\n')
         url = """https://{apic}/api/node/class/eventRecord.json?query-target-filter=and(gt(eventRecord.created,"{}T{}"),lt(eventRecord.created,"{}T{}"))&order-by=eventRecord.created|desc""".format(date1,time1,date2,time2,apic=apic)
-        eventresult, totalcount = GetResponseData(url)
+        eventresult = GetResponseData(url,cookie)
         list3 = eventgather(eventresult)
         print('{:6}{:8}{:26}{:10}{:18}{}'.format('Order','Type', 'Date & Time ', 'User','Fault-State','Summary Description'))
         print('-'*140)

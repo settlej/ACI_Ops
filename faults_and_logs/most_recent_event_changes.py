@@ -13,33 +13,6 @@ import datetime
 from localutils.custom_utils import *
 
 
-def GetRequest(url, icookie):
-    method = "GET"
-    cookies = 'APIC-cookie=' + icookie
-    request = urllib2.Request(url)
-    request.add_header("cookie", cookies)
-    request.add_header("Content-trig", "application/json")
-    request.add_header('Accept', 'application/json')
-    return urllib2.urlopen(request, context=ssl._create_unverified_context())
-def GetResponseData(url):
-    response = GetRequest(url, cookie)
-    result = json.loads(response.read())
-    return result['imdata'], result["totalCount"]
-
-#def getCookie():
-#    global cookie
-#    with open('/.aci/.sessions/.token', 'r') as f:
-#        cookie = f.read()
-
-def displaycurrenttime():
-    currenttime = datetime.datetime.now()
-    return str(currenttime)[:-3]
-
-def time_difference(event_time):
-    currenttime = datetime.datetime.now()
-    ref_event_time = datetime.datetime.strptime(event_time, '%Y-%m-%d %H:%M:%S.%f')
-    return str(currenttime - ref_event_time)[:-7]
-        
 def askrefresh():
     while True:
         refresh = custom_raw_input("Return to event list? [y=default|n]:  ") or 'y'
@@ -55,12 +28,13 @@ def gatheranddisplayrecentevents():
     while True:
         #getCookie()
         clear_screen()
-        print("Current time = " + displaycurrenttime())
+        current_time = get_APIC_clock(apic,cookie)
+        print("Current time = " + current_time)
         print("\nEvents loading...\n")
         url = """https://{apic}/api/node/class/eventRecord.json?query-target-filter=not(wcard(eventRecord.dn,%22__ui_%22))&order-by=eventRecord.created|desc&page=0&page-size=50""".format(apic=apic)
-        result, totalcount = GetResponseData(url)
+        result = GetResponseData(url,cookie)
         clear_screen()
-        print("Current time = " + displaycurrenttime())
+        print("Current time = " + current_time)
         print('\n{:>5}   {:26}{:20}{:24}{}'.format('#','Time','Time Difference', 'Port','Event Summary'))
         print('-'*175)
         eventdict = {}
@@ -103,7 +77,7 @@ def gatheranddisplayrecentevents():
                 #    portinterfaces = '{} {} {}'.format(leaf,fex,interface)
                 else:
                     portinterfaces = ""
-                diff_time = time_difference(eventcreated[:-6])
+                diff_time = time_difference(current_time,eventcreated[:-6])
                 eventdict[num] = [eventcreated[:-6],eventtrig,eventuser,eventdn,eventdescr]
                 print('{:5}.) {:26}{:20}{:24}{}'.format(num,eventcreated[:-6],diff_time,portinterfaces,summaryeventdescr))
         
@@ -117,7 +91,7 @@ def gatheranddisplayrecentevents():
                 print('\x1b[41;1mInvalid, number does not exist...try again\x1b[0m\n') 
         if moredetails == '':
             continue
-        diff_time = time_difference(eventdict[int(moredetails)][0])
+        diff_time = time_difference(current_time,eventdict[int(moredetails)][0])
         print('\n\n{:26}{:20}{:18}{:18}{}'.format('Time','Time Difference', 'Type','User','Object-Affected'))
         print('-'*120)
         print('{:26}{:20}{:18}{:18}{}\n'.format(eventdict[int(moredetails)][0],diff_time, eventdict[int(moredetails)][1],eventdict[int(moredetails)][2],'/'.join(str(eventdict[int(moredetails)][3]).split('/')[:-1])))

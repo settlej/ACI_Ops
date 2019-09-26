@@ -5,31 +5,32 @@ import urllib2
 import ssl
 import logging
 
-# Create a custom logger
-# Allows logging to state detailed info such as module where code is running and 
-# specifiy logging levels for file vs console.  Set default level to DEBUG to allow more
-# grainular logging levels
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.CRITICAL)
-
-# Define logging handler for file and console logging.  Console logging can be desplayed during
-# program run time, similar to print.  Program can display or write to log file if more debug 
-# info needed.  DEBUG is lowest and will display all logging messages in program.  
-c_handler = logging.StreamHandler()
-f_handler = logging.FileHandler('file.log')
-c_handler.setLevel(logging.CRITICAL)
-f_handler.setLevel(logging.DEBUG)
-
-# Create formatters and add it to handlers.  This creates custom logging format such as timestamp,
-# module running, function, debug level, and custom text info (message) like print.
-c_format = logging.Formatter('%(name)s - %(levelname)s - %(message)s')
-f_format = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(funcName)s - %(message)s')
-c_handler.setFormatter(c_format)
-f_handler.setFormatter(f_format)
-
-# Add handlers to the parent custom logger
-logger.addHandler(c_handler)
-logger.addHandler(f_handler)
+def create_logger():
+    # Create a custom logger
+    # Allows logging to state detailed info such as module where code is running and 
+    # specifiy logging levels for file vs console.  Set default level to DEBUG to allow more
+    # grainular logging levels
+    logger = logging.getLogger(__name__)
+    
+    # Define logging handler for file and console logging.  Console logging can be desplayed during
+    # program run time, similar to print.  Program can display or write to log file if more debug 
+    # info needed.  DEBUG is lowest and will display all logging messages in program.  
+    c_handler = logging.StreamHandler()
+    f_handler = logging.FileHandler('file.log')
+    c_handler.setLevel(logging.CRITICAL)
+    f_handler.setLevel(logging.DEBUG)
+    
+    # Create formatters and add it to handlers.  This creates custom logging format such as timestamp,
+    # module running, function, debug level, and custom text info (message) like print.
+    c_format = logging.Formatter('%(name)s - %(levelname)s - %(message)s')
+    f_format = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(funcName)s - %(message)s')
+    c_handler.setFormatter(c_format)
+    f_handler.setFormatter(f_format)
+    
+    # Add handlers to the parent custom logger
+    logger.addHandler(c_handler)
+    logger.addHandler(f_handler)
+    return logger
 
 def custom_raw_input(inputstr):
     r = raw_input(inputstr)
@@ -44,6 +45,16 @@ def clear_screen():
     else:
         os.system('cls')
 
+def time_difference(current_time, event_time):
+    currenttime = datetime.datetime.strptime(current_time, '%Y-%m-%d %H:%M:%S.%f')
+    ref_event_time = datetime.datetime.strptime(event_time, '%Y-%m-%d %H:%M:%S.%f')
+    return str(currenttime - ref_event_time)[:-7]
+
+
+def get_APIC_clock(apic,cookie):
+    url = """https://{apic}/api/node/class/topSystem.json?query-target-filter=or(eq(topSystem.oobMgmtAddr,"{apic}"),eq(topSystem.inbMgmtAddr,"{apic}"))""".format(apic=apic)
+    result = GetResponseData(url,cookie)
+    return result[0]['topSystem']['attributes']['currentTime'][:-7].replace('T', ' ')
 
 def refreshToken(apic,icookie):
     ssl._create_default_https_context = ssl._create_unverified_context
@@ -94,7 +105,7 @@ def GetResponseData(url, cookie, return_count=False):
     # the 'response' is an urllib2 object that needs to be read for JSON data, this loads the JSON to Python Dictionary format
     result = json.loads(response.read()) # here for this
     # return only infomation inside the dictionary under 'imdata'
-    logger.debug(result)
+    #logger.debug(result)
     if return_count == True:
         return result['imdata'], result['totalCount']
     else:

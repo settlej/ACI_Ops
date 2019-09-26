@@ -18,14 +18,14 @@ import logging
 # specifiy logging levels for file vs console.  Set default level to DEBUG to allow more
 # grainular logging levels
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 
 # Define logging handler for file and console logging.  Console logging can be desplayed during
 # program run time, similar to print.  Program can display or write to log file if more debug 
 # info needed.  DEBUG is lowest and will display all logging messages in program.  
 c_handler = logging.StreamHandler()
 f_handler = logging.FileHandler('file.log')
-c_handler.setLevel(logging.WARNING)
+c_handler.setLevel(logging.CRITICAL)
 f_handler.setLevel(logging.DEBUG)
 
 # Create formatters and add it to handlers.  This creates custom logging format such as timestamp,
@@ -232,7 +232,7 @@ def readable_dnpath(dnpath):
 
 def display_live_history_info(ipaddressEP, totalcount):
     url = """https://{apic}/mqapi2/troubleshoot.eptracker.json?ep={}&order-by=troubleshootEpTransition.date|desc""".format(ipaddressEP.dn,apic=apic)
-    logger.info(str(url))
+    logger.info(url)
     result, totalcount = GetResponseData(url, cookie, return_count=True)
     if totalcount == '0':
         print('No current IP history found...check event history\n')
@@ -430,7 +430,7 @@ def mac_path_function(mac, compVM=None):
         url = """https://{apic}/api/node/mo/{}.json""".format(compVM.host_rn_reference,apic=apic)
         logger.info(url)
         result, totalcount = GetResponseData(url, cookie, return_count=True)
-        logger.debug(result, totalcount)
+        logger.debug(str(result))
         for vminterface in compVM.compVNiclist:
             if vminterface.mac == mac:
                 print("{:26}\t{:15}\t{:18}\t{}".format("Date", "encap-vlan", "Ip Address", "Mac Address"))

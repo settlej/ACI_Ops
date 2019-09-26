@@ -10,24 +10,38 @@ import json
 import ssl
 import os
 from localutils.custom_utils import *
+import logging
 
-def GetRequest(url, icookie):
-    method = "GET"
-    cookies = 'APIC-cookie=' + icookie
-    request = urllib2.Request(url)
-    request.add_header("cookie", cookies)
-    request.add_header("Content-Type", "application/json")
-    request.add_header('Accept', 'application/json')
-    return urllib2.urlopen(request, context=ssl._create_unverified_context())
-def GetResponseData(url):
-    response = GetRequest(url, cookie)
-    result = json.loads(response.read())
-    return result['imdata'], result["totalCount"]
+# Create a custom logger
+# Allows logging to state detailed info such as module where code is running and 
+# specifiy logging levels for file vs console.  Set default level to DEBUG to allow more
+# grainular logging levels
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.CRITICAL)
+
+# Define logging handler for file and console logging.  Console logging can be desplayed during
+# program run time, similar to print.  Program can display or write to log file if more debug 
+# info needed.  DEBUG is lowest and will display all logging messages in program.  
+c_handler = logging.StreamHandler()
+f_handler = logging.FileHandler('file.log')
+c_handler.setLevel(logging.CRITICAL)
+f_handler.setLevel(logging.DEBUG)
+
+# Create formatters and add it to handlers.  This creates custom logging format such as timestamp,
+# module running, function, debug level, and custom text info (message) like print.
+c_format = logging.Formatter('%(name)s - %(levelname)s - %(message)s')
+f_format = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(funcName)s - %(message)s')
+c_handler.setFormatter(c_format)
+f_handler.setFormatter(f_format)
+
+# Add handlers to the parent custom logger
+logger.addHandler(c_handler)
+logger.addHandler(f_handler)
 
 def retrieve_leaf_list():
     # Display available leafs beginning of script
     url = """https://localhost/api/node/mo/topology/pod-1.json?query-target=children&target-subtree-class=fabricNode&query-target-filter=and(wcard(fabricNode.id,"^1[0-9][0-9]"))"""
-    result, totalcount = GetResponseData(url)
+    result = GetResponseData(url,cookie)
     #print(result)
     leafs = [leaf['fabricNode']['attributes']['id'] for leaf in result]
     #print('Available leafs to bounce ports...')
@@ -53,13 +67,9 @@ def displayepgs(result):
     else:
         print('No Epgs found...\n')
 
-
-with open('/.aci/.sessions/.token', 'r') as f:
-    cookie = f.read()
-
 def gatherandstoreinterfacesforleaf(leaf):
     url = """https://localhost/api/node/class/topology/pod-1/node-101/l1PhysIf.json"""
-    result, totalcount = GetResponseData(url)
+    result = GetResponseData(url,cookie)
     listofinterfaces = [interface['l1PhysIf']['attributes']['id'] for interface in result]
     return listofinterfaces
 
@@ -105,7 +115,7 @@ def main(import_apic,import_cookie):
         
         url = """https://localhost/api/node/mo/topology/pod-1/node-{leaf}/sys/phys-[{interface}].json?rsp-subtree-include=full-deployment&target-node=all&target-path=l1EthIfToEPg""".format(leaf=leaf,interface=interface)
         #print(url)
-        result, totalcount = GetResponseData(url)
+        result = GetResponseData(url,cookie)
         displayepgs(result)
     elif int_type == 2:
         pass
