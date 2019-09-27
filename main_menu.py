@@ -28,6 +28,7 @@ import information.routetranslation as routetranslation
 import information.routetrace as check_routing
 import information.show_static_routes as show_static_routes
 import configuration.create_local_span_session as create_local_span_session
+import configuration.span_to_server as span_to_server
 
 
 
@@ -225,9 +226,10 @@ def main():
                             '\t  [CONFIGURATION]\n'
                             '\t ---------------------------------------------------\n' +
                             '\t| 18.) Configure Local Span\n' + 
-                            '\t| 19.) Create EPGs (Not Available)\n' +
-                            '\t| 20.) Configure interface Descriptions (Not Available)\n' + 
-                            '\t| 21.) Import/Export interface Descriptions (Not Available)\n' + 
+                            '\t| 19.) Capture server traffic ERSPAN to server\n' + 
+                            '\t| 20.) Create EPGs (Not Available)\n' +
+                            '\t| 21.) Configure interface Descriptions (Not Available)\n' + 
+                            #'\t| 21.) Import/Export interface Descriptions (Not Available)\n' + 
                             '\t ---------------------------------------------------\x1b[0m')
             print('\x1b[7')
             print('\x1b[1;33;40m\x1b[5;70H -----------------------------\x1b[0m')
@@ -395,6 +397,16 @@ def main():
                     continue
             #elif choosen == 'exit':
             #    raise KeyboardInterrupt
+            elif choosen == '19':
+                try:
+                    span_to_server.main(apic,cookie)
+                    keyinterrupt = False
+                except KeyboardInterrupt as k:
+                    print('\nExit to Main menu\n')
+                    keyinterrupt = True
+                    continue
+
+            
         except urllib2.HTTPError as e:
             unauthenticated = True
             continue
