@@ -216,7 +216,9 @@ def detail_access_inter_faults(listdetail, apic=None):
         timestamp = ' '.join(fault['faultInst']['attributes']['lastTransition'].split('T'))
         diff_time = time_difference(current_time,timestamp[:-6])
         interface = re.search(r'\[.*\]', fault['faultInst']['attributes']['dn'])
-        leaf = re.search(r'leaf[0-9]{3}', fault['faultInst']['attributes']['descr'])
+        leaf = re.search(r'node [0-9]{3}', fault['faultInst']['attributes']['descr'])
+        if leaf == None:
+            leaf = re.search(r'leaf[0-9]{3}', fault['faultInst']['attributes']['descr'])
         logger.debug('{} {} {}'.format(current_time,timestamp,interface.group()))
         lc = fault['faultInst']['attributes']['lc']
         description = ' '.join(fault['faultInst']['attributes']['descr'].split())
@@ -230,6 +232,8 @@ def detail_access_inter_faults(listdetail, apic=None):
             t.start()
             polisting.append(t)
         else:
+            if leaf == None or interface == None:
+                import pdb; pdb.set_trace()
             teststring += '{:26}{:20}{:10}{:15}{:18}{:18}{}\n'.format(timestamp[:-6],diff_time, leaf.group(), interface.group(), '', lc,  description_final)
         for t in polisting:
             t.join()

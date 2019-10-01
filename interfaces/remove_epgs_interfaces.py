@@ -208,6 +208,7 @@ def physical_selection(all_leaflist, allepglist):
 def removeepgs(interfaces):
     queue = Queue.Queue()
     interfacelist = []
+    interfacelist2 = []
     #interfacelist2 =[]
     for interface in interfaces:
         t = threading.Thread(target=postremove, args=(interface,queue,))
@@ -215,9 +216,9 @@ def removeepgs(interfaces):
         interfacelist.append(t)
     for t in interfacelist:
         t.join()
-        #interfacelist2.append(queue.get())
-    #for x in sorted(interfacelist2):
-    #    print(x)
+        interfacelist2.append(queue.get())
+    for x in sorted(interfacelist2):
+        print(x)
 
 def postremove(interface,queue):
     for interface_epg in interface.epgfvRsPathAttlist:
@@ -229,8 +230,8 @@ def postremove(interface,queue):
         result =  PostandGetResponseData(url, data, cookie)
         #print(result)
         if result[0] == []:
-            print(interface_epg[:interface_epg.find('rspathAtt')-1] + ' removed from ' + interface.name)
-            #queue.put(interface_epg + ' removed from ' + interface.name)
+            #print(interface_epg[:interface_epg.find('rspathAtt')-1] + ' removed from ' + interface.name)
+            queue.put(interface_epg[:interface_epg.find('rspathAtt')-1] + ' removed from ' + interface.name)
 
 
 

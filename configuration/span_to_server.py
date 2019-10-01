@@ -18,8 +18,31 @@ import datetime
 from localutils.custom_utils import *
 import logging
 
-logger = create_logger()
+# Create a custom logger
+# Allows logging to state detailed info such as module where code is running and 
+# specifiy logging levels for file vs console.  Set default level to DEBUG to allow more
+# grainular logging levels
+logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
+
+# Define logging handler for file and console logging.  Console logging can be desplayed during
+# program run time, similar to print.  Program can display or write to log file if more debug 
+# info needed.  DEBUG is lowest and will display all logging messages in program.  
+c_handler = logging.StreamHandler()
+f_handler = logging.FileHandler('file.log')
+c_handler.setLevel(logging.CRITICAL)
+f_handler.setLevel(logging.DEBUG)
+
+# Create formatters and add it to handlers.  This creates custom logging format such as timestamp,
+# module running, function, debug level, and custom text info (message) like print.
+c_format = logging.Formatter('%(name)s - %(levelname)s - %(message)s')
+f_format = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(funcName)s - %(message)s')
+c_handler.setFormatter(c_format)
+f_handler.setFormatter(f_format)
+
+# Add handlers to the parent custom logger
+logger.addHandler(c_handler)
+logger.addHandler(f_handler)
 
 def goodspacing(column):
     if column.fex:
@@ -103,8 +126,10 @@ class fabricPathEp(object):
 #        url = """https://{apic}/api/node/class/fabricPathEp.json?query-target-filter=and(not(wcard(fabricPathEp.dn,%22__ui_%22)),""" \
 #              """and(eq(fabricPathEp.lagT,"not-aggregated"),eq(fabricPathEp.pathT,"leaf"),wcard(fabricPathEp.dn,"topology/pod-1/paths-{leaf}/"),""" \
 #              """not(or(wcard(fabricPathEp.name,"^tunnel"),wcard(fabricPathEp.name,"^vfc")))))&order-by=fabricPathEp.dn|desc""".format(leaf=leaf,apic=apic)
+# logger.info(url)
 #        result = GetResponseData(url,cookie)
-#        compoundedleafresult.append(result)
+# logger.debug(result)       
+# compoundedleafresult.append(result)
 #    result = compoundedleafresult
 #    interfacelist = []
 #    interfacelist2 = []
@@ -203,7 +228,10 @@ def create_span_dest_url(source_int, name, leaf):
     spandestname = name + '_leaf' + leaf + '_' + source_int.name.replace('/','_')
     desturl = """https://{apic}/api/node/mo/uni/infra/destgrp-{}.json""".format(spandestname,apic=apic)
     destdata = """{"spanDestGrp":{"attributes":{"name":"%s","status":"created"},"children":[{"spanDest":{"attributes":{"name":"%s","status":"created"},"children":[{"spanRsDestPathEp":{"attributes":{"tDn":"%s","status":"created"},"children":[]}}]}}]}}""" % (spandestgrpname, spandestname, destport)
+    logger.info(desturl)
+    logger.info(destdata)
     result = PostandGetResponseData(desturl, destdata, cookie)
+    logger.info(result)
     if result[0] == []:
         print("Successfully added Destination Port")
 
@@ -214,7 +242,10 @@ def create_source_session_and_port(source_int, dest_int, name, leaf):
     sourceport = source_int.dn
     sourceurl = """https://{apic}/api/node/mo/uni/infra/srcgrp-{}.json""".format(spansessionname,apic=apic)
     sourcedata = """{"spanSrcGrp":{"attributes":{"name":"%s","status":"created"},"children":[{"spanSpanLbl":{"attributes":{"name":"%s","status:"created"},"children":[]}},{"spanSrc":{"attributes":{"name":"%s","status":"created"},"children":[{"spanRsSrcToPathEp":{"attributes":{"tDn":"%s","status":"created"},"children":[]}}]}}]}}""" % (spansessionname, spandestname, spansourcename, sourceport)
+    logger.info(sourceurl)
+    logger.info(sourcedata)
     result = PostandGetResponseData(sourceurl, sourcedata, cookie)
+    logger.info(result)
     #print(result)
     if result[0] == []:
         print("Successfully added Source Session and Source Port")
@@ -256,53 +287,56 @@ class pcObject():
             return None
 
 def main(import_apic,import_cookie, current_user):
-    global apic
-    global cookie
-    cookie = import_cookie
-    apic = import_apic
-    allepglist = get_All_EGPs(apic,cookie)
-    allpclist = get_All_PCs(apic,cookie)
-    allvpclist = get_All_vPCs(apic,cookie)
-    all_leaflist = get_All_leafs(apic,cookie)
-
-    selection = interface_menu()
-    #direction = "Source"
-    
-    if selection == '1':
-        choseninterfaceobjectlist = physical_selection(all_leaflist)
-    elif selection == '2':
-        choseninterfaceobjectlist = port_channel_selection(allpclist)
-    elif selection == '3':
-        choseninterfaceobjectlist = port_channel_selection(allvpclist)
-
-    while True:
-        current_time = get_APIC_clock(apic,cookie)
-        current_time = current_time.replace(' ', 'T')
+    try:
+        global apic
+        global cookie
+        cookie = import_cookie
+        apic = import_apic
+        allepglist = get_All_EGPs(apic,cookie)
+        allpclist = get_All_PCs(apic,cookie)
+        allvpclist = get_All_vPCs(apic,cookie)
         all_leaflist = get_All_leafs(apic,cookie)
-        if all_leaflist == []:
-            print('\x1b[1;31;40mFailed to retrieve active leafs, make leafs are operational...\x1b[0m')
+    
+        selection = interface_menu()
+        #direction = "Source"
+        
+        if selection == '1':
+            choseninterfaceobjectlist = physical_selection(all_leaflist)
+        elif selection == '2':
+            choseninterfaceobjectlist = port_channel_selection(allpclist)
+        elif selection == '3':
+            choseninterfaceobjectlist = port_channel_selection(allvpclist)
+    
+        while True:
+            current_time = get_APIC_clock(apic,cookie)
+            current_time = current_time.replace(' ', 'T')
+            all_leaflist = get_All_leafs(apic,cookie)
+            if all_leaflist == []:
+                print('\x1b[1;31;40mFailed to retrieve active leafs, make leafs are operational...\x1b[0m')
+                custom_raw_input('\n#Press enter to continue...')
+                return
+            #print("\nWhat is the desired \x1b[1;33;40m'Monitored interface'\x1b[0m leaf for span session?\r")
+#            desiredleaf = custom_custom_raw_input("\nWhat is the desired \x1b[1;33;40m'Source and Destination'\x1b[0m leaf for span session?\r")
+           
+            #print("\nWhat is the desired \x1b[1;33;40m'Destination'\x1b[0m leaf for span session?\r")
+            #userpath = os.path.expanduser("~")
+            #userpathmarker = userpath.rfind('/')
+            #user = os.path.expanduser("~")[userpathmarker+1:]
+            #name = datetime.datetime.now().strftime('%Y:%m:%dT%H:%M:%S') + '_'
+            #direction = 'Destination'
+            #chosendestinterfaceobject, leaf = physical_selection(all_leaflist,direction)
+            #create_span_dest_url(chosendestinterfaceobject[0], name, leaf)
+            #direction= 'Source'
+            #chosensourceinterfacobject, leaf = physical_selection(all_leaflist,direction)
+            filterpath = create_filter(apic, cookie, current_time, current_user)
+            spandestname, serverip = create_span_server(apic, cookie, current_time, current_user, allepglist)
+            create_span_source(apic, cookie, current_time, spandestname, sourceinterfacepath=choseninterfaceobjectlist[0], filterpath=filterpath)
+            #create_source_session_and_port(chosensourceinterfacobject[0],chosendestinterfaceobject[0], name, leaf)
+            cookie = refreshToken(apic, cookie)
             custom_raw_input('\n#Press enter to continue...')
-            return
-        #print("\nWhat is the desired \x1b[1;33;40m'Monitored interface'\x1b[0m leaf for span session?\r")
-#        desiredleaf = custom_custom_raw_input("\nWhat is the desired \x1b[1;33;40m'Source and Destination'\x1b[0m leaf for span session?\r")
-       
-        #print("\nWhat is the desired \x1b[1;33;40m'Destination'\x1b[0m leaf for span session?\r")
-        #userpath = os.path.expanduser("~")
-        #userpathmarker = userpath.rfind('/')
-        #user = os.path.expanduser("~")[userpathmarker+1:]
-        #name = datetime.datetime.now().strftime('%Y:%m:%dT%H:%M:%S') + '_'
-        #direction = 'Destination'
-        #chosendestinterfaceobject, leaf = physical_selection(all_leaflist,direction)
-        #create_span_dest_url(chosendestinterfaceobject[0], name, leaf)
-        #direction= 'Source'
-        #chosensourceinterfacobject, leaf = physical_selection(all_leaflist,direction)
-        filterpath = create_filter(apic, cookie, current_time, current_user)
-        spandestname, serverip = create_span_server(apic, cookie, current_time, current_user, allepglist)
-        create_span_source(apic, cookie, current_time, spandestname, sourceinterfacepath=choseninterfaceobjectlist[0], filterpath=filterpath)
-        #create_source_session_and_port(chosensourceinterfacobject[0],chosendestinterfaceobject[0], name, leaf)
-        cookie = refreshToken(apic, cookie)
-        custom_raw_input('\n#Press enter to continue...')
-        break
+            break
+    except Exception as e:
+        logger.critical(str(e))
 
 def physical_selection(all_leaflist):
     nodelist = [node['fabricNode']['attributes']['id'] for node in all_leaflist]
@@ -322,7 +356,9 @@ def physical_selection(all_leaflist):
         url = """https://{apic}/api/node/class/fabricPathEp.json?query-target-filter=and(not(wcard(fabricPathEp.dn,%22__ui_%22)),""" \
               """and(eq(fabricPathEp.lagT,"not-aggregated"),eq(fabricPathEp.pathT,"leaf"),wcard(fabricPathEp.dn,"topology/pod-1/paths-{leaf}/"),""" \
               """not(or(wcard(fabricPathEp.name,"^tunnel"),wcard(fabricPathEp.name,"^vfc")))))&order-by=fabricPathEp.dn|desc""".format(leaf=leaf,apic=apic)
+        logger.info(url)
         result = GetResponseData(url, cookie)
+        logger.debug(result)
         compoundedleafresult.append(result)
     result = compoundedleafresult
     interfacelist = []
@@ -469,7 +505,11 @@ def create_filter(apic, cookie, current_time, current_user, protocol='unspecifie
             + """"ipProto":"%(protocol)s","srcAddr":"%(addr)s","srcPortFrom":"unspecified","srcPortTo":"unspecified"}}},""" % {"addr":srcaddr, "protocol":protocol}
             + """{"spanFilterEntry":{"attributes":{"descr":"","dstAddr":"%(addr)s","dstPortFrom":"unspecified","dstPortTo":"unspecified",""" % {"addr":srcaddr}
             + """""ipProto":"%(protocol)s","srcAddr":"%(addr)s","srcPortFrom":"unspecified","srcPortTo":"unspecified"}}}]}}""" % {"addr":dstaddr, "protocol":protocol})
+    logger.info(url)
+    logger.info(data)
     result = PostandGetResponseData(url, data, cookie)
+    logger.debug(result)
+    
     if result[0] == []:
         print("Successfully created filter")
     else:
@@ -487,7 +527,10 @@ def create_span_server(apic, cookie, current_time,current_user, allepglist, prot
             + """[{"spanDest":{"attributes":{"descr":"","name":"%(spandestname)s"},""" % {"spandestname":spandestname}
             + """"children":[{"spanRsDestEpg":{"attributes":{"dscp":"unspecified","finalIp":"0.0.0.0","flowId":"1","ip":"%(serverip)s","mtu":"1518",""" % {"serverip":serverip}
             + """"srcIpPrefix":"199.199.199.199","tDn":"%(serverepg_path)s","ttl":"64","ver":"ver2","verEnforced":"no"}}}]}}]}}""" % {"serverepg_path":serverepg_path[0]})
+    logger.info(url)
+    logger.info(data)
     result = PostandGetResponseData(url, data, cookie)
+    logger.debug(result)
     if result[0] == []:
         print("Successfully created server as ERSPAN collector")
     else:
@@ -503,7 +546,10 @@ def create_span_source(apic, cookie, current_time, spandestname, sourceinterface
             + """[{"spanSpanLbl":{"attributes":{"name":"%(spandestname)s","status":"created"},""" % {"spandestname":spandestname}
             + """"children":[]}},{"spanSrc":{"attributes":{"name":"%(spansourcename)s","status":"created"},"children":""" % {"spansourcename":spansourcename}
             + """[{"spanRsSrcToFilterGrp":{"attributes":{"tDn":"%(filterpath)s","status":"created"}}},{"spanRsSrcToPathEp":{"attributes":{"tDn":"%(sourceinterfacepath)s","status":"created"}}}]}}]}}""") % {"filterpath":filterpath,"sourceinterfacepath":str(sourceinterfacepath)}
+    logger.info(url)
+    logger.info(data)
     result = PostandGetResponseData(url, data, cookie)
+    logger.debug(result)
     if result[0] == []:
         print("Successfully added span session")
     else:

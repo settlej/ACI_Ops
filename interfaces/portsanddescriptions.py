@@ -19,7 +19,7 @@ import logging
 # specifiy logging levels for file vs console.  Set default level to DEBUG to allow more
 # grainular logging levels
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.CRITICAL)
+logger.setLevel(logging.DEBUG)
 
 # Define logging handler for file and console logging.  Console logging can be desplayed during
 # program run time, similar to print.  Program can display or write to log file if more debug 
@@ -174,7 +174,9 @@ def pull_leaf_interfaces(leafs):
         url = """https://{apic}/api/node-{}/class/l1PhysIf.json?rsp-subtree-class=rmonIfIn,rmonIfOut,pcAggrMbrIf,ethpmPhysIf,l1PhysIf,rmonEtherStats&rsp-subtree=full""".format(leaf,apic=apic)
       #  url = """https://{apic}/api/class/l1PhysIf.json?rsp-subtree-class=rmonIfIn,pcAggrMbrIf,ethpmPhysIf,l1PhysIf&rsp-subtree=full""".format(leaf)
         #print(url)
+        logger.info(url)
         result = GetResponseData(url, cookie)
+        logger.debug(result)
         leafdictwithresults[leaf] = result
         #leaf_interface_collection.append(leafdictwithresults)
     #for l in sorted(leafdictwithresults):
@@ -209,7 +211,9 @@ def match_port_channels_to_interfaces(interfaces, leaf):
     url = """https://{apic}/api/node/class/topology/pod-1/node-{}/pcAggrIf.json?rsp-subtree-include=relations&target-subtree-class=pcAggrIf,"""\
            """ethpmAggrIf&rsp-subtree=children&rsp-subtree-class=pcRsMbrIfs,ethpmAggrIf""".format(leaf,apic=apic)
   #  https://192.168.255.2/api/node/class/topology/pod-1/node-101/pcAggrIf.json?&target-subtree-class=pcAggrIf,ethpmAggrIf&rsp-subtree=children&rsp-subtree-class=pcRsMbrIfs,ethpmAggrIf
+    logger.info(url)
     result = GetResponseData(url, cookie)
+    logger.debug(result)
     #print(result)
     for pc in result:
         pcinterface = pcAggrIf(**pc['pcAggrIf']['attributes'])
@@ -269,7 +273,7 @@ def print_interfaces_layout(leafallinterfacesdict,leafs):
             #print(column.children)
 
             #if column.id == 'eth1/8':
-            #    pdb.set_trace()
+            #import pdb; pdb.set_trace()
             if column.adminSt == 'up' and (column.children[4].operStQual == 'sfp-missing' or column.children[4].operStQual == 'link-failure'):
                 status = 'down/down'
             elif column.adminSt == 'down':

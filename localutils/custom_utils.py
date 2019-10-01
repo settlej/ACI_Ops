@@ -156,7 +156,7 @@ def POSTRequest(url, data, icookie):
 def interface_menu():
     while True:
         clear_screen()
-        print("\nSelect interface for removing EPGs: \n\n" + \
+        print("\nSelect type of interface(s): \n\n" + \
           "\t1.) Physical Interfaces: \n" + \
           "\t2.) PC Interfaces: \n" + \
           "\t3.) VPC Interfaces: \n")

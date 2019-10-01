@@ -85,7 +85,7 @@ class l1PhysIf():
         if 'controller' in self.usage:
             color = '\x1b[1;37;45m{:2}\x1b[0m'.format(self.shortnum)
             return color
-        if self.layer == "Layer2" and self.pcmode == 'off' and self.epgs_status == 'Yes':
+        elif self.layer == "Layer2" and self.pcmode == 'off' and self.epgs_status == 'Yes':
             #light green
             color = '\x1b[2;30;42m{:2}\x1b[0m'.format(self.shortnum)
             return color
@@ -102,7 +102,7 @@ class l1PhysIf():
             #orange
             color = '\x1b[2;30;43m{:2}\x1b[0m'.format(self.shortnum)
             return color
-        elif self.typefex == True:
+        elif self.fex == True:
             color = '\x1b[5;30;41m{:2}\x1b[0m'.format(self.shortnum)
             return color
         else:
@@ -394,6 +394,8 @@ def print_interfaces_layout(leafallinterfacesdict,leafs):
             packets = column.children[0].rXNoErrors + '/' + column.children[0].tXNoErrors
             #import pdb; pdb.set_trace()
             column.allerrors = int(column.children[3].errors) + int(column.children[2].errors)
+            if column.mode == 'fex-fabric':
+                column['fex'] = True
             if column.pc_mbmr:
                 column['pclocalnum'] = column.pc_mbmr[0].id
                 column['pcname'] = column.pc_mbmr[0]
@@ -409,6 +411,7 @@ def print_interfaces_layout(leafallinterfacesdict,leafs):
                 column['pclocalnum'] = None
                 column['pcname'] = None
                 column['pctype'] = None
+                column['fex'] == False
         #import pdb; pdb.set_trace()
         nodeinterfacegrouping.append(interfacenewlist)
     #print(nodeinterfacegrouping)
@@ -450,7 +453,7 @@ def dispaly_port_status(nodeinterfacegrouping):
 
 def display_port_types(nodeinterfacegrouping):
     print('==================================================================')
-    print('Blue:VPC, Green:L2 + EPGS, Yellow:L3, Purple:APIC, White:Uplinks, Black:L2\n')
+    print('Blue:VPC, Green:L2 + EPGS, Yellow:L3, Purple:APIC, Red:Fex-uplinks, White:Uplinks, Black:L2\n')
 
     for node in nodeinterfacegrouping:
         #print(node)
@@ -577,9 +580,9 @@ def main(import_apic,import_cookie):
                 refreshToken(apic,cookie)
                 authcounter = 0 
             if action == 'a':
-                time.sleep(5)
+                time.sleep(3)
                 continue
-            action = custom_raw_input("Options ('a' = auto refresh 10 sec, 'm' = manual refresh, 's' = int stats) default=[m]:")
+            action = custom_raw_input("Options ('a' = auto refresh 3 sec, 'm' = manual refresh, 's' = int stats) default=[m]:")
             if action == 'm':
                 continue
             elif action == 's':
@@ -640,9 +643,9 @@ def main_detail(import_apic,import_cookie):
                 refreshToken(apic,cookie)
                 authcounter = 0 
             if action == 'a':
-                time.sleep(5)
+                time.sleep(3)
                 continue
-            action = custom_raw_input("Options ('a' = auto refresh 10 sec, 'm' = manual refresh) default=[m]:")
+            action = custom_raw_input("Options ('a' = auto refresh 3 sec, 'm' = manual refresh) default=[m]:")
             if action == 'm':
                 continue
             #import pdb; pdb.set_trace()

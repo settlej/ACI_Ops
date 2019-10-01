@@ -207,7 +207,7 @@ def main(import_apic,import_cookie):
     #print(dir())
     #import pdb; pdb.set_trace()
     while True:
-
+        clear_screen()
         all_leaflist = get_All_leafs(apic,cookie)
         if all_leaflist == []:
             print('\x1b[1;31;40mFailed to retrieve active leafs, make leafs are operational...\x1b[0m')

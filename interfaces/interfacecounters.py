@@ -423,7 +423,8 @@ def main(import_apic,import_cookie):
             print('\n Profiles:')
             if interfaceObject.l1RsAttEntityPCons:
                 print(' {}'.format(interfaceObject.l1RsAttEntityPCons['tDn']))
-            print(' {}'.format(interfaceObject.l1RsCdpIfPolCons['tDn']))
+            if interfaceObject.l1RsCdpIfPolCons:
+                print(' {}'.format(interfaceObject.l1RsCdpIfPolCons['tDn']))
             #if interfaceObject.l1RtMbrIfs:
             #    for interf in interfaceObject.l1RtMbrIfs:
             #        print(interf['tDn'])
@@ -496,7 +497,10 @@ def single_interface_pull(import_apic,import_cookie, selectedleaf, interfacepull
                 elif x.get('pcAggrMbrIf'):
                     interfaceObject.pcAggrMbrIf.append(x['pcAggrMbrIf']['attributes'])
             print('\x1b[1;33;40m')
-            print('\n {} is {}, line protocol is {}'.format(interface.capitalize(),interfaceObject.adminSt,interfaceObject.ethpmPhysIf['operSt']))
+            if 'blacklist' in interfaceObject.usage:
+                print('\n {} is Administratively Down'.format(interface.capitalize()))
+            else:
+                print('\n {} is {}, line protocol is {}'.format(interface.capitalize(),interfaceObject.adminSt,interfaceObject.ethpmPhysIf['operSt']))
             print(' Description: {}'.format(interfaceObject.descr))
             print(' MAC: {}'.format(interfaceObject.ethpmPhysIf['backplaneMac']))
             print(' Speed: {}, Duplex: {}, MTU: {}'.format(interfaceObject.ethpmPhysIf['operSpeed'],interfaceObject.ethpmPhysIf['operDuplex'].upper(),interfaceObject.mtu)) 

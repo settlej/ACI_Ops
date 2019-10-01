@@ -8,6 +8,7 @@ import json
 import sys
 import threading
 import time
+import traceback
 from localutils.custom_utils import *
 import interfaces.change_interface_state as shut_noshut_interfaces
 import interfaces.assign_epg_interfaces as assign_epg_interfaces
@@ -31,7 +32,33 @@ import information.routetrace as check_routing
 import information.show_static_routes as show_static_routes
 import configuration.create_local_span_session as create_local_span_session
 import configuration.span_to_server as span_to_server
+import logging
 
+# Create a custom logger
+# Allows logging to state detailed info such as module where code is running and 
+# specifiy logging levels for file vs console.  Set default level to DEBUG to allow more
+# grainular logging levels
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
+# Define logging handler for file and console logging.  Console logging can be desplayed during
+# program run time, similar to print.  Program can display or write to log file if more debug 
+# info needed.  DEBUG is lowest and will display all logging messages in program.  
+c_handler = logging.StreamHandler()
+f_handler = logging.FileHandler('file.log')
+c_handler.setLevel(logging.CRITICAL)
+f_handler.setLevel(logging.DEBUG)
+
+# Create formatters and add it to handlers.  This creates custom logging format such as timestamp,
+# module running, function, debug level, and custom text info (message) like print.
+c_format = logging.Formatter('%(name)s - %(levelname)s - %(message)s')
+f_format = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(funcName)s - %(message)s')
+c_handler.setFormatter(c_format)
+f_handler.setFormatter(f_format)
+
+# Add handlers to the parent custom logger
+logger.addHandler(c_handler)
+logger.addHandler(f_handler)
 
 
 
@@ -147,9 +174,15 @@ def reauthenticate(apic, error):
             apic = raw_input("Enter IP address or FQDN of APIC: ")
             timedout = False
         try:
-            user = raw_input('\nUsername: ')
-            pwd = getpass.getpass('Password: ')
-            getToken(apic, user,pwd)
+            if os.environ.get('apic'):
+                apic = os.environ.get('apic')
+                user = os.environ.get('user')
+                pwd = os.environ.get('password')
+                cookie = getToken(apic,user,pwd)
+            else:
+                user = raw_input('\nUsername: ')
+                pwd = getpass.getpass('Password: ')
+                cookie = getToken(apic, user,pwd)
         except urllib2.HTTPError:
             unauthenticated = True
             error = '\n\x1b[1;31;40mAuthentication failed\x1b[0m\n'
@@ -192,7 +225,7 @@ def main():
             unauthenticated = False
             clear_screen()
             if keyinterrupt:
-                cookie = refreshToken(apic, cookie)
+                pass #cookie = refreshToken(apic, cookie)
             print('\n What would you like to do?:\n\n' +
                             '\t\x1b[1;32;40m  [INTERFACES]\n'+
                             '\t ---------------------------------------------------\n' +
@@ -238,6 +271,7 @@ def main():
             print('\x1b[1;33;40m\x1b[8;70H|    to return to main menu   |\x1b[0m')
             print('\x1b[1;33;40m\x1b[9;70H -----------------------------\x1b[0m')
             print('\x1b[8')
+            cookie = refreshToken(apic, cookie)
             choosen = custom_raw_input('\x1b[u\x1b[40;1H Select a number: ')
             if choosen == '1':
                 try:
@@ -424,14 +458,17 @@ def main():
 
             
         except urllib2.HTTPError as e:
+            logger.exception('HTTPError')
             unauthenticated = True
             continue
 
         except KeyboardInterrupt as k:
+            logger.exception('KeyboardInterrupt')
             print('\nEnding Program\n')
             exit()
-        #except Exception as e:
-        #    print(e)
+        except Exception:
+            logger.exception('Critical Failure')
+            raise
         #    break
 
 if __name__ == '__main__':
