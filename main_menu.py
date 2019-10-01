@@ -72,15 +72,16 @@ def localOrRemote():
         # Set global variable to access 'cookie' everywhere in current module
         global cookie
         cookie = getCookie()
+        user = getpass.getuser()
         # return apic hostname and discovered cookie
-        return apic, cookie # str , str
+        return apic, user, cookie # str , str
     else:
         if os.environ.get('apic'):
+            apic = os.environ.get('apic')
             user = os.environ.get('user')
             pwd = os.environ.get('password')
-            apic = os.environ.get('apic')
             cookie = getToken(apic,user,pwd)
-            return apic, cookie
+            return apic, user, cookie
         else:    
             # if '.token' file doesn't exist than prompt APIC ip and username/password login.
             # Set defaults variables before login, allow variable to change if login attempts fail.
@@ -129,7 +130,7 @@ def localOrRemote():
                     print("\n\x1b[1;31;40mError has occured, please try again\x1b[0m\n")
                     continue
                 break
-    return apic, cookie
+    return apic, user, cookie
 
 def reauthenticate(apic, error):
     unauthenticated = True
@@ -173,7 +174,7 @@ def authentication_session(apic, cookie):
 
 def main():
     unauthenticated = False
-    apic, cookie = localOrRemote()
+    apic, current_user, cookie = localOrRemote()
     #a = threading.Thread(target=authentication_session, args=(apic,cookie))
     #a.daemon = True
     #a.start()
@@ -189,12 +190,7 @@ def main():
             unauthenticated = False
             clear_screen()
             if keyinterrupt:
-                pass
-                #print('\x1b[1;31;40m-------------------------------------------------')
-                #print('\nPrevious operation cancelled\n')
-                #print('-------------------------------------------------\x1b[0m')
-          #  import pdb; pdb.set_trace()
-
+                cookie = refreshToken(apic, cookie)
             print('\n What would you like to do?:\n\n' +
                             '\t\x1b[1;32;40m  [INTERFACES]\n'+
                             '\t ---------------------------------------------------\n' +
@@ -233,9 +229,9 @@ def main():
                             '\t ---------------------------------------------------\x1b[0m')
             print('\x1b[7')
             print('\x1b[1;33;40m\x1b[5;70H -----------------------------\x1b[0m')
-            print('\x1b[1;33;40m\x1b[6;70H|           Hint:             \x1b[0m|')
-            print('\x1b[1;33;40m\x1b[7;70H|  Type "exit" on any input   \x1b[0m|')
-            print('\x1b[1;33;40m\x1b[8;70H|    to return to main menu   \x1b[0m|')
+            print('\x1b[1;33;40m\x1b[6;70H|           Hint:             |\x1b[0m')
+            print('\x1b[1;33;40m\x1b[7;70H|  Type "exit" on any input   |\x1b[0m')
+            print('\x1b[1;33;40m\x1b[8;70H|    to return to main menu   |\x1b[0m')
             print('\x1b[1;33;40m\x1b[9;70H -----------------------------\x1b[0m')
             print('\x1b[8')
             choosen = custom_raw_input('\x1b[u\x1b[40;1H Select a number: ')
@@ -399,7 +395,7 @@ def main():
             #    raise KeyboardInterrupt
             elif choosen == '19':
                 try:
-                    span_to_server.main(apic,cookie)
+                    span_to_server.main(apic,cookie,current_user)
                     keyinterrupt = False
                 except KeyboardInterrupt as k:
                     print('\nExit to Main menu\n')

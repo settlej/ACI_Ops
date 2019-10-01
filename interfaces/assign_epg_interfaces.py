@@ -24,7 +24,7 @@ import logging
 # specifiy logging levels for file vs console.  Set default level to DEBUG to allow more
 # grainular logging levels
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.CRITICAL)
+logger.setLevel(logging.DEBUG)
 
 # Define logging handler for file and console logging.  Console logging can be desplayed during
 # program run time, similar to print.  Program can display or write to log file if more debug 
@@ -364,25 +364,26 @@ def physical_selection(all_leaflist, allepglist):
             chosenepgs = [allepglist[x] for x in epgsinglelist]
             break
     compoundurllist = []
-    urllist =  vlan_and_url_generating(epgsinglelist,numepgdict,choseninterfaceobjectlist)    
-    for url in urllist:
-        result, error = PostandGetResponseData(url.url, url.data,cookie)
-        shorturl = url.url[30:-5]
-        if error == None and result == []:
-            finalresult = 'Success for ' + shorturl + ' > ' + str(url.interface)
-            print(finalresult)
-            logger.debug('Physical modify: ' + finalresult)
-        elif result == 'invalid':
-            logger.error('Physical modify: ' + error)
-           # print('level1')
-            interfacepath = re.search(r'\[.*\]', error)
-            if 'already exists' in error:
-                print('\x1b[1;37;41mFailure\x1b[0m ' + shorturl + ' > ' + url.interface.dn + '\t -- EPG already on Interface ')# + interfacepath.group())    
-            else:
-                print('\x1b[1;37;41mFailure\x1b[0m ' + shorturl + '\t -- ' + error)
-        else:
-            logger.error('Physical modify: ' + error)
-            print(error)
+    urllist =  vlan_and_url_generating(epgsinglelist,numepgdict,choseninterfaceobjectlist)
+    add_egps_to_interfaces(urllist, 'Physical')
+    #for url in urllist:
+    #    result, error = PostandGetResponseData(url.url, url.data,cookie)
+    #    shorturl = url.url[30:-5]
+    #    if error == None and result == []:
+    #        finalresult = 'Success for ' + shorturl + ' > ' + str(url.interface)
+    #        print(finalresult)
+    #        logger.debug('Physical modify: ' + finalresult)
+    #    elif result == 'invalid':
+    #        logger.error('Physical modify: ' + error)
+    #       # print('level1')
+    #        interfacepath = re.search(r'\[.*\]', error)
+    #        if 'already exists' in error:
+    #            print('\x1b[1;37;41mFailure\x1b[0m ' + shorturl + ' > ' + url.interface.dn + '\t -- EPG already on Interface ')# + interfacepath.group())    
+    #        else:
+    #            print('\x1b[1;37;41mFailure\x1b[0m ' + shorturl + '\t -- ' + error)
+    #    else:
+    #        logger.error('Physical modify: ' + error)
+    #        print(error)
 
 def main(import_apic,import_cookie):
     while True:

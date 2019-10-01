@@ -48,7 +48,11 @@ def clear_screen():
 def time_difference(current_time, event_time):
     currenttime = datetime.datetime.strptime(current_time, '%Y-%m-%d %H:%M:%S.%f')
     ref_event_time = datetime.datetime.strptime(event_time, '%Y-%m-%d %H:%M:%S.%f')
-    return str(currenttime - ref_event_time)[:-7]
+    calculatedtime = str(currenttime - ref_event_time)
+    if '.' in calculatedtime:
+        return calculatedtime[:-7]
+    else:
+        return calculatedtime
 
 
 def get_APIC_clock(apic,cookie):

@@ -242,6 +242,19 @@ def display_and_select_epgs(allepglist):
             break
     return chosenepgs
 
+class pcObject():
+    def __init__(self, name=None, dn=None, number=None):
+        self.name = name
+        self.dn = dn
+        self.number = number
+    def __repr__(self):
+        return self.dn
+    def __get__(self, num):
+        if num in self.number:
+            return self.name
+        else:
+            return None
+
 def main(import_apic,import_cookie, current_user):
     global apic
     global cookie
@@ -283,8 +296,8 @@ def main(import_apic,import_cookie, current_user):
         #create_span_dest_url(chosendestinterfaceobject[0], name, leaf)
         #direction= 'Source'
         #chosensourceinterfacobject, leaf = physical_selection(all_leaflist,direction)
-        filterpath = create_filter(apic, cookie, current_time)
-        spandestname, serverip = create_span_server(apic, cookie, current_time, allepglist)
+        filterpath = create_filter(apic, cookie, current_time, current_user)
+        spandestname, serverip = create_span_server(apic, cookie, current_time, current_user, allepglist)
         create_span_source(apic, cookie, current_time, spandestname, sourceinterfacepath=choseninterfaceobjectlist[0], filterpath=filterpath)
         #create_source_session_and_port(chosensourceinterfacobject[0],chosendestinterfaceobject[0], name, leaf)
         cookie = refreshToken(apic, cookie)
@@ -398,56 +411,56 @@ def create_filter(apic, cookie, current_time, current_user, protocol='unspecifie
     srcaddr = raw_input('    Source ip: ')
     dstaddr = raw_input('    Destination ip: ')
     #name = datetime.datetime.now().strftime('%Y:%m:%dT%H:%M:%S')
-    filtername = current_time + '_' + current_user +  '_filter_' + srcaddr + '-' + dstaddr
+    filtername = (current_time + '_' + current_user +  '_filter_' + srcaddr[-7:] + '-' + dstaddr[-7:]).replace('.', '_')
     #desrc = raw_input('Description: ')
-    def select_protocol():
-        #print('Select protcol to capture:\n')
-        print('\nSelect protocol to capture:n\n' +
-                '    1.) ICMP \n' +
-                '    2.) TCP  \n' +
-                '    3.) UDP  \n' +
-                '    4.) Any  \n\n')
-        while True:
-            selectednum = custom_raw_input('Option: ')
-            if selectednum == '1':
-                protocol = 'icmp':
-            elif selectednum == '2':
-                print('[Example format: (single port) 443 or (range) 1018-1022]')
-                while True:
-                    srcPort = custom_raw_input('Provide source ports [default='any']') or 'unspecified'
-                    if 'unspecified':
-                        break
-                    elif '-' in srcPort:
-                        srcPort = srcPort.split('-')
-                        for src in srcPort:
-                            if not src.strip().lstrip().isdigit():
-                                print('\nInvalid format\n')
-                                continue
-                        if len(srcPort) > 2:
-                            print('\nInvalid range\n')
-                            continue
-                        break
-                    elif srcPort.strip().lstrip().isdigit():
-                        break
-                    else:
-                        print('\nInvalid format\n')
-                        continue
-                if type(srcPort) == list:
-                    srcPortFrom = srcPort[0]
-                    srcPortTo = srcPort[1]
-                else:
-                    srcPortFrom = srcPort
-                    srcPortTo = srcPort
-                    
-                        
-                    
-                    
-                    
-                    srcPort.isdigit() or not 
+    ##def select_protocol():
+    ##    #print('Select protcol to capture:\n')
+    ##    print('\nSelect protocol to capture:n\n' +
+    ##            '    1.) ICMP \n' +
+    ##            '    2.) TCP  \n' +
+    ##            '    3.) UDP  \n' +
+    ##            '    4.) Any  \n\n')
+    ##    while True:
+    ##        selectednum = custom_raw_input('Option: ')
+    ##        if selectednum == '1':
+    ##            protocol = 'icmp':
+    ##        elif selectednum == '2':
+    ##            print('[Example format: (single port) 443 or (range) 1018-1022]')
+    ##            while True:
+    ##                srcPort = custom_raw_input('Provide source ports [default='any']') or 'unspecified'
+    ##                if 'unspecified':
+    ##                    break
+    ##                elif '-' in srcPort:
+    ##                    srcPort = srcPort.split('-')
+    ##                    for src in srcPort:
+    ##                        if not src.strip().lstrip().isdigit():
+    ##                            print('\nInvalid format\n')
+    ##                            continue
+    ##                    if len(srcPort) > 2:
+    ##                        print('\nInvalid range\n')
+    ##                        continue
+    ##                    break
+    ##                elif srcPort.strip().lstrip().isdigit():
+    ##                    break
+    ##                else:
+    ##                    print('\nInvalid format\n')
+    ##                    continue
+    ##            if type(srcPort) == list:
+    ##                srcPortFrom = srcPort[0]
+    ##                srcPortTo = srcPort[1]
+    ##            else:
+    ##                srcPortFrom = srcPort
+    ##                srcPortTo = srcPort
+     #               
+     #                   
+     #               
+     #               
+     #               
+     #               srcPort.isdigit() or not 
 #                srcPort = custom_raw_input('\nWhat are the source port(s)?\n')
 
-        exit()
-        custom_raw_input('')
+       # exit()
+       # custom_raw_input('')
     filterpath = """uni/infra/filtergrp-%(filtername)s.json""" % {"apic":apic, "filtername":filtername}
     url = """https://{apic}/api/node/mo/{filterpath}""".format(apic=apic,filterpath=filterpath)
     data = ("""{"spanFilterGrp":{"attributes":{"descr":"", "name":"%(filtername)s"},""" % {"filtername":filtername}

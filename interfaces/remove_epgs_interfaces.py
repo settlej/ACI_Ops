@@ -20,7 +20,7 @@ import logging
 # specifiy logging levels for file vs console.  Set default level to DEBUG to allow more
 # grainular logging levels
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.CRITICAL)
+logger.setLevel(logging.DEBUG)
 
 # Define logging handler for file and console logging.  Console logging can be desplayed during
 # program run time, similar to print.  Program can display or write to log file if more debug 
@@ -42,12 +42,13 @@ logger.addHandler(c_handler)
 logger.addHandler(f_handler)
 
 class fabricPathEp(object):
-    def __init__(self, descr=None, dn=None,name=None, number=None):
+    def __init__(self, descr=None, dn=None,name=None, number=None, getepgsurl=None):
         self.name = name
         self.descr = descr
         self.dn = dn
         self.number = number
-        self.epgs = []
+        self.getepgsurl = getepgsurl
+        self.epgfvRsPathAttlist = []
         self.leaf =  dn.split('/')[2].replace('paths','leaf')
         self.shortname = name.replace('eth1/','')
         self.removedint = '/'.join(dn.split('/')[:-2])
@@ -69,22 +70,6 @@ def grouper(iterable, n, fillvalue=''):
     args = [iter(iterable)] * n  # creates list * n so args is a list of iters for iterable
     return itertools.izip_longest(*args, fillvalue=fillvalue)
 
-
-
-#def menu():
-#    while True:
-#        clear_screen()
-#        print("\nSelect interface for removing EPGs: \n\n" + \
-#          "\t1.) Physical Interfaces: \n" + \
-#          "\t2.) PC Interfaces: \n" + \
-#          "\t3.) VPC Interfaces: \n")
-#        selection = custom_raw_input("Select number: ")
-#        print('\r')
-#        if selection.isdigit() and selection != '' and 1 <= int(selection) <= 3:
-#            break
-#        else:
-#            continue
-#    return selection 
 
 class pcObject():
     def __init__(self, name=None, dn=None, number=None):
@@ -235,16 +220,76 @@ def removeepgs(interfaces):
     #    print(x)
 
 def postremove(interface,queue):
-    for interface_epg in interface.epgs:
+    for interface_epg in interface.epgfvRsPathAttlist:
         url = 'https://{apic}/api/node/mo/{rspathAtt}.json'.format(rspathAtt=interface_epg,apic=apic)
         # data is the 'POST' data sent in the REST call to 'blacklist' (shutdown) on a normal interface
         data = """'{{"fvRsPathAtt":{{"attributes":{{"dn":"{rspathAtt}","status":"deleted"}},"children":[]}}}}'""".format(rspathAtt=interface_epg)
+        logger.info(data)
         #print(data)
         result =  PostandGetResponseData(url, data, cookie)
         #print(result)
         if result[0] == []:
             print(interface_epg[:interface_epg.find('rspathAtt')-1] + ' removed from ' + interface.name)
             #queue.put(interface_epg + ' removed from ' + interface.name)
+
+
+
+
+
+
+
+
+#def removeepgs(interfaces):
+#    queue = Queue.Queue()
+#    interfacelist = []
+#    #interfacelist2 =[]
+#    for interface in interfaces:
+#        for epg in interface.epgs:
+#            t = threading.Thread(target=postremove, args=(interface,epg,queue,))
+#
+#
+#
+#
+#        t = threading.Thread(target=postremove, args=(interface,queue,))
+#        t.start()
+#        interfacelist.append(t)
+#    for t in interfacelist:
+#        t.join()
+#        #interfacelist2.append(queue.get())
+#    #for x in sorted(interfacelist2):
+#    #    print(x)
+#
+#def postremove(epg,interface,queue):
+#    url = 'https://{apic}/api/node/mo/{rspathAtt}.json'.format(rspathAtt=epg,apic=apic)
+#    # data is the 'POST' data sent in the REST call to 'blacklist' (shutdown) on a normal interface
+#    data = """'{{"fvRsPathAtt":{{"attributes":{{"dn":"{rspathAtt}","status":"deleted"}},"children":[]}}}}'""".format(rspathAtt=interface_epg)
+#    #print(data)
+#    result =  PostandGetResponseData(url, data, cookie)
+#    #print(result)
+#    if result[0] == []:
+#        print(interface_epg[:interface_epg.find('rspathAtt')-1] + ' removed from ' + interface.name)
+#        #queue.put(interface_epg + ' removed from ' + interface.name)
+#
+#
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 def port_channel_selection(allpclist,allepglist):
     pcdict = {}  
@@ -281,6 +326,7 @@ def port_channel_selection(allpclist,allepglist):
     return choseninterfaceobjectlist
 
 
+
 def main(import_apic,import_cookie):
     while True:
         global apic
@@ -296,17 +342,21 @@ def main(import_apic,import_cookie):
     
         if selection == '1':
             interfaces = physical_selection(all_leaflist, allepglist)
-            print(interfaces)
+            #print(interfaces)
             for interface in interfaces:
                 url = 'https://{apic}/api/node/class/fvRsPathAtt.json?query-target-filter=and(eq(fvRsPathAtt.tDn," {interface}"))&order-by=fvRsPathAtt.modTs|desc'.format(interface=interface,apic=apic)
+#                logger.info(url)
+#                interface.getepgsurl = url
+#            for interface in interfaces:
+#                t = 
                 result = GetResponseData(url,cookie)
                 for epg in result:
-                    interface.epgs.append(epg['fvRsPathAtt']['attributes']['dn'])
+                    interface.epgfvRsPathAttlist.append(epg['fvRsPathAtt']['attributes']['dn'])
                 print('\n')
                 removeepgs(interfaces)
                 interface.epgs = []
-                print('Done')
-            custom_raw_input('\n#Press enter to continue...')
+                print('Removal of epgs on interface: {} [Complete]'.format(str(interface)))
+            custom_raw_input('\n\n#Press enter to continue...')
         elif selection == '2':
             interfaces = port_channel_selection(allpclist,allepglist)
             print('\r')

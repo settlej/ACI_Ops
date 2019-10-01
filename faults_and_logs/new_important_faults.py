@@ -16,8 +16,31 @@ import Queue
 from localutils.custom_utils import *
 import logging
 
-logger = create_logger()
-logger.setLevel(logging.DEBUG)
+# Create a custom logger
+# Allows logging to state detailed info such as module where code is running and 
+# specifiy logging levels for file vs console.  Set default level to DEBUG to allow more
+# grainular logging levels
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+# Define logging handler for file and console logging.  Console logging can be desplayed during
+# program run time, similar to print.  Program can display or write to log file if more debug 
+# info needed.  DEBUG is lowest and will display all logging messages in program.  
+c_handler = logging.StreamHandler()
+f_handler = logging.FileHandler('file.log')
+c_handler.setLevel(logging.CRITICAL)
+f_handler.setLevel(logging.DEBUG)
+
+# Create formatters and add it to handlers.  This creates custom logging format such as timestamp,
+# module running, function, debug level, and custom text info (message) like print.
+c_format = logging.Formatter('%(name)s - %(levelname)s - %(message)s')
+f_format = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(funcName)s - %(message)s')
+c_handler.setFormatter(c_format)
+f_handler.setFormatter(f_format)
+
+# Add handlers to the parent custom logger
+logger.addHandler(c_handler)
+logger.addHandler(f_handler)
 
 class faultobject():
     def __init__(self, faultstring='', code='', amount=0, order=None, results=None):
@@ -149,6 +172,9 @@ def get_fault_results(apic, cookie, code):
 
 
 def detail_ospf_faults(listdetail,apic=None):
+    current_time = get_APIC_clock(apic,cookie)
+    print('\r')
+    print('Current Time = ' + current_time)
     print('\n')
     print("{:26}{:20}{:12}{:18}{}".format('Time', 'Time Diff','Leaf', 'State','Description'))
     print('-'*120)
@@ -163,6 +189,9 @@ def detail_ospf_faults(listdetail,apic=None):
         print("{:26}{:20}{:12}{:18}{}".format(timestamp[:-6],diff_time,controller.group(), lc,descr))
     print('\n')
 def detail_switch_availability_status_faults(listdetail,apic=None):
+    current_time = get_APIC_clock(apic,cookie)
+    print('\r')
+    print('Current Time = ' + current_time)
     print('\n')
     print("{:26}{:20}{:12}{:18}{}".format('Time', 'Time Diff','Leaf', 'State','Description'))
     print('-'*120)
@@ -176,21 +205,24 @@ def detail_switch_availability_status_faults(listdetail,apic=None):
         print("{:26}{:20}{:12}{:18}{}".format(timestamp[:-6],diff_time,device, lc,descr))
     print('\n')
 def detail_access_inter_faults(listdetail, apic=None):
+    current_time = get_APIC_clock(apic,cookie)
+    #import pdb; pdb.set_trace()
+    print('\r')
+    print('Current Time = ' + current_time)
     print('\n{:26}{:20}{:10}{:15}{:18}{:18}{}'.format('Time', 'Time Diff','Switch','Interface','Port-Channel', 'State', 'Description'))
     print('-'*120)
     teststring = ''
     for fault in listdetail:
         timestamp = ' '.join(fault['faultInst']['attributes']['lastTransition'].split('T'))
-        logger.debug('{} {}'.format(current_time,timestamp))
         diff_time = time_difference(current_time,timestamp[:-6])
         interface = re.search(r'\[.*\]', fault['faultInst']['attributes']['dn'])
         leaf = re.search(r'leaf[0-9]{3}', fault['faultInst']['attributes']['descr'])
+        logger.debug('{} {} {}'.format(current_time,timestamp,interface.group()))
         lc = fault['faultInst']['attributes']['lc']
         description = ' '.join(fault['faultInst']['attributes']['descr'].split())
         #print(description_short)
         usedlocation =  description.find('used')
         description_final = description[:usedlocation - 2] 
-        
         que = Queue.Queue()
         polisting = []
         if 'po' in interface.group():
@@ -202,12 +234,14 @@ def detail_access_inter_faults(listdetail, apic=None):
         for t in polisting:
             t.join()
             po = que.get()
+            logger.debug('{} {}'.format(fault, diff_time))
             teststring += '{:26}{:20}{:10}{:15}{:18}{:18}{}\n'.format(timestamp[:-6],diff_time, leaf.group(), interface.group(), po, lc, description_final)
     print(teststring)
-
-
     print('\n')
 def detail_leaf_spine_uplink_faults(listdetail,apic=None):
+    current_time = get_APIC_clock(apic,cookie)
+    print('\r')
+    print('Current Time = ' + current_time)
     print('\n')
     print("{:26}{:20}{:12}{:12}{:18}{}".format('Time', 'Time Diff','Leaf','Interface', 'State','Description'))
     print('-'*120)
@@ -222,6 +256,9 @@ def detail_leaf_spine_uplink_faults(listdetail,apic=None):
         print("{:26}{:20}{:12}{:12}{:18}{}".format(timestamp[:-6],diff_time,controller.group(), interface.group(), lc,descr))
     print('\n')
 def detail_vpc_full_faults(listdetail,apic=None):
+    current_time = get_APIC_clock(apic,cookie)
+    print('\r')
+    print('Current Time = ' + current_time)
     print('\n{:26}{:20}{:10}{:15}{:18}{:18}{}'.format('Time', 'Time Diff','Switch','Interface','Port-Channel', 'State', 'Description'))
     print('-'*120)
     for fault in listdetail:
@@ -236,6 +273,9 @@ def detail_vpc_full_faults(listdetail,apic=None):
             print('{:26}{:20}{:10}{:18}{}'.format(timestamp[:-6],diff_time, '', lc, descr))
     print('\n')
 def detail_vpc_part_faults(listdetail,apic=None):
+    current_time = get_APIC_clock(apic,cookie)
+    print('\r')
+    print('Current Time = ' + current_time)
     print("\n{:26}{:20}{:15}{:18}{}".format('Time', 'Time Diff','Leaf', 'State','Description'))
     print('-'*120)
     for fault in listdetail:
@@ -251,6 +291,9 @@ def detail_vpc_part_faults(listdetail,apic=None):
             print("{:26}{:20}{:15}{:18}{}".format(timestamp[:23],dn,lc,descr,'changeSet: ' + changeSet))
     print('\n')
 def detail_apic_replica_faults(listdetail,apic=None):
+    current_time = get_APIC_clock(apic,cookie)
+    print('\r')
+    print('Current Time = ' + current_time)
     print("{:26}{:20}{:12}{:18}{}".format('Time', 'Time Diff','Controller', 'State','Description'))
     print('-'*120)
     for fault in listdetail:
@@ -263,6 +306,9 @@ def detail_apic_replica_faults(listdetail,apic=None):
         print("{:26}{:20}{:12}{:18}{}".format(timestamp[:-6],diff_time,controller.group()[-1],lc,descr))
     print('\n')
 def detail_apic_health_faults(listdetail,apic=None):
+    current_time = get_APIC_clock(apic,cookie)
+    print('\r')
+    print('Current Time = ' + current_time)
     print("{:26}{:20}{:12}{:18}{}".format('Time', 'Time Diff','Controller', 'State','Description'))
     print('-'*120)
     for fault in listdetail:
@@ -275,6 +321,9 @@ def detail_apic_health_faults(listdetail,apic=None):
         print("{:26}{:20}{:^12}{:18}{}".format(timestamp[:-6],diff_time,controller.group()[-1],lc,descr))
     print('\n')
 def detail_ntp_faults(listdetail,apic=None):
+    current_time = get_APIC_clock(apic,cookie)
+    print('\r')
+    print('Current Time = ' + current_time)
     print("{:26}{:20}{:12}{:18}{}".format('Time', 'Time Diff', 'Device', 'State','Description'))
     print('-'*120)
     for fault in listdetail:
@@ -291,6 +340,9 @@ def detail_ntp_faults(listdetail,apic=None):
         print("{:26}{:20}{:12}{:18}{}".format(timestamp[:-6],diff_time,node,lc,descr))
     print('\n')
 def detail_vcenter_reachable(listdetail,apic=None):
+    current_time = get_APIC_clock(apic,cookie)
+    print('\r')
+    print('Current Time = ' + current_time)
     print("{:26}{:20}{:18}{}".format('Time', 'Time Diff', 'State','Description'))
     print('-'*120)
     for fault in listdetail:
@@ -313,6 +365,9 @@ def detail_vcenter_reachable(listdetail,apic=None):
             print("{:26}{:20}{:18}{}".format(timestamp[:-6],diff_time,lc,descr))
     print('\n')
 def detail_phys_apic_port_faults(listdetail,apic=None):
+    current_time = get_APIC_clock(apic,cookie)
+    print('\r')
+    print('Current Time = ' + current_time)
     print("{:26}{:20}{:12}{:18}{}".format('Time', 'Time Diff', 'Device', 'State','Description'))
     print('-'*120)
     for fault in listdetail:
@@ -329,6 +384,9 @@ def detail_phys_apic_port_faults(listdetail,apic=None):
         print("{:26}{:20}{:12}{:18}{}".format(timestamp[:-6],diff_time,node,lc,descr))
     print('\n')
 def detail_port_channel_neighbor_faults(listdetail,apic=None):
+    current_time = get_APIC_clock(apic,cookie)
+    print('\r')
+    print('Current Time = ' + current_time)
     print("{:26}{:20}{:25}{:18}{}".format('Time', 'Time Diff','Description', 'State','Path'))
     print('-'*120)
     for fault in listdetail:
@@ -342,6 +400,9 @@ def detail_port_channel_neighbor_faults(listdetail,apic=None):
         print("{:26}{:20}{:25}{:18}{}".format(timestamp[:-6],diff_time,lc,descr, dn))
     print('\n')
 def detail_missing_psu_faults(listdetail,apic=None):
+    current_time = get_APIC_clock(apic,cookie)
+    print('\r')
+    print('Current Time = ' + current_time)
     print("{:26}{:20}{:18}{:12}{:12}{}".format('Time', 'Time Diff', 'State','Device', 'PSU Slot', 'Description'))
     print('-'*120)
     for fault in listdetail:
@@ -356,6 +417,9 @@ def detail_missing_psu_faults(listdetail,apic=None):
         print("{:26}{:20}{:18}{:12}{:12}{}".format(timestamp[:-6],diff_time,lc,node.group(),psu.group(),descr))
     print('\n')
 def detail_shutdown_psu_faults(listdetail,apic=None):
+    current_time = get_APIC_clock(apic,cookie)
+    print('\r')
+    print('Current Time = ' + current_time)
     print("{:26}{:20}{:18}{:12}{:12}{}".format('Time', 'Time Diff', 'State','Device','PSU Slot','Description'))
     print('-'*120)
     for fault in listdetail:
@@ -370,6 +434,9 @@ def detail_shutdown_psu_faults(listdetail,apic=None):
         print("{:26}{:20}{:18}{:12}{:12}{}".format(timestamp[:-6],diff_time,lc,node.group(),psu.group(),descr))
     print('\n')
 def detail_failed_psu_faults(listdetail,apic=None):
+    current_time = get_APIC_clock(apic,cookie)
+    print('\r')
+    print('Current Time = ' + current_time)
     print("{:26}{:20}{:12}{:18}{}".format('Time', 'Time Diff', 'Device', 'State','Description'))
     print('-'*120)
     for fault in listdetail:
@@ -411,18 +478,19 @@ def askrefresh(detail_function, is_function):
 
         
 def refreshloop(detail_function, fault, apic, cookie):
-    current_time = get_APIC_clock(apic,cookie)
-    print('\r')
-    print('Current Time = ' + current_time)            
+    refreshcount = 0      
     while True:
+        if refreshcount == 5:
+            cookie = refreshToken(apic, cookie)
+            refreshcount = 0
+            print(cookie)
         get_fault_results(apic, cookie, fault)
         detail_function(fault.results,apic)
         if fault.results == []:
             print("No Faults, all have been resolved...\n")
         ask = custom_raw_input('Would you like to refresh? [y=default|n]:  ') or 'y'
         if ask[0].lower() == 'y' and not ask == '':
-            print('\r')
-            print('Current Time = ' + current_time)
+            refreshcount +=1
             continue
         else:
             return
