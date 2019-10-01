@@ -13,6 +13,7 @@ import datetime
 import itertools
 import trace
 import pdb
+import getpass
 import datetime
 from localutils.custom_utils import *
 import logging
@@ -216,10 +217,12 @@ def main(import_apic,import_cookie):
 #        desiredleaf = custom_custom_raw_input("\nWhat is the desired \x1b[1;33;40m'Source and Destination'\x1b[0m leaf for span session?\r")
        
         #print("\nWhat is the desired \x1b[1;33;40m'Destination'\x1b[0m leaf for span session?\r")
-        userpath = os.path.expanduser("~")
-        userpathmarker = userpath.rfind('/')
-        user = os.path.expanduser("~")[userpathmarker+1:]
-        name = datetime.datetime.now().strftime('%Y:%m:%dT%H:%M:%S') + '_' + user
+        #userpath = os.path.expanduser("~")
+        #userpathmarker = userpath.rfind('/')
+        #user = os.path.expanduser("~")[userpathmarker+1:]
+        time = get_APIC_clock(apic,cookie)
+        #name = datetime.datetime.now().strftime('%Y:%m:%dT%H:%M:%S') + '_' + getpass.getuser()
+        name = time.replace(' ','T') + '_' + getpass.getuser()
         direction = 'Destination'
         chosendestinterfaceobject, leaf = physical_selection(all_leaflist,direction)
         create_span_dest_url(chosendestinterfaceobject[0], name, leaf)

@@ -138,7 +138,7 @@ def gather_fvCEp_fullinfo(result):
                     fvIp_addr = ceptopath['fvIp']['attributes']['addr']
                     fvIp_rn = ceptopath['fvIp']['attributes']['rn']
                     if ceptopath['fvIp'].get('children'):
-                        fvReportingNodes = [node['fvReportingNode']['attributes']['rn'] for node in ceptopath['fvIp']['children']]
+                        fvReportingNodes = [node['fvReportingNode']['attributes']['rn'] for node in ceptopath['fvIp']['children'] if node.get('fvReportingNode')]
                     else:
                         fvReportingNodes = None
                     fvIplist.append(fvIp(addr=fvIp_addr, rn=fvIp_rn,
@@ -520,7 +520,7 @@ def main(import_apic,import_cookie):
             print(interfacelist)
     except Exception as e:
         print(e)
-        raw_input()
+        raw_input('Completed. Press enter to return')
 
         #custom_raw_input('#Press enter to continue...')
 
@@ -530,7 +530,7 @@ def main(import_apic,import_cookie):
         #print('\t', x.fvRsCEpToPathEp, interfacelist[0])
         if str(x.fvRsCEpToPathEp) == str(interfacelist[0]):
             print("{},{},{},{},{}".format(x.mac,x.ip,x.fvIplist,x.fvRsCEpToPathEp,x.dn))
-    raw_input()
+    raw_input('Completed. Press enter to return')
 #def main():
 #    get_Cookie()
 #    mac_path_function()

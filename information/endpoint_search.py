@@ -160,6 +160,7 @@ def gather_fvCEp_fullinfo(result):
     fvRsHyperobject = None
     fvIplist = []
     fvRsCEpToPathEplist = []
+    logger.debug(result)
     for ep in result:
         fvReportingNodes = []
         mac = ep['fvCEp']['attributes']['mac']
@@ -180,7 +181,8 @@ def gather_fvCEp_fullinfo(result):
                     fvIp_addr = ceptopath['fvIp']['attributes']['addr']
                     fvIp_rn = ceptopath['fvIp']['attributes']['rn']
                     if ceptopath['fvIp'].get('children'):
-                        fvReportingNodes = [node['fvReportingNode']['attributes']['rn'] for node in ceptopath['fvIp']['children']]
+                        #import pdb; pdb.set_trace()
+                        fvReportingNodes = [node['fvReportingNode']['attributes']['rn'] for node in ceptopath['fvIp']['children'] if node.get('fvReportingNode')]
                     else:
                         fvReportingNodes = None
                     fvIplist.append(fvIp(addr=fvIp_addr, rn=fvIp_rn,
