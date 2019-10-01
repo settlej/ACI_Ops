@@ -16,7 +16,9 @@ import interfaces.remove_epgs_interfaces as remove_egps
 import interfaces.show_all_endpoints_on_interface as show_all_endpoints_on_interface
 import interfaces.portsanddescriptions as portsanddescriptions
 import interfaces.interfacecounters as showinterface
+import interfaces.switch_port_view as switch_port_view
 import faults_and_logs.new_important_faults as fault_summary
+import faults_and_logs.most_recent_port_down as recent_port_down
 import faults_and_logs.most_recent_fault_changes as most_recent_fault_changes
 import faults_and_logs.most_recent_admin_changes as most_recent_admin_changes
 import faults_and_logs.most_recent_event_changes as most_recent_event_changes
@@ -28,7 +30,7 @@ import information.routetranslation as routetranslation
 import information.routetrace as check_routing
 import information.show_static_routes as show_static_routes
 import configuration.create_local_span_session as create_local_span_session
-import configuration.span_to_server as span_to_server
+#import configuration.span_to_server as span_to_server
 
 
 
@@ -275,14 +277,22 @@ def main():
                     print('\nExit to Main menu\n')
                     keyinterrupt = True
                     continue
-           # elif choosen == '55':
-           #     try:
-           #         showinterface.main(apic,cookie)
-           #         keyinterrupt = False
-           #     except KeyboardInterrupt as k:
-           #         print('\nExit to Main menu\n')
-           #         keyinterrupt = True
-           #         continue
+            elif choosen == '55':
+                try:
+                    switch_port_view.main(apic,cookie)
+                    keyinterrupt = False
+                except KeyboardInterrupt as k:
+                    print('\nExit to Main menu\n')
+                    keyinterrupt = True
+                    continue
+            elif choosen == '56':
+                try:
+                    switch_port_view.main_detail(apic,cookie)
+                    keyinterrupt = False
+                except KeyboardInterrupt as k:
+                    print('\nExit to Main menu\n')
+                    keyinterrupt = True
+                    continue              
             elif choosen == '6':
                 try:
                     show_all_endpoints_on_interface.main(apic,cookie)
@@ -300,6 +310,14 @@ def main():
                     print('\nExit to Main menu\n')
                     keyinterrupt = True
                     continue		
+            elif choosen == '77':
+                try:
+                    recent_port_down.main(apic,cookie)
+                    keyinterrupt = False
+                except KeyboardInterrupt as k:
+                    print('\nExit to Main menu\n')
+                    keyinterrupt = True
+                    continue	
             elif choosen == '8':
                 try:
                     most_recent_fault_changes.main(apic,cookie)
