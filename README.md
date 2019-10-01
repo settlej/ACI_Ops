@@ -1,5 +1,14 @@
 # Better ACI CLI Tools
 Tools to enhance CLI experience replacing slower ACI show commands with additional information.</br></br>
+This program fully supports Python2 and will be updated to Python3 when ACI's internal platform migrates from Python2.</br>
+Program can run on Windows, Mac, and Linux.</br>
+Can be ran on local computer or on APIC itself.  If on the APIC you can store the program in you home directory.</br>
+# New Features (In progress):
+1.) Picture showing interfaces like available in GUI with colors reflecting interface status, role, errors</br>
+2.) Show recent ports down</br>
+3.) Show all endpoints on interface</br>
+4.) Auto create span to server session</br></br>
+# Screen Shots:
 ![Image of Main Menu](https://github.com/settlej/Better_ACI_CLI_Tools/blob/master/images/main_menu.PNG)</br></br>
 # Important Fault Summary
 ![Image of fault_summary](https://github.com/settlej/Better_ACI_CLI_Tools/blob/master/images/fault_summary_example.JPG)</br></br>
