@@ -248,7 +248,7 @@ def print_interfaces_layout(leafallinterfacesdict,leafs):
         interfacelist2 = []
         for inter in interfaces:
             if inter.id.count('/') > 1:
-                removed_eth = inter.id[5:]
+                removed_eth = inter.id[3:]
                 ethlist = removed_eth.split('/')
                 inter['fex']=int(ethlist[0])
                 inter['shortnum']=int(ethlist[2])

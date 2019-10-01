@@ -14,3 +14,6 @@ enpoints on interface
 interface desciptions
 Show Leaf/Spine/APIC info
 EPG to EPG troubleshooting
+
+
+compEpPD contains loadbalance based on port-group vmware
