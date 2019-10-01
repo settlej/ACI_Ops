@@ -36,7 +36,7 @@ def gatheranddisplayrecentevents():
         clear_screen()
         print("Current time = " + current_time)
         print('\n{:>5}   {:26}{:20}{:24}{}'.format('#','Time','Time Difference', 'Port','Event Summary'))
-        print('-'*175)
+        print('-'*100)
         eventdict = {}
         for num,event in enumerate(result,1):
             if event.get('eventRecord'):

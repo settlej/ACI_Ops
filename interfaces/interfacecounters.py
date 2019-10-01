@@ -443,6 +443,7 @@ def single_interface_pull(import_apic,import_cookie, selectedleaf, interfacepull
     global cookie
     cookie = import_cookie
     apic = import_apic
+    authcounter = 0
     while True:
         #interface =  chosendestinterfaceobject[0].name
         leaf = selectedleaf
@@ -557,9 +558,14 @@ def single_interface_pull(import_apic,import_cookie, selectedleaf, interfacepull
             epgresult = GetResponseData(epgurl, cookie)
             result = GetResponseData(url, cookie)
             print('\x1b[0m')
+            #cookie = refreshToken(apic, cookie)
             refresh = custom_raw_input('Refresh [Y]: ') or 'Y'
             #import pdb; pdb.set_trace()
+            if authcounter == 5:
+                cookie = refreshToken(apic, cookie)
+                authcounter = 0
             if refresh == 'Y':
+                authcounter += 1
                 continue
             else:
                 break

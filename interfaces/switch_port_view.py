@@ -586,6 +586,7 @@ def main(import_apic,import_cookie):
                 interfacesearch = custom_raw_input('interface (xxx ethx/x) [example: 101 eth1/1]: ')
                 leaf, interfacepull = interfacesearch.split()
                 showinterface.single_interface_pull(apic,cookie, leaf, interfacepull)
+                cookie = refreshToken(apic, cookie)
             #import pdb; pdb.set_trace()
             
 def main_detail(import_apic,import_cookie):
