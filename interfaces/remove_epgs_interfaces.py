@@ -223,21 +223,32 @@ def removeepgs(interfaces):
         print(x)
 
 def postremove(interface,queue):
+<<<<<<< HEAD
     #import pdb; pdb.set_trace()
+=======
+    logger.debug(interface.epgfvRsPathAttlist)
+>>>>>>> dev2
     for interface_epg in interface.epgfvRsPathAttlist:
         url = 'https://{apic}/api/node/mo/{rspathAtt}.json'.format(rspathAtt=interface_epg,apic=apic)
         # data is the 'POST' data sent in the REST call to 'blacklist' (shutdown) on a normal interface
         data = """'{{"fvRsPathAtt":{{"attributes":{{"dn":"{rspathAtt}","status":"deleted"}},"children":[]}}}}'""".format(rspathAtt=interface_epg)
+        logger.info(url)
         logger.info(data)
         #import pdb; pdb.set_trace()
         #print(data)
         result =  PostandGetResponseData(url, data, cookie)
+        logger.debug(result)
         #print(result)
         if result[0] == []:
             #print(interface_epg[:interface_epg.find('rspathAtt')-1] + ' removed from ' + interface.name)
             queue.put(interface_epg[:interface_epg.find('rspathAtt')-1] + ' removed from ' + interface.name)
         else:
+<<<<<<< HEAD
             queue.put(result[0])
+=======
+            queue.put('match')
+
+>>>>>>> dev2
 
 
 
@@ -350,17 +361,32 @@ def main(import_apic,import_cookie):
             interfaces = physical_selection(all_leaflist, allepglist)
             #print(interfaces)
             for interface in interfaces:
-                url = 'https://{apic}/api/node/class/fvRsPathAtt.json?query-target-filter=and(eq(fvRsPathAtt.tDn," {interface}"))&order-by=fvRsPathAtt.modTs|desc'.format(interface=interface,apic=apic)
-#                logger.info(url)
+                url = 'https://{apic}/api/node/class/fvRsPathAtt.json?query-target-filter=and(eq(fvRsPathAtt.tDn,"{interface}"))&order-by=fvRsPathAtt.modTs|desc'.format(interface=interface,apic=apic)
+                logger.info(url)
 #                interface.getepgsurl = url
 #            for interface in interfaces:
 #                t = 
                 result = GetResponseData(url,cookie)
+<<<<<<< HEAD
                 for epg in result:
                     interface.epgfvRsPathAttlist.append(epg['fvRsPathAtt']['attributes']['dn'])
                 print('\n')
                 removeepgs(interfaces)
                 interface.epgfvRsPathAttlist = []
+=======
+                logger.debug(result)
+               # import pdb; pdb.set_trace()
+                if result == []:
+                    print('No static EPGs to remove for {}'.format(str(interface)))
+                    
+                else:
+                    for epg in result:
+                        interface.epgfvRsPathAttlist.append(epg['fvRsPathAtt']['attributes']['dn'])
+                    print('\n')
+                    import pdb; pdb.set_trace()
+                    removeepgs(interfaces)
+                interface.epgs = []
+>>>>>>> dev2
                 print('Removal of epgs on interface: {} [Complete]'.format(str(interface)))
             custom_raw_input('\n\n#Press enter to continue...')
         elif selection == '2':
