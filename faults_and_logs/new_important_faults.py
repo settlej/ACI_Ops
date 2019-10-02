@@ -457,8 +457,11 @@ def detail_failed_psu_faults(listdetail,apic=None):
         print("{:26}{:20}{:12}{:18}{}".format(timestamp[:-6],diff_time,node,lc,descr))
     print('\n')
 def retrievePortChannelName(apic, cookie, PoNum, leaf, que):
-    url = """https://{apic}/api/node/mo/topology/pod-1/node-{leaf}/sys/aggr-{PoNum}/rtaccBndlGrpToAggrIf.json""".format(apic=apic,leaf=leaf[4:],PoNum=PoNum)
+    #import pdb; pdb.set_trace()
+    url = """https://{apic}/api/node/mo/topology/pod-1/node-{leaf}/sys/aggr-{PoNum}/rtaccBndlGrpToAggrIf.json""".format(apic=apic,leaf=leaf[4:].lstrip(),PoNum=PoNum)
+    logger.info(url)
     result = GetResponseData(url, cookie)
+    logger.debug(result)
     poresult = result[0][u"pcRtAccBndlGrpToAggrIf"][u"attributes"][u'tDn']
     poposition = result[0][u"pcRtAccBndlGrpToAggrIf"][u"attributes"][u'tDn'].rfind('accbundle-')
     poName = poresult[poposition+10:]

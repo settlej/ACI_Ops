@@ -9,6 +9,7 @@ import sys
 import threading
 import time
 import traceback
+import pdb
 from localutils.custom_utils import *
 import interfaces.change_interface_state as shut_noshut_interfaces
 import interfaces.assign_epg_interfaces as assign_epg_interfaces
@@ -124,12 +125,14 @@ def localOrRemote():
                 # Clear console ouput creating clean login screen for login attempt
                 clear_screen()
                 if unauthenticated:
+                    import pdb; pdb.set_trace()
                     # print error reason after cleared console screen
                     print(error)
                     # reset unauthenticated to prevent 'if' capture if failure is a different reason
                     unauthenticated = False
                 # Server doesn't respond in time to login request (unreachable default 4 sec)
                 elif timedout:
+                    import pdb; pdb.set_trace()
                     # print error reason after cleared console screen
                     print(error)
                     # reask IP in cause IP typed incorrectly
@@ -167,6 +170,7 @@ def reauthenticate(apic, error):
     while True:
         clear_screen()
         if unauthenticated:
+            import pdb; pdb.set_trace()
             print(error)
             unauthenticated = False
         elif timedout:
@@ -175,6 +179,8 @@ def reauthenticate(apic, error):
             timedout = False
         try:
             if os.environ.get('apic'):
+                print('\nLogging back into Apic...')
+                time.sleep(1)
                 apic = os.environ.get('apic')
                 user = os.environ.get('user')
                 pwd = os.environ.get('password')
@@ -193,6 +199,7 @@ def reauthenticate(apic, error):
             continue
         except Exception as e:
             print("\n\x1b[1;31;40mError has occured, please try again\x1b[0m\n")
+            import pdb; pdb.set_trace()
             continue
         return cookie
 
@@ -200,21 +207,9 @@ class AuthenticationFailure(Exception):
     """Authentication Failure"""
     pass
 
-def authentication_session(apic, cookie):
-    while True:
-        time.sleep(3)
-        print('auth session deamon')
-    #q = Queue.Queue()
-    #refreshToken()
-
 def main():
     unauthenticated = False
     apic, current_user, cookie = localOrRemote()
-    #a = threading.Thread(target=authentication_session, args=(apic,cookie))
-    #a.daemon = True
-    #a.start()
-    #print(a.isDaemon)
-   # raw_input('test')
     keyinterrupt = False
     while True:
         try:
@@ -457,23 +452,22 @@ def main():
                     continue
 
             
-        except urllib2.HTTPError as e:
+        except urllib2.HTTPError:
             logger.exception('HTTPError')
             unauthenticated = True
             continue
 
-        except KeyboardInterrupt as k:
+        except KeyboardInterrupt:
             logger.exception('KeyboardInterrupt')
             print('\nEnding Program\n')
             exit()
         except Exception:
             logger.exception('Critical Failure')
             raise
-        #    break
 
 if __name__ == '__main__':
     try:
         main()
     except KeyboardInterrupt as k:
         print('\nEnding Program\n')
-        #exit()
+        exit()
