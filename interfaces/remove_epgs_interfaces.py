@@ -208,7 +208,7 @@ def physical_selection(all_leaflist, allepglist):
 def removeepgs(interfaces):
     queue = Queue.Queue()
     interfacelist = []
-    interfacelist2 = []
+    queueresultlist = []
     #interfacelist2 =[]
     for interface in interfaces:
         t = threading.Thread(target=postremove, args=(interface,queue,))
@@ -218,16 +218,12 @@ def removeepgs(interfaces):
         t.join()
         if not queue.empty():
             for epg in xrange(queue.qsize()):
-                interfacelist2.append(queue.get())
-    for x in sorted(interfacelist2):
-        print(x)
+                queueresultlist.append(queue.get())
+    for interfaceresult in sorted(queueresultlist):
+        print(interfaceresult)
 
 def postremove(interface,queue):
-<<<<<<< HEAD
     #import pdb; pdb.set_trace()
-=======
-    logger.debug(interface.epgfvRsPathAttlist)
->>>>>>> dev2
     for interface_epg in interface.epgfvRsPathAttlist:
         url = 'https://{apic}/api/node/mo/{rspathAtt}.json'.format(rspathAtt=interface_epg,apic=apic)
         # data is the 'POST' data sent in the REST call to 'blacklist' (shutdown) on a normal interface
@@ -243,12 +239,7 @@ def postremove(interface,queue):
             #print(interface_epg[:interface_epg.find('rspathAtt')-1] + ' removed from ' + interface.name)
             queue.put(interface_epg[:interface_epg.find('rspathAtt')-1] + ' removed from ' + interface.name)
         else:
-<<<<<<< HEAD
-            queue.put(result[0])
-=======
-            queue.put('match')
-
->>>>>>> dev2
+            queue.put('Failure -- ' + result[0])
 
 
 
@@ -367,27 +358,18 @@ def main(import_apic,import_cookie):
 #            for interface in interfaces:
 #                t = 
                 result = GetResponseData(url,cookie)
-<<<<<<< HEAD
-                for epg in result:
-                    interface.epgfvRsPathAttlist.append(epg['fvRsPathAtt']['attributes']['dn'])
-                print('\n')
-                removeepgs(interfaces)
-                interface.epgfvRsPathAttlist = []
-=======
                 logger.debug(result)
                # import pdb; pdb.set_trace()
                 if result == []:
                     print('No static EPGs to remove for {}'.format(str(interface)))
-                    
                 else:
                     for epg in result:
                         interface.epgfvRsPathAttlist.append(epg['fvRsPathAtt']['attributes']['dn'])
                     print('\n')
-                    import pdb; pdb.set_trace()
+                    #mport pdb; pdb.set_trace()
                     removeepgs(interfaces)
-                interface.epgs = []
->>>>>>> dev2
-                print('Removal of epgs on interface: {} [Complete]'.format(str(interface)))
+                    interface.epgfvRsPathAttlist = []
+                    print('Removal of static epgs on interface: {} [Complete]'.format(str(interface)))
             custom_raw_input('\n\n#Press enter to continue...')
         elif selection == '2':
             interfaces = port_channel_selection(allpclist,allepglist)
@@ -396,13 +378,15 @@ def main(import_apic,import_cookie):
           #          data = """{{"fvRsPathAtt":{{"attributes":{{"encap":"{vlan}","instrImedcy":"immediate","tDn":"{}","status":"created"}},"children":[]}}}}""".format(numepgdict[number],vlan=vlan)
           #          print(data)
             #result = PostandGetResponseData(url, data, cookie)
-            option = custom_raw_input(("Would you like to do?\n\
-                        \n1.) remove epgs\
-                        \nSelect a number: "))
-            if option == '1':
-                print('\n')
-                removeepgs(interfaces)
-            custom_raw_input('\n#Press enter to continue...')
+            ########print("Would you like to do?\n\n" + 
+            ########            "1.) Remove all EPGss" + 
+            ########            "2.) Remove "
+            ########            )
+            ########option = custom_raw_input(
+            ########if option == '1':
+            ########    print('\n')
+            ########    removeepgs(interfaces)
+            ########custom_raw_input('\n#Press enter to continue...')
 
         elif selection == '3':
             interfaces = port_channel_selection(allvpclist,allepglist)

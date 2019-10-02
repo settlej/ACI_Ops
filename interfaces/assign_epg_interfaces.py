@@ -136,8 +136,9 @@ def goodspacing(column):
         return column.leaf + ' ' + str(column.name)
 
 
-def vlan_and_url_generating(epgsinglelist,numepgdict,choseninterfaceobjectlist):
+def vlan_and_url_generating(epgsinglelist,numepgdict,choseninterfaceobjectlist, epg_type):
     urllist = []
+    confirmationlist = []
     for epg in sorted(epgsinglelist):
         url = """https://{apic}/api/node/mo/{}.json""".format(numepgdict[epg],apic=apic)
         print("\nProvide a vlan number for epg: {}".format(numepgdict[epg]))
@@ -152,13 +153,19 @@ def vlan_and_url_generating(epgsinglelist,numepgdict,choseninterfaceobjectlist):
             except ValueError:
                 continue
         for interface in sorted(choseninterfaceobjectlist):
-            data = """'{{"fvRsPathAtt":{{"attributes":{{"encap":"vlan-{vlan}","instrImedcy":"immediate",\
+            if epg_type == 'trunk_port':
+                data = """'{{"fvRsPathAtt":{{"attributes":{{"encap":"vlan-{vlan}","instrImedcy":"immediate",\
+                     "tDn":"{}","status":"created"}},"children":[]}}}}'""".format(interface.dn,vlan=vlan)
+            elif epg_type == 'access_port':
+                data = """'{{"fvRsPathAtt":{{"attributes":{{"encap":"vlan-{vlan}","mode":"native","instrImedcy":"immediate",\
                          "tDn":"{}","status":"created"}},"children":[]}}}}'""".format(interface.dn,vlan=vlan)
-            #print(fvRsPa)
+            elif epg_type == 'untagged_port':
+                data = """'{{"fvRsPathAtt":{{"attributes":{{"encap":"vlan-{vlan}","mode":"untagged","instrImedcy":"immediate",\
+                         "tDn":"{}","status":"created"}},"children":[]}}}}'""".format(interface.dn,vlan=vlan)
             urlmodify = namedtuple('urlmodify', ('url', 'interface', 'data'))
             urllist.append(urlmodify(url, interface, data))
-           # urldict[uniquenumber] = (url, interface.dn, fvRsPa)
-    return urllist
+        confirmationlist.append((choseninterfaceobjectlist,numepgdict[epg], vlan))
+    return urllist, confirmationlist
 
 class pcObject():
     def __init__(self, name=None, dn=None, number=None):
@@ -250,7 +257,49 @@ def port_channel_selection(allpclist,allepglist):
             break
         except ValueError as v:
             print("\n\x1b[1;37;41mInvalid format and/or range...Try again\x1b[0m\n")
-    urllist =  vlan_and_url_generating(epgsinglelist,numepgdict,choseninterfaceobjectlist)
+    while True:
+        print('What is the inteface epg mode?:\n\n'
+              + '**Use either 1 for trunks ports and 2 for normal access ports\n\n' 
+              + '1.) Trunk\n'
+              + '2.) Access\n'
+              + '3.) Untagged\n')
+
+        askepgtype = custom_raw_input("Which mode? [default=1]: ") or '1'
+        if askepgtype == '1':
+            epg_type = 'trunk_port'
+            break
+        elif askepgtype == '2':
+            epg_type = 'access_port'
+            break
+        elif askepgtype == '3':
+            epg_type = 'untagged_port'
+            break
+        else:
+            print("\n\x1b[1;37;41mInvalid option...Try again\x1b[0m\n")
+            continue
+        
+    urllist, confirmationlist =  vlan_and_url_generating(epgsinglelist,numepgdict,choseninterfaceobjectlist, epg_type)
+    #print(confirmationlist
+    print('')
+    print('Please Confirm deployment:\n')
+    for confirm in confirmationlist:
+        print('{epg} with vlan {vlan}'.format(epg=confirm[1],vlan=confirm[2]))
+        for interface in confirm[0]:
+            print('{}'.format(interface))
+        print('')
+    while True:
+        verify = custom_raw_input('Continue? [y|n]: ')
+        if verify == '':
+            print("\n\x1b[1;37;41mInvalid option...Try again\x1b[0m\n")
+            continue
+        elif verify[0].lower() == 'y':
+            break
+        elif verify[0].lower() == 'n':
+            raise KeyboardInterrupt
+        else:
+            print("\n\x1b[1;37;41mInvalid option...Try again\x1b[0m\n")
+            continue
+
     add_egps_to_interfaces(urllist, 'Port-Channel')
 #        result, error = PostandGetResponseData(url.url, url.data, cookie)
 #        shorturl = url.url[30:-5]
@@ -364,7 +413,28 @@ def physical_selection(all_leaflist, allepglist):
             chosenepgs = [allepglist[x] for x in epgsinglelist]
             break
     compoundurllist = []
-    urllist =  vlan_and_url_generating(epgsinglelist,numepgdict,choseninterfaceobjectlist)
+    while True:
+        print('What is the inteface epg mode?:\n\n'
+              + '**Use either 1 for trunks ports and 2 for normal access ports\n\n' 
+              + '1.) Trunk\n'
+              + '2.) Access\n'
+              + '3.) Untagged\n')
+
+        askepgtype = custom_raw_input("Which mode? [default=1]: ") or '1'
+        if askepgtype == '1':
+            epg_type = 'trunk_port'
+            break
+        elif askepgtype == '2':
+            epg_type = 'access_port'
+            break
+        elif askepgtype == '3':
+            epg_type = 'untagged_port'
+            break
+        else:
+            print("\n\x1b[1;37;41mInvalid option...Try again\x1b[0m\n")
+            continue
+        
+    urllist =  vlan_and_url_generating(epgsinglelist,numepgdict,choseninterfaceobjectlist, epg_type)
     add_egps_to_interfaces(urllist, 'Physical')
     #for url in urllist:
     #    result, error = PostandGetResponseData(url.url, url.data,cookie)
