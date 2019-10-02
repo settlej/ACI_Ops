@@ -43,26 +43,6 @@ logger.addHandler(c_handler)
 logger.addHandler(f_handler)
 
 
-
-#def GetRequest(url, icookie):
-#    method = "GET"
-#    cookies = 'APIC-cookie=' + icookie
-#    request = urllib2.Request(url)
-#    request.add_header("cookie", cookies)
-#    request.add_header("Content-Type", "application/json")
-#    request.add_header('Accept', 'application/json')
-#    return urllib2.urlopen(request, context=ssl._create_unverified_context())
-#def GetResponseData(url):
-#    response = GetRequest(url, cookie)
-#    result = json.loads(response.read())
-#    return result['imdata'], result["totalCount"]
-#
-#def get_All_leafs():
-#    url = """https://{apic}/api/node/class/fabricNode.json?query-target-filter=and(not(wcard(fabricNode.dn,%22__ui_%22)),""" \
-#          """and(eq(fabricNode.role,"leaf"),eq(fabricNode.fabricSt,"active"),ne(fabricNode.nodeType,"virtual")))""".format(apic=apic)
-#    result, totalCount = GetResponseData(url)
-#    return result
-
 def goodspacing(column):
     if column.fex:
         return column.leaf + ' ' + column.fex + ' ' + str(column.name)

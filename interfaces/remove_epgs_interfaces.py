@@ -216,23 +216,28 @@ def removeepgs(interfaces):
         interfacelist.append(t)
     for t in interfacelist:
         t.join()
-        interfacelist2.append(queue.get())
+        if not queue.empty():
+            for epg in xrange(queue.qsize()):
+                interfacelist2.append(queue.get())
     for x in sorted(interfacelist2):
         print(x)
 
 def postremove(interface,queue):
+    #import pdb; pdb.set_trace()
     for interface_epg in interface.epgfvRsPathAttlist:
         url = 'https://{apic}/api/node/mo/{rspathAtt}.json'.format(rspathAtt=interface_epg,apic=apic)
         # data is the 'POST' data sent in the REST call to 'blacklist' (shutdown) on a normal interface
         data = """'{{"fvRsPathAtt":{{"attributes":{{"dn":"{rspathAtt}","status":"deleted"}},"children":[]}}}}'""".format(rspathAtt=interface_epg)
         logger.info(data)
+        #import pdb; pdb.set_trace()
         #print(data)
         result =  PostandGetResponseData(url, data, cookie)
         #print(result)
         if result[0] == []:
             #print(interface_epg[:interface_epg.find('rspathAtt')-1] + ' removed from ' + interface.name)
             queue.put(interface_epg[:interface_epg.find('rspathAtt')-1] + ' removed from ' + interface.name)
-
+        else:
+            queue.put(result[0])
 
 
 
@@ -355,7 +360,7 @@ def main(import_apic,import_cookie):
                     interface.epgfvRsPathAttlist.append(epg['fvRsPathAtt']['attributes']['dn'])
                 print('\n')
                 removeepgs(interfaces)
-                interface.epgs = []
+                interface.epgfvRsPathAttlist = []
                 print('Removal of epgs on interface: {} [Complete]'.format(str(interface)))
             custom_raw_input('\n\n#Press enter to continue...')
         elif selection == '2':
