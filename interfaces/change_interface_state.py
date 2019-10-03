@@ -1,4 +1,5 @@
 #!/bin//python
+
 import re
 try:
     import readline
@@ -102,7 +103,8 @@ def main(import_apic, import_cookie):
             returnedlist = physical_selection(all_leaflist, apic, cookie)
             print('\r')
             while True:
-                option = custom_raw_input(("Would you like to do?\n\
+                option = custom_raw_input(
+                    ("Would you like to do?\n\
                         \n1.) shut\
                         \n2.) no shut\
                         \n3.) bounce \n\
@@ -127,7 +129,8 @@ def main(import_apic, import_cookie):
         elif selection == '2':
             returnedlist = port_channel_selection(allpclist)
             print('\r')
-            option = custom_raw_input(("Would you like to do?\n\
+            option = custom_raw_input(
+                    ("Would you like to do?\n\
                         \n1.) shut\
                         \n2.) no shut\
                         \n3.) bounce \n\
@@ -147,7 +150,8 @@ def main(import_apic, import_cookie):
         elif selection == '3':
             returnedlist = port_channel_selection(allvpclist)
             print('\r')
-            option = custom_raw_input(("Would you like to do?\n\
+            option = custom_raw_input(
+                    ("Would you like to do?\n\
                         \n1.) shut\
                         \n2.) no shut\
                         \n3.) bounce \n\

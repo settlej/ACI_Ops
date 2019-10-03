@@ -9,7 +9,6 @@ import urllib2
 import json
 import ssl
 import trace
-import pdb
 import os
 from localutils.custom_utils import *
 import logging
@@ -197,8 +196,6 @@ def match_port_channels_to_interfaces(interfaces, leaf):
             else:
                 if pc.portmembers[0].tSKey == interface.id:
                     interface.add_portchannel(pc)
-    
-        
 
 def print_interfaces_layout(leafallinterfacesdict,leafs):
     interface_output = ''
@@ -256,15 +253,11 @@ def print_interfaces_layout(leafallinterfacesdict,leafs):
                 sfp = 'sfp-missing'
             else:
                 sfp = column.children[4].children[0]
-
             if column.switchingSt == 'enabled':
                 epgs_status = 'Yes'
             elif column.switchingSt == 'disabled':
                 epgs_status = 'No'
             packets = column.children[0].rXNoErrors + '/' + column.children[0].tXNoErrors
-           # elif
-           #     sfp
-
             if column.pc_mbmr:
                 interface_output += ('{:13}{:14}{:5}{:18}{:12}{:26}{:12}{:7}{:28}{}\n'.format(column.id, status, epgs_status,
                                            str(sfp) , errors, packets, pcstatus + ' ' + pcmode, column.pc_mbmr[0].id, column.pc_mbmr[0],column.descr))#column.pc_mbmr[0].children[0].operVlans))

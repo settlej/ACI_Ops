@@ -170,7 +170,7 @@ def reauthenticate(apic, error):
     while True:
         clear_screen()
         if unauthenticated:
-            import pdb; pdb.set_trace()
+            #import pdb; pdb.set_trace()
             print(error)
             unauthenticated = False
         elif timedout:
