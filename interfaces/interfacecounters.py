@@ -43,62 +43,62 @@ logger.addHandler(c_handler)
 logger.addHandler(f_handler)
 
 
-def goodspacing(column):
-    if column.fex:
-        return column.leaf + ' ' + column.fex + ' ' + str(column.name)
-    elif column.fex == '':
-        return column.leaf + ' ' + str(column.name)
-
-def grouper(iterable, n, fillvalue=''):
-    "Collect data into fixed-length chunks or blocks"
-    # grouper('ABCDEFG', 3, 'x') --> ABC DEF Gxx"
-    args = [iter(iterable)] * n  # creates list * n so args is a list of iters for iterable
-    return itertools.izip_longest(*args, fillvalue=fillvalue)
-
-def parseandreturnsingelist(liststring, collectionlist):
-    try:
-        rangelist = []
-        singlelist = []
-        seperated_list = liststring.split(',')
-        for x in seperated_list:
-            if '-' in x:
-                rangelist.append(x)
-            else:
-                singlelist.append(int(x))
-        if len(rangelist) >= 1:
-            for foundrange in rangelist:
-                tempsplit = foundrange.split('-')
-                for i in xrange(int(tempsplit[0]), int(tempsplit[1])+1):
-                    singlelist.append(int(i))
-   #     print(sorted(singlelist))
-        if max(singlelist) > len(collectionlist) or min(singlelist) < 1:
-            print('\n\x1b[1;37;41mInvalid format and/or range...Try again\x1b[0m\n')
-            return 'invalid'
-        return list(set(singlelist)) 
-    except ValueError as v:
-        print('\n\x1b[1;37;41mInvalid format and/or range...Try again\x1b[0m\n')
-        return 'invalid'
-
-class fabricPathEp(object):
-    def __init__(self, descr=None, dn=None,name=None, number=None):
-        self.name = name
-        self.descr = descr
-        self.dn = dn
-        self.number = number
-        self.leaf =  dn.split('/')[2].replace('paths','leaf')
-        self.shortname = name.replace('eth1/','')
-        self.removedint = '/'.join(dn.split('/')[:-2])
-        if 'extpaths' in self.dn:
-            self.fex = self.dn.split('/')[3].replace('extpaths','fex')
-        else:
-            self.fex = ''
-    def __repr__(self):
-        return self.dn
-    def __getitem__(self, number):
-        if number in self.dn:
-            return self.dn
-        else:
-            return None
+#def goodspacing(column):
+#    if column.fex:
+#        return column.leaf + ' ' + column.fex + ' ' + str(column.name)
+#    elif column.fex == '':
+#        return column.leaf + ' ' + str(column.name)
+#
+#def grouper(iterable, n, fillvalue=''):
+#    "Collect data into fixed-length chunks or blocks"
+#    # grouper('ABCDEFG', 3, 'x') --> ABC DEF Gxx"
+#    args = [iter(iterable)] * n  # creates list * n so args is a list of iters for iterable
+#    return itertools.izip_longest(*args, fillvalue=fillvalue)
+#
+#def parseandreturnsingelist(liststring, collectionlist):
+#    try:
+#        rangelist = []
+#        singlelist = []
+#        seperated_list = liststring.split(',')
+#        for x in seperated_list:
+#            if '-' in x:
+#                rangelist.append(x)
+#            else:
+#                singlelist.append(int(x))
+#        if len(rangelist) >= 1:
+#            for foundrange in rangelist:
+#                tempsplit = foundrange.split('-')
+#                for i in xrange(int(tempsplit[0]), int(tempsplit[1])+1):
+#                    singlelist.append(int(i))
+#   #     print(sorted(singlelist))
+#        if max(singlelist) > len(collectionlist) or min(singlelist) < 1:
+#            print('\n\x1b[1;37;41mInvalid format and/or range...Try again\x1b[0m\n')
+#            return 'invalid'
+#        return list(set(singlelist)) 
+#    except ValueError as v:
+#        print('\n\x1b[1;37;41mInvalid format and/or range...Try again\x1b[0m\n')
+#        return 'invalid'
+#
+#class fabricPathEp(object):
+#    def __init__(self, descr=None, dn=None,name=None, number=None):
+#        self.name = name
+#        self.descr = descr
+#        self.dn = dn
+#        self.number = number
+#        self.leaf =  dn.split('/')[2].replace('paths','leaf')
+#        self.shortname = name.replace('eth1/','')
+#        self.removedint = '/'.join(dn.split('/')[:-2])
+#        if 'extpaths' in self.dn:
+#            self.fex = self.dn.split('/')[3].replace('extpaths','fex')
+#        else:
+#            self.fex = ''
+#    def __repr__(self):
+#        return self.dn
+#    def __getitem__(self, number):
+#        if number in self.dn:
+#            return self.dn
+#        else:
+#            return None
 
 class l1PhysIf():
     def __init__(self, interface):
@@ -119,72 +119,6 @@ class l1PhysIf():
         return self.interface
     def __repr__(self):
         return self.interface
-
-#class rmonIfIn:
-#    def __init__(self, **kwargs):
-#        self.__dict__.update(kwargs)
-#    def __repr__(self):
-#        return self.__dict__
-#
-#class rmonIfOut:
-#    def __init__(self, **kwargs):
-#        self.__dict__.update(kwargs)
-#    def __repr__(self):
-#        return self.__dict__
-#
-#class rmonEtherStats:
-#    def __init__(self, **kwargs):
-#        self.__dict__.update(kwargs)
-#    def __repr__(self):
-#        return self.__dict__
-#
-#class ethpmPhysIf:
-#    def __init__(self, **kwargs):
-#        self.__dict__.update(kwargs)
-#    def __repr__(self):
-#        return self.__dict__
-#
-#class fvDomDef:
-#    def __init__(self, **kwargs):
-#        self.__dict__.update(kwargs)
-#    def __repr__(self):
-#        return self.__dict__
-#
-#class l1RsAttEntityPCons:
-#    def __init__(self, **kwargs):
-#        self.__dict__.update(kwargs)
-#    def __repr__(self):
-#        return self.__dict__
-#
-#class l1RsCdpIfPolCons:
-#    def __init__(self, **kwargs):
-#        self.__dict__.update(kwargs)
-#    def __repr__(self):
-#        return self.__dict__
-#
-#class l1RtMbrIfs:
-#    def __init__(self, **kwargs):
-#        self.__dict__.update(kwargs)
-#    def __repr__(self):
-#        return self.__dict__
-#
-#class pcAggrMbrIf:
-#    def __init__(self, **kwargs):
-#        self.__dict__.update(kwargs)
-#    def __repr__(self):
-#        return self.__dict__
-#
-#class eqptIngrTotal5min:
-#    def __init__(self, **kwargs):
-#        self.__dict__.update(kwargs)
-#    def __repr__(self):
-#        return self.__dict__   
-#
-#class eqptEgrTotal5min:
-#    def __init__(self, **kwargs):
-#        self.__dict__.update(kwargs)
-#    def __repr__(self):
-#        return self.__dict__   
 
 def physical_selection(all_leaflist,leaf=None):
     if leaf == None:
@@ -292,6 +226,8 @@ def main(import_apic,import_cookie):
     global cookie
     cookie = import_cookie
     apic = import_apic
+    clear_screen()
+    location_banner('Show interface counters and EPGs')
     while True:
 
         all_leaflist = get_All_leafs(apic,cookie)

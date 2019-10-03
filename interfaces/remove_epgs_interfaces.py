@@ -76,6 +76,7 @@ class pcObject():
         self.name = name
         self.dn = dn
         self.number = number
+        self.epgfvRsPathAttlist = []
     def __repr__(self):
         return self.dn
     def __get__(self, num):

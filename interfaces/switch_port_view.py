@@ -189,28 +189,28 @@ class ethpmAggrIf():
         return self.allowedvlans
 
 
-def parseandreturnsingelist(liststring, collectionlist):
-    try:
-        rangelist = []
-        singlelist = []
-        seperated_list = liststring.split(',')
-        for x in seperated_list:
-            if '-' in x:
-                rangelist.append(x)
-            else:
-                singlelist.append(int(x))
-        if len(rangelist) >= 1:
-            for foundrange in rangelist:
-                tempsplit = foundrange.split('-')
-                for i in xrange(int(tempsplit[0]), int(tempsplit[1])+1):
-                    singlelist.append(int(i))
-        if max(singlelist) > len(collectionlist) or min(singlelist) < 1:
-            print('\n\x1b[1;37;41mInvalid format and/or range...Try again\x1b[0m\n')
-            return 'invalid'
-        return list(set(singlelist)) 
-    except ValueError as v:
-        print('\n\x1b[1;37;41mInvalid format and/or range...Try again\x1b[0m\n')
-        return 'invalid'
+#def parseandreturnsingelist(liststring, collectionlist):
+#    try:
+#        rangelist = []
+#        singlelist = []
+#        seperated_list = liststring.split(',')
+#        for x in seperated_list:
+#            if '-' in x:
+#                rangelist.append(x)
+#            else:
+#                singlelist.append(int(x))
+#        if len(rangelist) >= 1:
+#            for foundrange in rangelist:
+#                tempsplit = foundrange.split('-')
+#                for i in xrange(int(tempsplit[0]), int(tempsplit[1])+1):
+#                    singlelist.append(int(i))
+#        if max(singlelist) > len(collectionlist) or min(singlelist) < 1:
+#            print('\n\x1b[1;37;41mInvalid format and/or range...Try again\x1b[0m\n')
+#            return 'invalid'
+#        return list(set(singlelist)) 
+#    except ValueError as v:
+#        print('\n\x1b[1;37;41mInvalid format and/or range...Try again\x1b[0m\n')
+#        return 'invalid'
 
 def gather_l1PhysIf_info(result):
     listofinterfaces = []
@@ -537,6 +537,7 @@ def main(import_apic,import_cookie):
         cookie = import_cookie
         apic = import_apic
         clear_screen()
+        location_banner('Switch View')
         q = Queue.Queue()
         leafs = leaf_selection(get_All_leafs(apic, cookie))
         counter = 0
@@ -599,6 +600,7 @@ def main_detail(import_apic,import_cookie):
         cookie = import_cookie
         apic = import_apic
         clear_screen()
+        location_banner('Switch View (Detail)')
         q = Queue.Queue()
         leafs = leaf_selection(get_All_leafs(apic, cookie))
         counter = 0

@@ -125,7 +125,7 @@ def localOrRemote():
                 # Clear console ouput creating clean login screen for login attempt
                 clear_screen()
                 if unauthenticated:
-                    import pdb; pdb.set_trace()
+                    #import pdb; pdb.set_trace()
                     # print error reason after cleared console screen
                     print(error)
                     # reset unauthenticated to prevent 'if' capture if failure is a different reason

@@ -46,59 +46,6 @@ logger.addHandler(c_handler)
 logger.addHandler(f_handler)
 
 
-
-class fabricPathEp(object):
-    def __init__(self, descr=None, dn=None,name=None, number=None):
-        self.name = name
-        self.descr = descr
-        self.dn = dn
-        self.number = number
-        self.leaf =  dn.split('/')[2].replace('paths','leaf')
-        self.shortname = name.replace('eth1/','')
-        self.removedint = '/'.join(dn.split('/')[:-2])
-        if 'extpaths' in self.dn:
-            self.fex = self.dn.split('/')[3].replace('extpaths','fex')
-        else:
-            self.fex = ''
-    def __repr__(self):
-        return self.dn
-    def __getitem__(self, number):
-        if number in self.dn:
-            return self.dn
-        else:
-            return None
-
-def grouper(iterable, n, fillvalue=''):
-    "Collect data into fixed-length chunks or blocks"
-    # grouper('ABCDEFG', 3, 'x') --> ABC DEF Gxx"
-    args = [iter(iterable)] * n  # creates list * n so args is a list of iters for iterable
-    return itertools.izip_longest(*args, fillvalue=fillvalue)
-
-
-def parseandreturnsingelist(liststring, collectionlist):
-    try:
-        rangelist = []
-        singlelist = []
-        seperated_list = liststring.split(',')
-        for x in seperated_list:
-            if '-' in x:
-                rangelist.append(x)
-            else:
-                singlelist.append(int(x))
-        if len(rangelist) >= 1:
-            for foundrange in rangelist:
-                tempsplit = foundrange.split('-')
-                for i in xrange(int(tempsplit[0]), int(tempsplit[1])+1):
-                    singlelist.append(int(i))
-   #     print(sorted(singlelist))
-        if max(singlelist) > len(collectionlist) or min(singlelist) < 1:
-            print('\n\x1b[1;37;41mInvalid format and/or range...Try again\x1b[0m\n')
-            return 'invalid'
-        return list(set(singlelist)) 
-    except ValueError as v:
-        print('\n\x1b[1;37;41mInvalid format and/or range...Try again\x1b[0m\n')
-        return 'invalid'
-
 def parseandreturnsingelist2(liststring, collectionlist):
     try:
         rangelist = []
@@ -119,24 +66,11 @@ def parseandreturnsingelist2(liststring, collectionlist):
             print('\n\x1b[1;37;41mInvalid format and/or range...Try again\x1b[0m\n')
             return 'invalid'
         return list(set(singlelist)) 
-
-        #1,2,4,5,10]
-        #[object1,object2,object3,object4,object5,object6]
-
     except ValueError as v:
         print('\n\x1b[1;37;41mInvalid format and/or range...Try again\x1b[0m\n')
         return 'invalid'
 
-
-
-def goodspacing(column):
-    if column.fex:
-        return column.leaf + ' ' + column.fex + ' ' + str(column.name)
-    elif column.fex == '':
-        return column.leaf + ' ' + str(column.name)
-
-
-def vlan_and_url_generating(epgsinglelist,numepgdict,choseninterfaceobjectlist, epg_type):
+def vlan_and_url_generating(epgsinglelist,numepgdict,choseninterfaceobjectlist, apic, epg_type):
     urllist = []
     confirmationlist = []
     for epg in sorted(epgsinglelist):
@@ -167,25 +101,12 @@ def vlan_and_url_generating(epgsinglelist,numepgdict,choseninterfaceobjectlist, 
         confirmationlist.append((choseninterfaceobjectlist,numepgdict[epg], vlan))
     return urllist, confirmationlist
 
-class pcObject():
-    def __init__(self, name=None, dn=None, number=None):
-        self.name = name
-        self.dn = dn
-        self.number = number
-    def __repr__(self):
-        return self.dn
-    def __get__(self, num):
-        if num in self.number:
-            return self.name
-        else:
-            return None
-
-def add_egps_to_interfaces(urllist, interfacetype):
+def add_egps_to_interfaces(urllist, interfacetype, cookie):
     queue = Queue.Queue()
     threadlist = []
     queuelist = []
     for url in urllist:
-        t = threading.Thread(target=submit_add_post_request, args=(url,interfacetype,queue))
+        t = threading.Thread(target=submit_add_post_request, args=(url,interfacetype,queue, cookie))
         t.start()
         threadlist.append(t)
     for t in threadlist:
@@ -194,11 +115,11 @@ def add_egps_to_interfaces(urllist, interfacetype):
     for q in sorted(queuelist):
         print(q)
 
-def submit_add_post_request(url,interfacetype,queue):
-    result, error = PostandGetResponseData(url.url, url.data,cookie)
+def submit_add_post_request(url,interfacetype,queue, cookie):
+    result, error = PostandGetResponseData(url.url, url.data, cookie)
     shorturl = url.url[30:-5]
     if error == None and result == []:
-        finalresult = 'Success! -- Adding ' + shorturl + ' > ' + str(url.interface)
+        finalresult = 'Success! -- Added ' + shorturl + ' > ' + str(url.interface)
         queue.put(finalresult)
         logger.debug('{} modify: {}'.format(interfacetype, finalresult))
     elif result == 'invalid':
@@ -212,58 +133,13 @@ def submit_add_post_request(url,interfacetype,queue):
         logger.error('{} modify: {}'.format(interfacetype, error))
         print(error)
 
-
-def port_channel_selection(allpclist,allepglist):
-    pcobjectlist = []
-    for pc in allpclist:
-        pcobjectlist.append(pcObject(name = pc['fabricPathEp']['attributes']['name'],
-                                     dn = pc['fabricPathEp']['attributes']['dn'] ))
-    print("\n{:>4} |  {}".format("#","Port-Channel Name"))
-    print("-"* 65)
-    for num,pc in enumerate(sorted(pcobjectlist),1):
-        print("{:>4}.) {}".format(num,pc.name))
-        pc.number = num
-    while True:
-        try:
-            askpcnum = custom_raw_input("\nWhich number(s)?: ")
-            print('\r')
-            if askpcnum.strip().lstrip() == '':
-                continue
-            pcsinglelist = parseandreturnsingelist2(askpcnum,pcobjectlist)
-            if pcsinglelist == 'invalid':
-                continue
-            choseninterfaceobjectlist = filter(lambda x: x.number in pcsinglelist, pcobjectlist)
-            break
-        except ValueError as v:
-            print("\n\x1b[1;37;41mInvalid format and/or range...Try again\x1b[0m\n")
-            
-    numepgdict = {}
-
-    print("\n{:>4} | {:8}|  {:15}|  {}".format("#","Tenant","App-Profile","EPG"))
-    print("-"* 65)
-    for num,epg in enumerate(sorted(allepglist),1):
-        numepgdict[num] = epg
-        egpslit = epg.split('/')[1:]
-        print("{:4}.) {:8}|  {:15}|  {}".format(num,egpslit[0][3:],egpslit[1][3:],egpslit[2][4:]))
-    while True:
-        try:
-            askepgnum = custom_raw_input("\nWhich number(s)?: ")
-            print('\r')
-            if askepgnum.strip().lstrip() == '':
-                continue
-            epgsinglelist = parseandreturnsingelist(askepgnum,numepgdict)
-            if epgsinglelist == 'invalid':
-                continue
-            break
-        except ValueError as v:
-            print("\n\x1b[1;37;41mInvalid format and/or range...Try again\x1b[0m\n")
+def interface_type_and_deployement(epgsinglelist, numepgdict, choseninterfaceobjectlist, apic, type="Physical"):
     while True:
         print('What is the inteface epg mode?:\n\n'
               + '**Use either 1 for trunks ports and 2 for normal access ports\n\n' 
               + '1.) Trunk\n'
               + '2.) Access\n'
               + '3.) Untagged\n')
-
         askepgtype = custom_raw_input("Which mode? [default=1]: ") or '1'
         if askepgtype == '1':
             epg_type = 'trunk_port'
@@ -278,164 +154,7 @@ def port_channel_selection(allpclist,allepglist):
             print("\n\x1b[1;37;41mInvalid option...Try again\x1b[0m\n")
             continue
         
-    urllist, confirmationlist =  vlan_and_url_generating(epgsinglelist,numepgdict,choseninterfaceobjectlist, epg_type)
-    #print(confirmationlist
-    print('')
-    print('Please Confirm deployment:\n')
-    #print(confirmationlist)
-    for confirm in confirmationlist:
-        print('{epg} with vlan {vlan}'.format(epg=confirm[1],vlan=confirm[2]))
-        for interface in confirm[0]:
-            print('{}'.format(interface))
-        print('')
-    while True:
-        verify = custom_raw_input('Continue? [y|n]: ')
-        if verify == '':
-            print("\n\x1b[1;37;41mInvalid option...Try again\x1b[0m\n")
-            continue
-        elif verify[0].lower() == 'y':
-            break
-        elif verify[0].lower() == 'n':
-            raise KeyboardInterrupt
-        else:
-            print("\n\x1b[1;37;41mInvalid option...Try again\x1b[0m\n")
-            continue
-
-    add_egps_to_interfaces(urllist, 'Port-Channel')
-#        result, error = PostandGetResponseData(url.url, url.data, cookie)
-#        shorturl = url.url[30:-5]
-#        if error == None and result == []:
-#            finalresult = 'Success for ' + shorturl + ' > ' + str(url.interface)
-#            print(finalresult)
-#            logger.debug('Port-Channel modify: ' + finalresult)
-#        elif result == 'invalid':
-#            logger.debug(error)
-#            interfacepath = re.search(r'\[.*\]', error)
-#            if 'already exists' in error:
-#                print('\x1b[1;37;41mFailure\x1b[0m for ' + shorturl + ' > ' + str(url.interface) + ' -- EPG already on Interface ' )    
-#            elif 'AttrBased EPG' in error:
-#                print('\x1b[1;37;41mFailure\x1b[0m for ' + shorturl + ' > ' + str(url.interface) + ' -- Attribute EPGs need special static attirbutes')    
-#            else:
-#                print('\x1b[1;37;41mFailure\x1b[0m for ' + shorturl + '\t -- ' + error)  
-#        else:
-#            print(error)
-#            logger.error('Port-Channel modify: ' + error)
-
-
-def physical_selection(all_leaflist, allepglist):
-    nodelist = [node['fabricNode']['attributes']['id'] for node in all_leaflist]
-    nodelist.sort()
-    for num,node in enumerate(nodelist,1):
-        print("{}.) {}".format(num,node))
-    while True:
-        asknode = custom_raw_input('\nWhat leaf(s): ')
-        print('\r')
-        returnedlist = parseandreturnsingelist(asknode, nodelist)
-        if returnedlist == 'invalid':
-            continue
-        chosenleafs = [nodelist[int(node)-1] for node in returnedlist]
-        break
-    compoundedleafresult = []
-    for leaf in chosenleafs:
-        url = """https://{apic}/api/node/class/fabricPathEp.json?query-target-filter=and(not(wcard(fabricPathEp.dn,%22__ui_%22)),""" \
-              """and(eq(fabricPathEp.lagT,"not-aggregated"),eq(fabricPathEp.pathT,"leaf"),wcard(fabricPathEp.dn,"topology/pod-1/paths-{leaf}/"),""" \
-              """not(or(wcard(fabricPathEp.name,"^tunnel"),wcard(fabricPathEp.name,"^vfc")))))&order-by=fabricPathEp.dn|desc""".format(leaf=leaf,apic=apic)
-        result = GetResponseData(url, cookie)
-        compoundedleafresult.append(result)
-    result = compoundedleafresult
-    interfacelist = []
-    interfacelist2 = []
-    for x in result:
-        for pathep in x:
-            dn = pathep['fabricPathEp']['attributes']['dn']
-            name = pathep['fabricPathEp']['attributes']['name']
-            descr = pathep['fabricPathEp']['attributes']['descr']
-            if 'extpaths' in dn:
-                interfacelist2.append(fabricPathEp(descr=descr, dn=dn ,name=name))
-            else:
-                interfacelist.append(fabricPathEp(descr=descr, dn=dn ,name=name))
-            
-    interfacelist2 = sorted(interfacelist2, key=lambda x: (x.fex, int(x.shortname)))
-    interfacelist = sorted(interfacelist, key=lambda x: int(x.shortname))
-    interfacenewlist = interfacelist2 + interfacelist
-    interfacelist = []
-    interfacelist2 = []
-    finalsortedinterfacelist = sorted(interfacenewlist, key=lambda x: x.removedint)
-    interfacedict = {}
-    for num,interf in enumerate(finalsortedinterfacelist,1):
-        if interf != '':
-           interfacedict[interf] = str(num) + '.) '
-           interf.number = num
-    listlen = len(finalsortedinterfacelist) / 3
-    firstgrouped = [x for x in grouper(finalsortedinterfacelist,listlen)]
-    finalgrouped = zip(*firstgrouped)
-    for column in finalgrouped:
-        a = column[0].number
-        b = goodspacing(column[0])
-        c = column[1].number
-        d = goodspacing(column[1])
-        if column[2] == '' or column[2] == None:
-            e = ''
-            f = ''
-        else:
-            #e = interfacedict[column[2]]
-            e = column[2].number
-            f = goodspacing(column[2])
-            #f = row[2].leaf + ' ' + row[2].fex + ' ' + str(row[2].name)
-        print('{:6}.) {:33}{}.) {:33}{}.) {}'.format(a,b,c,d,e,f))
-    while True:
-        #try:
-            selectedinterfaces = custom_raw_input("\nSelect interface(s) by number: ")
-            print('\r')
-            if selectedinterfaces.strip().lstrip() == '':
-                continue
-            intsinglelist = parseandreturnsingelist(selectedinterfaces,finalsortedinterfacelist)
-            if intsinglelist == 'invalid':
-                continue
-            choseninterfaceobjectlist = filter(lambda x: x.number in intsinglelist, finalsortedinterfacelist)
-            break
-    numepgdict = {}
-    print("\n{:>4} | {:8}|  {:15}|  {}".format("#","Tenant","App-Profile","EPG"))
-    print("-"* 65)
-    allepglist = sorted(allepglist)
-    for num,epg in enumerate(allepglist,1):
-        numepgdict[num] = epg
-        egpslit = epg.split('/')[1:]
-        print("{:4}.) {:8}|  {:15}|  {}".format(num,egpslit[0][3:],egpslit[1][3:],egpslit[2][4:]))
-    while True:
-        #try:
-            askepgnum = custom_raw_input("\nWhich number(s)?: ")
-            print('\r')
-            if askepgnum.strip().lstrip() == '':
-                continue
-            epgsinglelist = parseandreturnsingelist(askepgnum,numepgdict)
-            if epgsinglelist == 'invalid':
-                continue
-            chosenepgs = [allepglist[x] for x in epgsinglelist]
-            break
-    compoundurllist = []
-    while True:
-        print('What is the inteface epg mode?:\n\n'
-              + '**Use either 1 for trunks ports and 2 for normal access ports\n\n' 
-              + '1.) Trunk\n'
-              + '2.) Access\n'
-              + '3.) Untagged\n')
-
-        askepgtype = custom_raw_input("Which mode? [default=1]: ") or '1'
-        if askepgtype == '1':
-            epg_type = 'trunk_port'
-            break
-        elif askepgtype == '2':
-            epg_type = 'access_port'
-            break
-        elif askepgtype == '3':
-            epg_type = 'untagged_port'
-            break
-        else:
-            print("\n\x1b[1;37;41mInvalid option...Try again\x1b[0m\n")
-            continue
-        
-    urllist, confirmationlist =  vlan_and_url_generating(epgsinglelist,numepgdict,choseninterfaceobjectlist, epg_type)
+    urllist, confirmationlist =  vlan_and_url_generating(epgsinglelist,numepgdict,choseninterfaceobjectlist, apic, epg_type)
     print('')
     print('Please Confirm deployment:\n')
     for confirm in confirmationlist:
@@ -455,25 +174,7 @@ def physical_selection(all_leaflist, allepglist):
         else:
             print("\n\x1b[1;37;41mInvalid option...Try again\x1b[0m\n")
             continue    
-    add_egps_to_interfaces(urllist, 'Physical')
-    #for url in urllist:
-    #    result, error = PostandGetResponseData(url.url, url.data,cookie)
-    #    shorturl = url.url[30:-5]
-    #    if error == None and result == []:
-    #        finalresult = 'Success for ' + shorturl + ' > ' + str(url.interface)
-    #        print(finalresult)
-    #        logger.debug('Physical modify: ' + finalresult)
-    #    elif result == 'invalid':
-    #        logger.error('Physical modify: ' + error)
-    #       # print('level1')
-    #        interfacepath = re.search(r'\[.*\]', error)
-    #        if 'already exists' in error:
-    #            print('\x1b[1;37;41mFailure\x1b[0m ' + shorturl + ' > ' + url.interface.dn + '\t -- EPG already on Interface ')# + interfacepath.group())    
-    #        else:
-    #            print('\x1b[1;37;41mFailure\x1b[0m ' + shorturl + '\t -- ' + error)
-    #    else:
-    #        logger.error('Physical modify: ' + error)
-    #        print(error)
+    add_egps_to_interfaces(urllist, type, cookie)
 
 def main(import_apic,import_cookie):
     while True:
@@ -485,52 +186,28 @@ def main(import_apic,import_cookie):
         allpclist = get_All_PCs(apic,cookie)
         allvpclist = get_All_vPCs(apic,cookie)
         all_leaflist = get_All_leafs(apic,cookie)
-    
+        clear_screen()
+        location_banner('Adding EPGs')
         selection = interface_menu()
     
         if selection == '1':
-            physical_selection(all_leaflist, allepglist)
+            returnedlist = physical_selection(all_leaflist, apic, cookie)
+            #import pdb; pdb.set_trace()
+            epgsinglelist, numepgdict, choseninterfaceobjectlist = display_and_select_epgs(returnedlist, allepglist)
+            interface_type_and_deployement(epgsinglelist, numepgdict, choseninterfaceobjectlist, apic)
             print('\r')
             custom_raw_input('#Press enter to continue...')
         elif selection == '2':
-            port_channel_selection(allpclist,allepglist)
+            returnedlist = port_channel_selection(allpclist)
+            epgsinglelist, numepgdict, choseninterfaceobjectlist = display_and_select_epgs(returnedlist, allepglist)
+            interface_type_and_deployement(epgsinglelist, numepgdict, choseninterfaceobjectlist, apic, type="Port-Channel")
+            #port_channel_selection(allpclist,allepglist)
             print('\r')
             custom_raw_input('#Press enter to continue...')
-          #      for number in sorted(pcsinglelist):
-          #          data = """{{"fvRsPathAtt":{{"attributes":{{"encap":"{vlan}","instrImedcy":"immediate","tDn":"{}","status":"created"}},"children":[]}}}}""".format(numepgdict[number],vlan=vlan)
-          #          print(data)
-            #result, totalcount = PostandGetResponseData(url, data)
         elif selection == '3':
-            port_channel_selection(allvpclist,allepglist)
+            returnedlist = port_channel_selection(allvpclist)
+            epgsinglelist, numepgdict, choseninterfaceobjectlist = display_and_select_epgs(returnedlist, allepglist)
+            interface_type_and_deployement(epgsinglelist, numepgdict, choseninterfaceobjectlist, apic, type="vPort-Channel")
             print('\r')
             custom_raw_input('#Press enter to continue...')
         
-        #print(numepglist[int(askepgnum)])
-     #   for num,a in enumerate(sorted(epgdict, reverse=False),1): 
-     #       numepgdict[num] = epgdict[a]
-     #       egpslit = epgdict[a].split('/')[1:]
-     #       print("{:4}.) {:8}|  {:15}|  {}".format(num,egpslit[0][3:],egpslit[1][3:],egpslit[2][4:]))
-     #   epgnum = custom_raw_input("which number(s)?: ")
-
-        #print(numepgdict[int(epgnum)])
-            #print(pcdict)
-            #print(epgdict)
-#            Curr
-#url: https://192.168.255.2/api/node/mo/uni/tn-SI/ap-APP-MGMT/epg-EPG-ESXI-MGMT.json
-#payload{"fvRsPathAtt":{"attributes":{"encap":"vlan-235","instrImedcy":"immediate","tDn":"topology/pod-1/paths-102/extpaths-112/pathep-[Find-vpc]","status":"created"},"children":[]}}
-#response: {"totalCount":"0","imdata":[]}
-#            custom_raw_input("#Press enter to return to main menu...")
-if __name__ == '__main__':
-    try:
-        main()
-    except KeyboardInterrupt as k:
-                print('\n\nEnding Script....\n')
-                exit()
-
-#                        url = 'https://{apic}/api/node/mo/uni/fabric/outofsvc.json'
-#                        # data is the 'POST' data sent in the REST call to 'blacklist' (shutdown) on a fex interface
-#                        data = """'{{"fabricRsOosPath":{{"attributes":{{"tDn":"topology/pod-1/paths-{leaf}/extpaths-{fexnumber}/pathep-[{ints}]","lc":"blacklist"}},"children":[]}}}}'""".format(fexnumber=fexnumber,ints=('eth1' + ints[8:]),leaf=leaf)
-#                        PostandGetResponseData(url, data)
-#                        print(leaf + ' ' + fexnumber + ' ' +  ints + ' shut')
-#PC
-#url: https://{apic}/api/node/class/fabricPathEp.json?query-target-filter=and(not(wcard(fabricPathEp.dn,%22__ui_%22)),eq(fabricPathEp.lagT,"link"))
