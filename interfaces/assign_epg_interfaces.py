@@ -434,7 +434,26 @@ def physical_selection(all_leaflist, allepglist):
             print("\n\x1b[1;37;41mInvalid option...Try again\x1b[0m\n")
             continue
         
-    urllist =  vlan_and_url_generating(epgsinglelist,numepgdict,choseninterfaceobjectlist, epg_type)
+    urllist, confirmationlist =  vlan_and_url_generating(epgsinglelist,numepgdict,choseninterfaceobjectlist, epg_type)
+    print('')
+    print('Please Confirm deployment:\n')
+    for confirm in confirmationlist:
+        print('{epg} with vlan {vlan}'.format(epg=confirm[1],vlan=confirm[2]))
+        for interface in confirm[0]:
+            print('{}'.format(interface))
+        print('')
+    while True:
+        verify = custom_raw_input('Continue? [y|n]: ')
+        if verify == '':
+            print("\n\x1b[1;37;41mInvalid option...Try again\x1b[0m\n")
+            continue
+        elif verify[0].lower() == 'y':
+            break
+        elif verify[0].lower() == 'n':
+            raise KeyboardInterrupt
+        else:
+            print("\n\x1b[1;37;41mInvalid option...Try again\x1b[0m\n")
+            continue    
     add_egps_to_interfaces(urllist, 'Physical')
     #for url in urllist:
     #    result, error = PostandGetResponseData(url.url, url.data,cookie)
