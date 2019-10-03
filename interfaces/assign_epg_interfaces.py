@@ -198,7 +198,7 @@ def submit_add_post_request(url,interfacetype,queue):
     result, error = PostandGetResponseData(url.url, url.data,cookie)
     shorturl = url.url[30:-5]
     if error == None and result == []:
-        finalresult = 'Success for ' + shorturl + ' > ' + str(url.interface)
+        finalresult = 'Success! -- Adding ' + shorturl + ' > ' + str(url.interface)
         queue.put(finalresult)
         logger.debug('{} modify: {}'.format(interfacetype, finalresult))
     elif result == 'invalid':
@@ -282,6 +282,7 @@ def port_channel_selection(allpclist,allepglist):
     #print(confirmationlist
     print('')
     print('Please Confirm deployment:\n')
+    #print(confirmationlist)
     for confirm in confirmationlist:
         print('{epg} with vlan {vlan}'.format(epg=confirm[1],vlan=confirm[2]))
         for interface in confirm[0]:

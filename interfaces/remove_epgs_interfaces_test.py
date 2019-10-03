@@ -275,9 +275,10 @@ def postremove(interface_epg,queue):
     #print(result)
     if result[0] == []:
         #print(interface_epg[:interface_epg.find('rspathAtt')-1] + ' removed from ' + interface.name)
-        queue.put(interface_epg[:interface_epg.find('rspathAtt')-1] + ' removed from ' + interfacepath)
+        removeendingrspathAtt = interface_epg.find('rspathAtt')-1
+        queue.put('Success! -- Removed ' + interface_epg[:removeendingrspathAtt] + ' > ' + interfacepath)
     else:
-        queue.put('Failure -- ' + result[0])
+        queue.put('\x1b[1;37;41mFailure!\x1b[0m -- ' + result[0])
 
 
 #def removeepgs(interfaces):
@@ -373,34 +374,25 @@ def remove_all_epgs_every_interface(interfacelist):
 def remove_selection_from_all_interfaces(interfacelist):
     allepgsfoundlist = []
     interfaceswithoutepgs = []
-    allepgsfoundlist2 = []
     for interface in interfacelist:
         url = 'https://{apic}/api/node/class/fvRsPathAtt.json?query-target-filter=and(eq(fvRsPathAtt.tDn,"{interface}"))&order-by=fvRsPathAtt.modTs|desc'.format(interface=interface,apic=apic)
         logger.info(url)
-#        interface.getepgsurl = url
-#    for interface in interfaces:
-#        t = 
         result = GetResponseData(url,cookie)
         logger.debug(result)
-       # import pdb; pdb.set_trace()
         if result == []:
             interfaceswithoutepgs.append(interface)
         else:
             for epg in result:
                 interface.epgfvRsPathAttlist.append(epg['fvRsPathAtt']['attributes']['dn'])
-                allepgsfoundlist.append('/'.join(epg['fvRsPathAtt']['attributes']['dn'].split('/')[:4]))
-                allepgsfoundlist2.append(epg['fvRsPathAtt']['attributes']['dn'])
-    
+                allepgsfoundlist.append('/'.join(epg['fvRsPathAtt']['attributes']['dn'].split('/')[:4]))  
     allepgsfoundlist = sorted(list(set(allepgsfoundlist)))
     for num,epg in enumerate(allepgsfoundlist,1):
         print("{}.) {}".format(num,epg))
     selectedremovalepgs = custom_raw_input("Which EPG(s) would you like to remove? [example 1 or 1,2 or 1-3,5]: ")
     removableegps = parseandreturnsingelist(selectedremovalepgs, allepgsfoundlist)
-    #print(removableegps)
     filteredepglist = []
     for num in removableegps:
         filteredepglist.append(allepgsfoundlist[num-1])
-    
     currentremovalegplist = []
     for interface in interfacelist:
         for epgfvRsPathAtt in interface.epgfvRsPathAttlist:
