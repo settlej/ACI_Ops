@@ -165,6 +165,19 @@ def remove_selection_from_all_interfaces(interfacelist, apic, cookie):
             for tDn in filteredepglist:
                 if tDn in epgfvRsPathAtt:
                     currentremovalegplist.append(epgfvRsPathAtt)
+    print(currentremovalegplist)
+    while True:
+        verify = custom_raw_input('Continue removal of EPGs? [y|n]: ')
+        if verify == '':
+            print("\n\x1b[1;37;41mInvalid option...Try again\x1b[0m\n")
+            continue
+        elif verify[0].lower() == 'y':
+            break
+        elif verify[0].lower() == 'n':
+            raise KeyboardInterrupt
+        else:
+            print("\n\x1b[1;37;41mInvalid option...Try again\x1b[0m\n")
+            continue    
     removeepgs(currentremovalegplist)
     raw_input("\n\n#Press enter to continue...")
 

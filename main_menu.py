@@ -26,11 +26,11 @@ import faults_and_logs.most_recent_admin_changes as most_recent_admin_changes
 import faults_and_logs.most_recent_event_changes as most_recent_event_changes
 import faults_and_logs.alleventsbetweendates as alleventsbetweendates
 import faults_and_logs.alleventsbetweendates_fulldetail as alleventsbetweendates_fulldetail
-import information.endpoint_search as ipendpoint
-import information.routetranslation as epg_troubleshooting
-import information.routetranslation as routetranslation
-import information.routetrace as check_routing
-import information.show_static_routes as show_static_routes
+import information.endpoint_search as ipendpoint_search
+#import information.routetranslation as epg_troubleshooting
+#import information.routetranslation as routetranslation
+#import information.routetrace as check_routing
+#import information.show_static_routes as show_static_routes
 import configuration.create_local_span_session as create_local_span_session
 import configuration.span_to_server as span_to_server
 import logging
@@ -392,7 +392,7 @@ def main():
                     continue
             elif choosen == '16':
                 try:
-                    ipendpoint.main(apic,cookie)
+                    ipendpoint_search.main(apic,cookie)
                     keyinterrupt = False
                 except KeyboardInterrupt as k:
                     print('\nExit to Main menu\n')

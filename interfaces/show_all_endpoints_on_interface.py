@@ -12,7 +12,6 @@ import trace
 import os
 import time
 import itertools
-import ipaddress
 from localutils.custom_utils import *
 import logging
 

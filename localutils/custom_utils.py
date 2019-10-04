@@ -1,4 +1,5 @@
 import os
+import socket
 import datetime
 import json
 import urllib2
@@ -11,7 +12,7 @@ import logging
 # specifiy logging levels for file vs console.  Set default level to DEBUG to allow more
 # grainular logging levels
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 # Define logging handler for file and console logging.  Console logging can be desplayed during
 # program run time, similar to print.  Program can display or write to log file if more debug 
@@ -66,10 +67,10 @@ def time_difference(current_time, event_time):
 
 def get_APIC_clock(apic,cookie):
     if apic == 'localhost':
-        url = """https://{apic}/api/node/class/topSystem.json?query-target-filter=or(eq(topSystem.dn,"topology/pod-1/node-1/sys"))""".format(apic=apic)
+        serverhostname = socket.gethostname()
+        url = """https://{apic}/api/node/class/topSystem.json?query-target-filter=or(eq(topSystem.name,"{serverhostname}"))""".format(apic=apic,serverhostname=serverhostname)
     else:
         url = """https://{apic}/api/node/class/topSystem.json?query-target-filter=or(eq(topSystem.oobMgmtAddr,"{apic}"),eq(topSystem.inbMgmtAddr,"{apic}","topology/pod-1/node-1/sys"))""".format(apic=apic)
-    url = """https://{apic}/api/node/class/topSystem.json?query-target-filter=or(eq(topSystem.oobMgmtAddr,"{apic}"),eq(topSystem.inbMgmtAddr,"{apic}"))""".format(apic=apic)
     logger.info(url)
     result = GetResponseData(url,cookie)
     return result[0]['topSystem']['attributes']['currentTime'][:-7].replace('T', ' ')

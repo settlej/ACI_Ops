@@ -220,12 +220,12 @@ def single_interface_pull(import_apic,import_cookie, selectedleaf, interfacepull
         leaf = selectedleaf
         interface = interfacepull
         #str(chosendestinterfaceobject[0]).replace('paths','nodes')
-        epgurl = """https://{apic}/api/node-{leaf}/mo/sys/phys-[{interface}].json?rsp-subtree-include=full-deployment&target-node=all&target-path=l1EthIfToEPg""".format(interface=str(interface),leaf=str(leaf[0]),apic=apic)
+        epgurl = """https://{apic}/api/node-{leaf}/mo/sys/phys-[{interface}].json?rsp-subtree-include=full-deployment&target-node=all&target-path=l1EthIfToEPg""".format(interface=str(interface),leaf=str(leaf),apic=apic)
         #url = """https://{apic}/api/node/mo/{path}.json?rsp-subtree-include=full-deployment&target-node=all&target-path=l1EthIfToEPg""".format(apic=apic,path=str(chosendestinterfaceobject[0]))
         logger.info(epgurl)
         epgresult = GetResponseData(epgurl, cookie)
             
-        url = """https://{apic}/api/node-{leaf}/mo/sys/phys-[{interface}].json?""".format(interface=str(interface),leaf=str(leaf[0]),apic=apic) \
+        url = """https://{apic}/api/node-{leaf}/mo/sys/phys-[{interface}].json?""".format(interface=str(interface),leaf=str(leaf),apic=apic) \
                   + """query-target=subtree&rsp-subtree-include=stats&target-subtree-class=rmonIfOut,l1PhysIf,""" \
                   + """rmonIfIn,rmonEtherStats,ethpmPhysIf,l1RsAttEntityPCons,"""\
                   + """l1RsCdpIfPolCons,l1RtMbrIfs,pcAggrMbrIf,fvDomDef,eqptIngrTotal5min,eqptEgrTotal5min"""
