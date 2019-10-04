@@ -4,7 +4,7 @@ Tools to enhance CLI experience replacing slower ACI show commands with addition
 This program fully supports Python2 and will be updated to Python3 when ACI's internal platform migrates from Python2.</br>
 Program can run on Windows, Mac, and Linux.</br>
 Can be ran on local computer or on APIC itself.  If on the APIC you can store the program in you home directory.</br>
-# New Features (In progress):
+# New Features!
 1.) Picture showing interfaces like available in GUI with colors reflecting interface status, role, errors</br>
 2.) Show recent ports down</br>
 3.) Show all endpoints on interface</br>
