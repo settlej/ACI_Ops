@@ -65,6 +65,10 @@ def time_difference(current_time, event_time):
 
 
 def get_APIC_clock(apic,cookie):
+    if apic == 'localhost':
+        url = """https://{apic}/api/node/class/topSystem.json?query-target-filter=or(eq(topSystem.dn,"topology/pod-1/node-1/sys"))""".format(apic=apic)
+    else:
+        url = """https://{apic}/api/node/class/topSystem.json?query-target-filter=or(eq(topSystem.oobMgmtAddr,"{apic}"),eq(topSystem.inbMgmtAddr,"{apic}","topology/pod-1/node-1/sys"))""".format(apic=apic)
     url = """https://{apic}/api/node/class/topSystem.json?query-target-filter=or(eq(topSystem.oobMgmtAddr,"{apic}"),eq(topSystem.inbMgmtAddr,"{apic}"))""".format(apic=apic)
     logger.info(url)
     result = GetResponseData(url,cookie)
@@ -245,7 +249,7 @@ def display_and_select_epgs(choseninterfaceobjectlist, allepglist):
             epgsinglelist = parseandreturnsingelist(askepgnum,numepgdict)
             if epgsinglelist == 'invalid':
                 continue
-            chosenepgs = [allepglist[x] for x in epgsinglelist]
+            chosenepgs = [allepglist[x-1] for x in epgsinglelist]
             break
     return epgsinglelist, numepgdict, choseninterfaceobjectlist
 
