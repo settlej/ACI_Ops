@@ -248,15 +248,15 @@ def display_and_select_epgs(choseninterfaceobjectlist, allepglist):
     return epgsinglelist, numepgdict, choseninterfaceobjectlist
 
 
-def physical_selection(all_leaflist, apic, cookie, leafprovided=None):
-    if leafprovided == None:
+def physical_selection(all_leaflist, apic, cookie, leafnum=None, provideleaf=False):
+    if leafnum == None:
         nodelist = [node['fabricNode']['attributes']['id'] for node in all_leaflist]
         nodelist.sort()
         for num,node in enumerate(nodelist,1):
             print("{}.) {}".format(num,node))
         while True:
             #try:
-                asknode = custom_raw_input('\nWhat leaf(s): ')
+                asknode = custom_raw_input('\nWhich leaf(s): ')
                 print('\r')
                 returnedlist = parseandreturnsingelist(asknode, nodelist)
                 if returnedlist == 'invalid':
@@ -267,7 +267,7 @@ def physical_selection(all_leaflist, apic, cookie, leafprovided=None):
             #    print('\n\nEnding Script....\n')
             #    return
     else:
-        chosenleafs = [leafprovided]
+        chosenleafs = [leafnum]
     compoundedleafresult = []
     for leaf in chosenleafs:
         url = """https://{apic}/api/node/class/fabricPathEp.json?query-target-filter=and(not(wcard(fabricPathEp.dn,%22__ui_%22)),""" \
@@ -327,12 +327,14 @@ def physical_selection(all_leaflist, apic, cookie, leafprovided=None):
             intsinglelist = parseandreturnsingelist(selectedinterfaces,finalsortedinterfacelist)
             if intsinglelist == 'invalid':
                 continue
-            if leafprovided == None:
+            if provideleaf == False:
                 choseninterfaceobjectlist = filter(lambda x: x.number in intsinglelist, finalsortedinterfacelist)
                 return choseninterfaceobjectlist
             else:
-                choseninterfaceobjectlist = filter(lambda x: x.number in intsinglelist, finalsortedinterfacelist), leafprovided
-                return choseninterfaceobjectlist, leafprovided
+                chosenleafs
+                choseninterfaceobjectlist = filter(lambda x: x.number in intsinglelist, finalsortedinterfacelist)
+                import pdb; pdb.set_trace()
+                return choseninterfaceobjectlist, chosenleafs
            # for number in intsinglelist:
            #     if not (0 < int(number) <= len(finalsortedinterfacelist)):
            #         print('here')

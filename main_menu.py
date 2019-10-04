@@ -247,8 +247,8 @@ def main():
                             '\t ---------------------------------------------------\n' +
                             '\t| 16.) Endpoint Search\n' + 
                             #'\t| 16.) Show Leaf/Spine/APIC info (Not Available)\n' +
-                            '\t| 17.) EPG to EPG troubleshooting (alpha)\n' +
-                            '\t| 18.) Route lookup to endpoint (alpha)\n' +
+                            #'\t| 17.) EPG to EPG troubleshooting (alpha)\n' +
+                            #'\t| 18.) Route lookup to endpoint (alpha)\n' +
                             #'\t| 17.) Show all static routes\n' + 
                             '\t ---------------------------------------------------\n\n' +
                             '\t  [CONFIGURATION]\n'
@@ -397,14 +397,14 @@ def main():
                     print('\nExit to Main menu\n')
                     keyinterrupt = True
                     continue		
-            elif choosen == '17':
-                try:
-                    epg_troubleshooting.main(apic,cookie)
-                    keyinterrupt = False
-                except KeyboardInterrupt as k:
-                    print('\nExit to Main menu\n')
-                    keyinterrupt = True
-                    continue
+            #elif choosen == '17':
+            #    try:
+            #        epg_troubleshooting.main(apic,cookie)
+            #        keyinterrupt = False
+            #    except KeyboardInterrupt as k:
+            #        print('\nExit to Main menu\n')
+            #        keyinterrupt = True
+            #        continue
             #elif choosen == '18':
             #    try:
             #        routetranslation.main(apic,cookie)
@@ -414,14 +414,14 @@ def main():
             #        print('\nExit to Main menu\n')
             #        keyinterrupt = True
             #        continue
-            elif choosen == '18':
-                try:
-                    check_routing.main(apic,cookie)
-                    keyinterrupt = False
-                except KeyboardInterrupt as k:
-                    print('\nExit to Main menu\n')
-                    keyinterrupt = True
-                    continue      
+            #elif choosen == '18':
+            #    try:
+            #        check_routing.main(apic,cookie)
+            #        keyinterrupt = False
+            #    except KeyboardInterrupt as k:
+            #        print('\nExit to Main menu\n')
+            #        keyinterrupt = True
+            #        continue      
 
             #elif choosen == '17':
             #    try:

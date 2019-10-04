@@ -175,40 +175,53 @@ def main(import_apic,import_cookie):
         print('\x1b[1;31;40mFailed to retrieve active leafs, make sure leafs are operational...\x1b[0m')
         custom_raw_input('\n#Press enter to continue...')
         return
-    clear_screen()
-    location_banner('Show Endpoints on Interface')
-    selection = interface_menu()
-    try:
-        if selection == '1':
-            print("\nSelect leaf(s): \r")
-            returnedlist = physical_selection(all_leaflist, apic, cookie)
-            #interface =  interfacelist[0].name
-            #interfacelist = physical_selection(all_leaflist, allepglist)
-            print(returnedlist)
+    while True:
+        clear_screen()
+        location_banner('Show Endpoints on Interface')
+        selection = interface_menu()
+        try:
+            if selection == '1':
+                print("\nSelect leaf(s): ")
+                print("\r")
+                returnedlist = physical_selection(all_leaflist, apic, cookie)
+                #interface =  interfacelist[0].name
+                #interfacelist = physical_selection(all_leaflist, allepglist)
+                #print(returnedlist)
+                #custom_raw_input('#Press enter to continue...')
+            elif selection == '2':
+                returnedlist = port_channel_selection(allpclist)
+                #print(returnedlist)
+                #custom_raw_input('#Press enter to continue...')
+            elif selection == '3':
+                returnedlist = port_channel_selection(allvpclist)
+                #print(returnedlist)
+        except Exception as e:
+            print(e)
+            raw_input('Completed. Press enter to return....')
+
             #custom_raw_input('#Press enter to continue...')
-        elif selection == '2':
-            returnedlist = port_channel_selection(allpclist)
-            print(returnedlist)
-            #custom_raw_input('#Press enter to continue...')
-        elif selection == '3':
-            returnedlist = port_channel_selection(allvpclist)
-            print(returnedlist)
-    except Exception as e:
-        print(e)
-        raw_input('Completed. Press enter to return....')
 
-        #custom_raw_input('#Press enter to continue...')
+        #all_leaflist = get_All_leafs()
+        fvCEplist = mac_path_function()
+        #import pdb; pdb.set_trace()
+   #     if fvCEplist == []:
+        macsfound = 0
+        print('{:20}  {:15}  {:25}  {}'.format('MAC', 'Last IP', 'All Live IPs', 'EPG'))
+        print('---------------------------------------------------------------------------')
+        for x in fvCEplist:
+            #print('\t', x.fvRsCEpToPathEp, interfacelist[0])
+            if str(x.fvRsCEpToPathEp) == str(returnedlist[0]):
+                print("{:20}  {:15}  {:25}  {}".format(x.mac,x.ip,x.fvIplist,x.dn[x.dn.find('/')+1:x.dn.rfind('/')]))
+                macsfound +=1
+        if macsfound == 0 and selection == '1':
+            print("No endpoints found!\n\n**If this interface is part of a PC or VPC on interface please search using interface type pc/vpc")
+            raw_input('\n\n#Press enter to return')
+        elif macsfound == 0:
+            print("No endpoints found!")
+            raw_input('\n\n#Press enter to return')
+        else:
+            raw_input('\nFound {} endpoints.\n\n #Press enter to return...'.format(macsfound))
+#def     main():
+#        get_Cookie()
+#        mac_path_function()
 
-    #all_leaflist = get_All_leafs()
-    fvCEplist = mac_path_function()
-    for x in fvCEplist:
-        #print('\t', x.fvRsCEpToPathEp, interfacelist[0])
-        if str(x.fvRsCEpToPathEp) == str(returnedlist[0]):
-            print("{},{},{},{},{}".format(x.mac,x.ip,x.fvIplist,x.fvRsCEpToPathEp,x.dn))
-    raw_input('Completed. Press enter to return')
-#def main():
-#    get_Cookie()
-#    mac_path_function()
-
-if __name__ == '__main__':
-    main()

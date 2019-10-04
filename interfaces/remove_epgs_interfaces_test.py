@@ -210,8 +210,8 @@ def main(import_apic,import_cookie):
             #print(interfaces)
             print('What would you like to do for static EPGS on Port(s)?:\n\n'
                 + '1.) Remove ALL EPGs\n'
-                + '2.) Remove Selected from all interfaces\n'
-                + '3.) Remove based on individual interface selection\n\n')
+                + '2.) Remove Selected from all interfaces\n\n')
+                #+ '3.) Remove based on individual interface selection\n\n')
             while True:
                 removaloption = custom_raw_input('Selection: ')
                 if removaloption == '1':
@@ -220,9 +220,9 @@ def main(import_apic,import_cookie):
                 elif removaloption == '2':
                     remove_selection_from_all_interfaces(interfacelist, apic, cookie)
                     break
-                elif removaloption == '3':
-                    remove_per_interface(interfacelist, apic, cookie)
-                    break
+                #elif removaloption == '3':
+                #    remove_per_interface(interfacelist, apic, cookie)
+                #    break
                 else:
                     print("\n\x1b[1;37;41mInvalid option...Try again\x1b[0m\n")
 
@@ -231,8 +231,8 @@ def main(import_apic,import_cookie):
             #print(interfaces)
             print('What would you like to do for static EPGS on Port(s)?:\n\n'
                 + '1.) Remove ALL EPGs\n'
-                + '2.) Remove Selected from all interfaces\n'
-                + '3.) Remove based on individual interface selection\n\n')
+                + '2.) Remove Selected from all interfaces\n\n')
+                #+ '3.) Remove based on individual interface selection\n\n')
             while True:
                 removaloption = custom_raw_input('Selection: ')
                 if removaloption == '1':
@@ -241,9 +241,9 @@ def main(import_apic,import_cookie):
                 elif removaloption == '2':
                     remove_selection_from_all_interfaces(interfacelist, apic, cookie)
                     break
-                elif removaloption == '3':
-                    remove_per_interface(interfacelist, apic, cookie)
-                    break
+                #elif removaloption == '3':
+                #    remove_per_interface(interfacelist, apic, cookie)
+                #    break
                 else:
                     print("\n\x1b[1;37;41mInvalid option...Try again\x1b[0m\n")
 
@@ -251,8 +251,8 @@ def main(import_apic,import_cookie):
             interfacelist = port_channel_selection(allvpclist)
             print('What would you like to do for static EPGS on Port(s)?:\n\n'
                 + '1.) Remove ALL EPGs\n'
-                + '2.) Remove Selected from all interfaces\n'
-                + '3.) Remove based on individual interface selection\n\n')
+                + '2.) Remove Selected from all interfaces\n\n')
+                #+ '3.) Remove based on individual interface selection\n\n')
             while True:
                 removaloption = custom_raw_input('Selection: ')
                 if removaloption == '1':
@@ -261,9 +261,9 @@ def main(import_apic,import_cookie):
                 elif removaloption == '2':
                     remove_selection_from_all_interfaces(interfacelist, apic, cookie)
                     break
-                elif removaloption == '3':
-                    remove_per_interface(interfacelist, apic, cookie)
-                    break
+               # elif removaloption == '3':
+               #     remove_per_interface(interfacelist, apic, cookie)
+               #     break
                 else:
                     print("\n\x1b[1;37;41mInvalid option...Try again\x1b[0m\n")
 
