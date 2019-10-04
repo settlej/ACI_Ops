@@ -10,7 +10,7 @@ Can be ran on local computer or on APIC itself.  If on the APIC you can store th
 3.) Show all endpoints on interface</br>
 4.) Auto create span to server session</br></br>
 # Screen Shots:
-![Image of Main Menu](https://github.com/settlej/Better_ACI_CLI_Tools/blob/master/images/main_menu.PNG)</br></br>
+![Image of Main Menu](https://github.com/settlej/Better_ACI_CLI_Tools/blob/master/images/main_menu.JPG)</br></br>
 # Important Fault Summary
 ![Image of fault_summary](https://github.com/settlej/Better_ACI_CLI_Tools/blob/master/images/fault_summary_example.JPG)</br></br>
 # Add EPGs to Multiple Interfaces
