@@ -13,81 +13,36 @@ import datetime
 import itertools
 import trace
 import pdb
+import getpass
 import datetime
 from localutils.custom_utils import *
+import logging
 
-def GetRequest(url, icookie):
-    method = "GET"
-    cookies = 'APIC-cookie=' + icookie
-    request = urllib2.Request(url)
-    request.add_header("cookie", cookies)
-    request.add_header("Content-type", "application/json")
-    request.add_header('Accept', 'application/json')
-    return urllib2.urlopen(request, context=ssl._create_unverified_context())
+# Create a custom logger
+# Allows logging to state detailed info such as module where code is running and 
+# specifiy logging levels for file vs console.  Set default level to DEBUG to allow more
+# grainular logging levels
+logger = logging.getLogger(__name__)
 
+# Define logging handler for file and console logging.  Console logging can be desplayed during
+# program run time, similar to print.  Program can display or write to log file if more debug 
+# info needed.  DEBUG is lowest and will display all logging messages in program.  
+c_handler = logging.StreamHandler()
+f_handler = logging.FileHandler('file.log')
+c_handler.setLevel(logging.CRITICAL)
+f_handler.setLevel(logging.DEBUG)
 
-def GetResponseData(url):
-    response = GetRequest(url, cookie)
-    result = json.loads(response.read())
-    return result['imdata'], result["totalCount"]
+# Create formatters and add it to handlers.  This creates custom logging format such as timestamp,
+# module running, function, debug level, and custom text info (message) like print.
+c_format = logging.Formatter('%(name)s - %(levelname)s - %(message)s')
+f_format = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(funcName)s - %(message)s')
+c_handler.setFormatter(c_format)
+f_handler.setFormatter(f_format)
 
-def POSTRequest(url, data, icookie):
-    # Function to Perform HTTP POST call to update and create objects and return server data in an http object
-    # POST in urllib2 is special because it doesn't exist as a built-in method for the urllib2 object you need to make a function (aka lambda) and refrence this method
-    method = "POST"
-    # icookie comes from the PostandGetResponseData fuction that references 'cookie' which is a global variable from reading /.aci/.sessions/.token
-    cookies = 'APIC-cookie=' + icookie
-    # notice 'data' is going to added to the urllib2 object, unlike GET requests
-    request = urllib2.Request(url, data)
-    # Function needs APIC cookie for authentication and what content format you need in returned http object (example JSON)
-    # need to add header one at a time in urllib2
-    request.add_header("cookie", cookies)
-    request.add_header("Content-type", "application/json")
-    request.add_header('Accept', 'application/json')
-    request.get_method = lambda: method
-    #opener = urllib2.build_opener()
-    #opener.addheaders =[("Content-type", "application/json"),("cookie", cookies),('Accept', 'application/json')]
-    #return opener.open(url,context=ssl._create_unverified_context())
-    try:
-        return urllib2.urlopen(request, context=ssl._create_unverified_context()), None
-    except urllib2.HTTPError as httpe:
-        #print('url')
-        failure_reason = json.loads(httpe.read())
-        failure_info = failure_reason['imdata'][0]['error']['attributes']['text'].strip()
-        return 'invalid', failure_info
-    except urllib2.URLError as urle:
-        #print(urle.code)
-        #print(urle.read())
-        failure_reason = json.loads(urle.read())
-        #print(url)
-        #print('EPG ' + url[45:-4])
-        #print((failure_reason['imdata'][0]['error']['attributes']['text']).strip())
-        return 'invalid', failure_reason
+# Add handlers to the parent custom logger
+logger.addHandler(c_handler)
+logger.addHandler(f_handler)
 
-
-def PostandGetResponseData(url, data):
-    # Fuction to submit JSON and load it into Python Dictionary format and present all JSON inside the 'imdata' level
-    # Perform a POSTRequest function to perform a POST REST call to server and provide response data
-    response, error = POSTRequest(url, data, cookie)
-    #print(error)
-    if response is 'invalid':
-        return 'invalid', error
-    # the 'response' is an urllib2 object that needs to be read for JSON data, this loads the JSON to Python Dictionary format
-    result = json.loads(response.read())
-    # return only infomation inside the dictionary under 'imdata'
-    return result['imdata'], None
-
-
-def get_Cookie():
-    global cookie
-    with open('/.aci/.sessions/.token', 'r') as f:
-        cookie = f.read()
-
-def get_All_leafs():
-    url = """https://{apic}/api/node/class/fabricNode.json?query-target-filter=and(not(wcard(fabricNode.dn,%22__ui_%22)),""" \
-          """and(eq(fabricNode.role,"leaf"),eq(fabricNode.fabricSt,"active"),ne(fabricNode.nodeType,"virtual")))""".format(apic=apic)
-    result, totalCount = GetResponseData(url)
-    return result
 
 def goodspacing(column):
     if column.fex:
@@ -154,20 +109,16 @@ def physical_selection(all_leaflist,direction, leaf=None):
         for num,node in enumerate(nodelist,1):
             print("{}.) {}".format(num,node))
         while True:
-            #try:
-                asknode = custom_raw_input('\nWhat leaf: ')
-                print('\r')
-                if asknode.strip().lstrip() == '' or '-' in asknode or ',' in asknode or not asknode.isdigit():
-                    print("\n\x1b[1;37;41mInvalid format or number...Try again\x1b[0m\n")
-                    continue
-                returnedlist = parseandreturnsingelist(asknode, nodelist)
-                if returnedlist == 'invalid':
-                    continue
-                chosenleafs = [nodelist[int(node)-1] for node in returnedlist]
-                break
-            #except KeyboardInterrupt as k:
-            #    print('\n\nEnding Script....\n')
-            #    return
+            asknode = custom_raw_input('\nWhat leaf: ')
+            print('\r')
+            if asknode.strip().lstrip() == '' or '-' in asknode or ',' in asknode or not asknode.isdigit():
+                print("\n\x1b[1;37;41mInvalid format or number...Try again\x1b[0m\n")
+                continue
+            returnedlist = parseandreturnsingelist(asknode, nodelist)
+            if returnedlist == 'invalid':
+                continue
+            chosenleafs = [nodelist[int(node)-1] for node in returnedlist]
+            break
     else:
         chosenleafs = [leaf]
     compoundedleafresult = []
@@ -175,7 +126,7 @@ def physical_selection(all_leaflist,direction, leaf=None):
         url = """https://{apic}/api/node/class/fabricPathEp.json?query-target-filter=and(not(wcard(fabricPathEp.dn,%22__ui_%22)),""" \
               """and(eq(fabricPathEp.lagT,"not-aggregated"),eq(fabricPathEp.pathT,"leaf"),wcard(fabricPathEp.dn,"topology/pod-1/paths-{leaf}/"),""" \
               """not(or(wcard(fabricPathEp.name,"^tunnel"),wcard(fabricPathEp.name,"^vfc")))))&order-by=fabricPathEp.dn|desc""".format(leaf=leaf,apic=apic)
-        result, totalcount = GetResponseData(url)
+        result = GetResponseData(url,cookie)
         compoundedleafresult.append(result)
     result = compoundedleafresult
     interfacelist = []
@@ -251,7 +202,7 @@ def create_span_dest_url(source_int, name, leaf):
     spandestname = name + '_leaf' + leaf + '_' + source_int.name.replace('/','_')
     desturl = """https://{apic}/api/node/mo/uni/infra/destgrp-{}.json""".format(spandestname,apic=apic)
     destdata = """{"spanDestGrp":{"attributes":{"name":"%s","status":"created"},"children":[{"spanDest":{"attributes":{"name":"%s","status":"created"},"children":[{"spanRsDestPathEp":{"attributes":{"tDn":"%s","status":"created"},"children":[]}}]}}]}}""" % (spandestgrpname, spandestname, destport)
-    result = PostandGetResponseData(desturl, destdata)
+    result = PostandGetResponseData(desturl, destdata, cookie)
     if result[0] == []:
         print("Successfully added Destination Port")
 
@@ -262,7 +213,7 @@ def create_source_session_and_port(source_int, dest_int, name, leaf):
     sourceport = source_int.dn
     sourceurl = """https://{apic}/api/node/mo/uni/infra/srcgrp-{}.json""".format(spansessionname,apic=apic)
     sourcedata = """{"spanSrcGrp":{"attributes":{"name":"%s","status":"created"},"children":[{"spanSpanLbl":{"attributes":{"name":"%s","status:"created"},"children":[]}},{"spanSrc":{"attributes":{"name":"%s","status":"created"},"children":[{"spanRsSrcToPathEp":{"attributes":{"tDn":"%s","status":"created"},"children":[]}}]}}]}}""" % (spansessionname, spandestname, spansourcename, sourceport)
-    result = PostandGetResponseData(sourceurl, sourcedata)
+    result = PostandGetResponseData(sourceurl, sourcedata, cookie)
     #print(result)
     if result[0] == []:
         print("Successfully added Source Session and Source Port")
@@ -279,8 +230,8 @@ def main(import_apic,import_cookie):
     #print(dir())
     #import pdb; pdb.set_trace()
     while True:
-
-        all_leaflist = get_All_leafs()
+        clear_screen()
+        all_leaflist = get_All_leafs(apic,cookie)
         if all_leaflist == []:
             print('\x1b[1;31;40mFailed to retrieve active leafs, make leafs are operational...\x1b[0m')
             custom_raw_input('\n#Press enter to continue...')
@@ -289,19 +240,18 @@ def main(import_apic,import_cookie):
 #        desiredleaf = custom_custom_raw_input("\nWhat is the desired \x1b[1;33;40m'Source and Destination'\x1b[0m leaf for span session?\r")
        
         #print("\nWhat is the desired \x1b[1;33;40m'Destination'\x1b[0m leaf for span session?\r")
-        userpath = os.path.expanduser("~")
-        userpathmarker = userpath.rfind('/')
-        user = os.path.expanduser("~")[userpathmarker+1:]
-        name = datetime.datetime.now().strftime('%Y:%m:%dT%H:%M:%S') + '_' + user
+        #userpath = os.path.expanduser("~")
+        #userpathmarker = userpath.rfind('/')
+        #user = os.path.expanduser("~")[userpathmarker+1:]
+        time = get_APIC_clock(apic,cookie)
+        #name = datetime.datetime.now().strftime('%Y:%m:%dT%H:%M:%S') + '_' + getpass.getuser()
+        name = time.replace(' ','T') + '_' + getpass.getuser()
         direction = 'Destination'
-        chosendestinterfacobject, leaf = physical_selection(all_leaflist,direction)
-        create_span_dest_url(chosendestinterfacobject[0], name, leaf)
-    
-
-    
+        chosendestinterfaceobject, leaf = physical_selection(all_leaflist,direction)
+        create_span_dest_url(chosendestinterfaceobject[0], name, leaf)
         direction= 'Source'
         chosensourceinterfacobject, leaf = physical_selection(all_leaflist,direction, leaf=leaf)
-        create_source_session_and_port(chosensourceinterfacobject[0],chosendestinterfacobject[0], name, leaf)
+        create_source_session_and_port(chosensourceinterfacobject[0],chosendestinterfaceobject[0], name, leaf)
         cookie = refreshToken(apic, cookie)
         custom_raw_input('\n#Press enter to continue...')
         break

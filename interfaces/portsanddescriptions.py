@@ -9,33 +9,35 @@ import urllib2
 import json
 import ssl
 import trace
-import pdb
 import os
 from localutils.custom_utils import *
+import logging
 
-def GetRequest(url, icookie):
-    method = "GET"
-    cookies = 'APIC-cookie=' + icookie
-    request = urllib2.Request(url)
-    request.add_header("cookie", cookies)
-    request.add_header("Content-Type", "application/json")
-    request.add_header('Accept', 'application/json')
-    return urllib2.urlopen(request, context=ssl._create_unverified_context())
-def GetResponseData(url):
-    response = GetRequest(url, cookie)
-    result = json.loads(response.read())
-    return result['imdata'], result["totalCount"]
+# Create a custom logger
+# Allows logging to state detailed info such as module where code is running and 
+# specifiy logging levels for file vs console.  Set default level to DEBUG to allow more
+# grainular logging levels
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
-def get_Cookie():
-    global cookie
-    with open('/.aci/.sessions/.token', 'r') as f:
-        cookie = f.read()
+# Define logging handler for file and console logging.  Console logging can be desplayed during
+# program run time, similar to print.  Program can display or write to log file if more debug 
+# info needed.  DEBUG is lowest and will display all logging messages in program.  
+c_handler = logging.StreamHandler()
+f_handler = logging.FileHandler('file.log')
+c_handler.setLevel(logging.CRITICAL)
+f_handler.setLevel(logging.DEBUG)
 
-def get_All_leafs():
-    url = """https://{apic}/api/node/class/fabricNode.json?query-target-filter=and(not(wcard(fabricNode.dn,%22__ui_%22)),""" \
-          """and(eq(fabricNode.role,"leaf"),eq(fabricNode.fabricSt,"active"),ne(fabricNode.nodeType,"virtual")))""".format(apic=apic)
-    result, totalCount = GetResponseData(url)
-    return result
+# Create formatters and add it to handlers.  This creates custom logging format such as timestamp,
+# module running, function, debug level, and custom text info (message) like print.
+c_format = logging.Formatter('%(name)s - %(levelname)s - %(message)s')
+f_format = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(funcName)s - %(message)s')
+c_handler.setFormatter(c_format)
+f_handler.setFormatter(f_format)
+
+# Add handlers to the parent custom logger
+logger.addHandler(c_handler)
+logger.addHandler(f_handler)
 
 class l1PhysIf():
     def __init__(self, **kwargs):
@@ -117,29 +119,6 @@ class ethpmAggrIf():
         return self.allowedvlans
 
 
-def parseandreturnsingelist(liststring, collectionlist):
-    try:
-        rangelist = []
-        singlelist = []
-        seperated_list = liststring.split(',')
-        for x in seperated_list:
-            if '-' in x:
-                rangelist.append(x)
-            else:
-                singlelist.append(int(x))
-        if len(rangelist) >= 1:
-            for foundrange in rangelist:
-                tempsplit = foundrange.split('-')
-                for i in xrange(int(tempsplit[0]), int(tempsplit[1])+1):
-                    singlelist.append(int(i))
-        if max(singlelist) > len(collectionlist) or min(singlelist) < 1:
-            print('\n\x1b[1;37;41mInvalid format and/or range...Try again\x1b[0m\n')
-            return 'invalid'
-        return list(set(singlelist)) 
-    except ValueError as v:
-        print('\n\x1b[1;37;41mInvalid format and/or range...Try again\x1b[0m\n')
-        return 'invalid'
-
 def gather_l1PhysIf_info(result):
     listofinterfaces = []
     for interface in result:
@@ -169,45 +148,36 @@ def pull_leaf_interfaces(leafs):
     leaf_interface_collection = []
     for leaf in leafs:
         url = """https://{apic}/api/node-{}/class/l1PhysIf.json?rsp-subtree-class=rmonIfIn,rmonIfOut,pcAggrMbrIf,ethpmPhysIf,l1PhysIf,rmonEtherStats&rsp-subtree=full""".format(leaf,apic=apic)
-      #  url = """https://{apic}/api/class/l1PhysIf.json?rsp-subtree-class=rmonIfIn,pcAggrMbrIf,ethpmPhysIf,l1PhysIf&rsp-subtree=full""".format(leaf)
-        #print(url)
-        result, totalcount = GetResponseData(url)
+        logger.info(url)
+        result = GetResponseData(url, cookie)
+        logger.debug(result)
         leafdictwithresults[leaf] = result
-        #leaf_interface_collection.append(leafdictwithresults)
-    #for l in sorted(leafdictwithresults):
-     #   print(leafdictwithresults[l])
-    #print(len(leaf_interface_collection))
     return leafdictwithresults
 
 
 def leaf_selection(all_leaflist):
     nodelist = [node['fabricNode']['attributes']['id'] for node in all_leaflist]
-    #print(nodelist)
     nodelist.sort()
     print('\nAvailable leafs to choose from:\n')
     for num,node in enumerate(nodelist,1):
         print("{}.) {}".format(num,node))
     while True:
-       # try:
-            asknode = custom_raw_input('\nWhat leaf(s): ')
-            print('\r')
-            returnedlist = parseandreturnsingelist(asknode, nodelist)
-            if returnedlist == 'invalid':
-                continue
-            leaflist =  [nodelist[int(node)-1] for node in returnedlist]
-            #print(leaflist)
-            return leaflist
-        #except KeyboardInterrupt as k:
-        #    print('\n\nEnding Script....\n')
-        #    exit()
+        asknode = custom_raw_input('\nWhat leaf(s): ')
+        print('\r')
+        returnedlist = parseandreturnsingelist(asknode, nodelist)
+        if returnedlist == 'invalid':
+            continue
+        leaflist =  [nodelist[int(node)-1] for node in returnedlist]
+        return leaflist
+
 def match_port_channels_to_interfaces(interfaces, leaf):
    # for leaf in leafs:
     listofpcinterfaces = []
     url = """https://{apic}/api/node/class/topology/pod-1/node-{}/pcAggrIf.json?rsp-subtree-include=relations&target-subtree-class=pcAggrIf,"""\
            """ethpmAggrIf&rsp-subtree=children&rsp-subtree-class=pcRsMbrIfs,ethpmAggrIf""".format(leaf,apic=apic)
-  #  https://192.168.255.2/api/node/class/topology/pod-1/node-101/pcAggrIf.json?&target-subtree-class=pcAggrIf,ethpmAggrIf&rsp-subtree=children&rsp-subtree-class=pcRsMbrIfs,ethpmAggrIf
-    result, totalcount = GetResponseData(url)
-    #print(result)
+    logger.info(url)
+    result = GetResponseData(url, cookie)
+    logger.debug(result)
     for pc in result:
         pcinterface = pcAggrIf(**pc['pcAggrIf']['attributes'])
         if pc['pcAggrIf'].get('children'):
@@ -219,17 +189,13 @@ def match_port_channels_to_interfaces(interfaces, leaf):
         listofpcinterfaces.append(pcinterface)
     for interface in interfaces:
         for pc in listofpcinterfaces:
-            if pc.portmembers > 1:
+            if len(pc.portmembers) > 1:
                 for pcinter in pc.portmembers:
                     if pcinter.tSKey ==  interface.id:
                         interface.add_portchannel(pc)
             else:
-                print(pc.portmembers[0].tSkey, interface.id)
-                if pcinter.tSKey == interface.id:
-                
+                if pc.portmembers[0].tSKey == interface.id:
                     interface.add_portchannel(pc)
-    
-        
 
 def print_interfaces_layout(leafallinterfacesdict,leafs):
     interface_output = ''
@@ -238,22 +204,18 @@ def print_interfaces_layout(leafallinterfacesdict,leafs):
     print('-'*160)
     for leaf,leafinterlist in sorted(leafallinterfacesdict.items()):
         interfaces = gather_l1PhysIf_info(leafinterlist)
-        #print(interfaces)
         match_port_channels_to_interfaces(interfaces, leaf)
-    
-    
         interfacelist = []
         interfacelist2 = []
         for inter in interfaces:
             if inter.id.count('/') > 1:
-                removed_eth = inter.id[5:]
+                removed_eth = inter.id[3:]
                 ethlist = removed_eth.split('/')
                 inter['fex']=int(ethlist[0])
                 inter['shortnum']=int(ethlist[2])
                 interfacelist2.append(inter)
             else:
                 inter['shortnum'] = int(inter.id[5:])
-                #print(inter.shortnum)
                 interfacelist.append(inter)
                 
         interfacelist2 = sorted(interfacelist2, key=lambda x: (x.fex, int(x.shortnum)))
@@ -264,10 +226,6 @@ def print_interfaces_layout(leafallinterfacesdict,leafs):
         currentleaf = '\x1b[2;30;47m{}\x1b[0m'.format(leaf)
         interface_output += currentleaf + '\n'
         for column in interfacenewlist:
-            #print(column.children)
-
-            #if column.id == 'eth1/8':
-            #    pdb.set_trace()
             if column.adminSt == 'up' and (column.children[4].operStQual == 'sfp-missing' or column.children[4].operStQual == 'link-failure'):
                 status = 'down/down'
             elif column.adminSt == 'down':
@@ -295,23 +253,17 @@ def print_interfaces_layout(leafallinterfacesdict,leafs):
                 sfp = 'sfp-missing'
             else:
                 sfp = column.children[4].children[0]
-
             if column.switchingSt == 'enabled':
                 epgs_status = 'Yes'
             elif column.switchingSt == 'disabled':
                 epgs_status = 'No'
             packets = column.children[0].rXNoErrors + '/' + column.children[0].tXNoErrors
-           # elif
-           #     sfp
-
             if column.pc_mbmr:
                 interface_output += ('{:13}{:14}{:5}{:18}{:12}{:26}{:12}{:7}{:28}{}\n'.format(column.id, status, epgs_status,
-                                           sfp , errors, packets, pcstatus + ' ' + pcmode, column.pc_mbmr[0].id, column.pc_mbmr[0],column.descr))#column.pc_mbmr[0].children[0].operVlans))
+                                           str(sfp) , errors, packets, pcstatus + ' ' + pcmode, column.pc_mbmr[0].id, column.pc_mbmr[0],column.descr))#column.pc_mbmr[0].children[0].operVlans))
             else: 
                 interface_output += ('{:13}{:14}{:5}{:18}{:12}{:26}{:12}{:7}{:28}{}\n'.format(column.id, status, epgs_status,
-                                           sfp,errors, packets , '','','',column.descr))
-
-
+                                           str(sfp),errors, packets , '','','',column.descr))
     print(interface_output)
 
 def main(import_apic,import_cookie):
@@ -321,64 +273,8 @@ def main(import_apic,import_cookie):
         cookie = import_cookie
         apic = import_apic
         clear_screen()
-        leafs = leaf_selection(get_All_leafs())
+        location_banner('Show interface status')
+        leafs = leaf_selection(get_All_leafs(apic, cookie))
         leafallinterfacesdict = pull_leaf_interfaces(leafs)
         print_interfaces_layout(leafallinterfacesdict,leafs)
         raw_input('#Press enter to continue...')
-    #for leafinterlist in allinterfaceslist:
-    #    interfaces = gather_l1PhysIf_info(leafinterlist)
-#
-    #    interfaces = match_port_channels_to_interfaces(interfaces, leafs)
-    #
-    #
-    #    interfacelist = []
-    #    interfacelist2 = []
-    #    for inter in interfaces:
-    #        if inter.id.count('/') > 1:
-    #            removed_eth = inter.id[5:]
-    #            ethlist = removed_eth.split('/')
-    #            inter['fex']=int(ethlist[0])
-    #            inter['shortnum']=int(ethlist[2])
-    #            interfacelist2.append(inter)
-    #        else:
-    #            inter['shortnum'] = int(inter.id[5:])
-    #            #print(inter.shortnum)
-    #            interfacelist.append(inter)
-    #            
-    #    interfacelist2 = sorted(interfacelist2, key=lambda x: (x.fex, int(x.shortnum)))
-    #    interfacelist = sorted(interfacelist, key=lambda x: x.shortnum)
-    #    interfacenewlist = interfacelist + interfacelist2
-    #    interfacelist = []
-    #    interfacelist2 = []
-#
-#
-    #for column in interfacenewlist:
-    #    if column.adminSt == 'up' and (column.children[2].operStQual == 'sfp-missing' or column.children[2].operStQual == 'link-failure'):
-    #        status = 'down/down'
-    #    elif column.adminSt == 'down' and column.children[2].operStQual == 'admin-down':
-    #        status = 'admin-down'
-    #    else:
-    #        status = 'up/up'
-    #    if column.children[0].pcMode == 'on':
-    #        pcmode = ''
-    #    elif column.children[0].pcMode == 'static':
-    #        pcmode = 'static'
-    #    elif column.children[0].pcMode == 'active':
-    #        pcmode = 'lacp'
-    #    else:
-    #        pcmode = column.children[0]
-    #    errors = column.children[1]
-#
-    #    if column.children[2].children[0].typeName == '':
-    #        sfp = 'sfp-missing'
-    #    else:
-    #        sfp = column.children[2].children[0]
-    #    print('{:13}{:10}{:10}{:10}{:10}{:17}{}'.format(column.id, status, column.switchingSt,
-    #                                  pcmode, errors, sfp ,column.descr))
-  
-if __name__ == "__main__":
-    try:
-        main()
-    except KeyboardInterrupt as k:
-                print('\n\nEnding Script....\n')
-                exit()

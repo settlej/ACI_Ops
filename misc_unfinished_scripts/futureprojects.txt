@@ -1,0 +1,19 @@
+show interface trunk
+Automatic span session for endpoint to designated wireshark server
+automate phyical port setups (vpc) and access ports
+            vpc1    vpc2
+            ___     ____  
+            cdp on
+            lldp on
+            lacp on
+
+            access1
+            ____
+static routes
+enpoints on interface
+interface desciptions
+Show Leaf/Spine/APIC info
+EPG to EPG troubleshooting
+
+
+compEpPD contains loadbalance based on port-group vmware

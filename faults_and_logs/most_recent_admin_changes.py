@@ -12,8 +12,6 @@ import os
 import datetime
 from localutils.custom_utils import *
 
-
-
 def askrefresh():
     while True:
         refresh = custom_raw_input("Return to admin list? [y=default|n]:  ") or 'y'
@@ -27,11 +25,11 @@ def askrefresh():
 
 def gatheranddisplayrecentadmins():
     while True:
-        #getCookie()
         clear_screen()
-        print("Current time = " + displaycurrenttime())
+        current_time = get_APIC_clock(apic,cookie)
+        print("Current time = " + current_time)
         url = """https://{apic}/api/node/class/aaaModLR.json?query-target-filter=not(wcard(aaaModLR.dn,%22__ui_%22))&order-by=aaaModLR.created|desc&page=0&page-size=50""".format(apic=apic)
-        result, totauserount = GetResponseData(url, cookie)
+        result = GetResponseData(url, cookie)
         print('\n{:>5}   {:26}{:20}{:18}{:18}{}'.format('#','Time','Time Difference', 'Type','User','admin Summary'))
         print('-'*175)
         admindict = {}
@@ -47,7 +45,7 @@ def gatheranddisplayrecentadmins():
                 admintrig = admin['aaaModLR']['attributes']['trig']
                 adminuser = admin['aaaModLR']['attributes']['user']
                 admindn = admin['aaaModLR']['attributes']['dn']
-                diff_time = time_difference(admincreated[:-6])
+                diff_time = time_difference(current_time,admincreated[:-6])
                 admindict[num] = [admincreated[:-6],admintrig,adminuser,admindn,admindescr]
                 print('{:5}.) {:26}{:20}{:18}{:18}{}'.format(num,admincreated[:-6],diff_time,admintrig,adminuser,summaryadmindescr))
         
@@ -61,7 +59,7 @@ def gatheranddisplayrecentadmins():
                 print('\x1b[41;1mInvalid, number does not exist...try again\x1b[0m\n') 
         if moredetails == '':
             continue
-        diff_time = time_difference(admindict[int(moredetails)][0])
+        diff_time = time_difference(current_time,admindict[int(moredetails)][0])
         print('\n\n{:26}{:20}{:18}{:18}{}'.format('Time','Time Difference', 'Type','User','Object-Affected'))
         print('-'*120)
         print('{:26}{:20}{:18}{:18}{}\n'.format(admindict[int(moredetails)][0],diff_time, admindict[int(moredetails)][1],admindict[int(moredetails)][2],'/'.join(str(admindict[int(moredetails)][3]).split('/')[:-1])))

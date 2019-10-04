@@ -9,14 +9,19 @@
 #############################################################################################################################################
 
 import re
-import readline
-import urllib2
+try:
+    import readline
+except:
+    pass
+import urllib.request, urllib.error, urllib.parse
 import json
 import ssl
 import os
 import itertools
 import threading
-import Queue
+import queue
+from localutils.custom_utils import *
+
 
 #############################################################################################################################################
 #                               What does this def do period
@@ -32,13 +37,13 @@ def GetRequest(url, icookie):
     # icookie comes from the GetResponseData fuction that references 'cookie' which is a global variable from reading /.aci/.sessions/.token
     cookies = 'APIC-cookie=' + icookie
     # create urllib2 object to add headers and cookies
-    request = urllib2.Request(url)
+    request = urllib.request.Request(url)
     # Function needs APIC cookie for authentication and what content format you need in returned http object (example JSON)
     # need to add header one at a time in urllib2
     request.add_header("cookie", cookies)
     request.add_header("Content-Type", "application/json")
     request.add_header('Accept', 'application/json')
-    return urllib2.urlopen(request, context=ssl._create_unverified_context())
+    return urllib.request.urlopen(request, context=ssl._create_unverified_context())
 
 #############################################################################################################################################
 #                               What does this def do period
@@ -55,12 +60,12 @@ def POSTRequest(url, data, icookie):
     # icookie comes from the PostandGetResponseData fuction that references 'cookie' which is a global variable from reading /.aci/.sessions/.token
     cookies = 'APIC-cookie=' + icookie
     # notice 'data' is going to added to the urllib2 object, unlike GET requests
-    request = urllib2.Request(url, data)
+    request = urllib.request.Request(url, data)
     # Function needs APIC cookie for authentication and what content format you need in returned http object (example JSON)
     # need to add header one at a time in urllib2
     request.add_header("cookie", cookies)
     request.get_method = lambda: method
-    return urllib2.urlopen(request, context=ssl._create_unverified_context())
+    return urllib.request.urlopen(request, context=ssl._create_unverified_context())
 
 #############################################################################################################################################
 #                               What does this def do period
@@ -123,18 +128,22 @@ def grouper(iterable, n, fillvalue=''):
     "Collect data into fixed-length chunks or blocks"
     # grouper('ABCDEFG', 3, 'x') --> ABC DEF Gxx"
     args = [iter(iterable)] * n  # creates list * n so args is a list of iters for iterable
-    return itertools.izip_longest(*args, fillvalue=fillvalue)
+    return itertools.zip_longest(*args, fillvalue=fillvalue)
 
-
+#def clear_screen():
+#    if os.name == 'posix':
+#        clear_screen()
+#    else:
+#        os.system('cls')
 
 def menu():
     while True:
-        os.system('clear')
-        print("\nSelect interface for adding EPGs: \n" + \
+        clear_screen()
+        print(("\nSelect interface type for shut/noshut/bounce: \n" + \
           "\n\t1.) Physical Interfaces: \n" + \
           "\t2.) PC Interfaces: \n" + \
-          "\t3.) VPC Interfaces: \n")
-        selection = raw_input("Select number: ")
+          "\t3.) VPC Interfaces: \n"))
+        selection = custom_raw_input("Select number: ")
         print('\r')
         if selection.isdigit() and selection != '' and 1 <= int(selection) <= 3:
             break
@@ -156,9 +165,9 @@ class pcObject():
             return None
 
 def get_All_EGPs():
-    get_Cookie()
+    ##get_Cookie()
     epgdict = {}
-    url = """https://localhost/api/node/class/fvAEPg.json"""
+    url = """https://{apic}/api/node/class/fvAEPg.json""".format(apic=apic)
     result, totalCount = GetResponseData(url)
     #print(json.dumps(result, indent=2))
     epglist = [epg['fvAEPg']['attributes']['dn'] for epg in result]
@@ -167,20 +176,20 @@ def get_All_EGPs():
     return epglist
 
 def get_All_PCs():
-    url = """https://localhost/api/node/class/fabricPathEp.json?query-target-filter=and(not(wcard(fabricPathEp.dn,%22__ui_%22)),""" \
-          """eq(fabricPathEp.lagT,"link"))"""
+    url = """https://{apic}/api/node/class/fabricPathEp.json?query-target-filter=and(not(wcard(fabricPathEp.dn,%22__ui_%22)),""" \
+          """eq(fabricPathEp.lagT,"link"))""".format(apic=apic)
     result, totalCount = GetResponseData(url)
     return result
 
 def get_All_vPCs():
-    url = """https://localhost/api/node/class/fabricPathEp.json?query-target-filter=and(not(wcard(fabricPathEp.dn,%22__ui_%22)),""" \
-          """and(eq(fabricPathEp.lagT,"node"),wcard(fabricPathEp.dn,"^topology/pod-[\d]*/protpaths-")))"""
+    url = """https://{apic}/api/node/class/fabricPathEp.json?query-target-filter=and(not(wcard(fabricPathEp.dn,%22__ui_%22)),""" \
+          """and(eq(fabricPathEp.lagT,"node"),wcard(fabricPathEp.dn,"^topology/pod-[\d]*/protpaths-")))""".format(apic=apic)
     result, totalCount = GetResponseData(url)
     return result
 
 def get_All_leafs():
-    url = """https://localhost/api/node/class/fabricNode.json?query-target-filter=and(not(wcard(fabricNode.dn,%22__ui_%22)),""" \
-          """and(eq(fabricNode.role,"leaf"),eq(fabricNode.fabricSt,"active"),ne(fabricNode.nodeType,"virtual")))"""
+    url = """https://{apic}/api/node/class/fabricNode.json?query-target-filter=and(not(wcard(fabricNode.dn,%22__ui_%22)),""" \
+          """and(eq(fabricNode.role,"leaf"),eq(fabricNode.fabricSt,"active"),ne(fabricNode.nodeType,"virtual")))""".format(apic=apic)
     result, totalCount = GetResponseData(url)
     #print(result)
     return result
@@ -199,7 +208,7 @@ def parseandreturnsingelist(liststring, collectionlist):
         if len(rangelist) >= 1:
             for foundrange in rangelist:
                 tempsplit = foundrange.split('-')
-                for i in xrange(int(tempsplit[0]), int(tempsplit[1])+1):
+                for i in range(int(tempsplit[0]), int(tempsplit[1])+1):
                     singlelist.append(int(i))
    #     print(sorted(singlelist))
         if max(singlelist) > len(collectionlist) or min(singlelist) < 1:
@@ -221,24 +230,24 @@ def physical_selection(all_leaflist, allepglist):
     nodelist = [node['fabricNode']['attributes']['id'] for node in all_leaflist]
     nodelist.sort()
     for num,node in enumerate(nodelist,1):
-        print("{}.) {}".format(num,node))
+        print(("{}.) {}".format(num,node)))
     while True:
-        try:
-            asknode = raw_input('\nWhat leaf(s): ')
+        #try:
+            asknode = custom_raw_input('\nWhat leaf(s): ')
             print('\r')
             returnedlist = parseandreturnsingelist(asknode, nodelist)
             if returnedlist == 'invalid':
                 continue
             chosenleafs = [nodelist[int(node)-1] for node in returnedlist]
             break
-        except KeyboardInterrupt as k:
-            print('\n\nEnding Script....\n')
-            return
+        #except KeyboardInterrupt as k:
+        #    print('\n\nEnding Script....\n')
+        #    return
     compoundedleafresult = []
     for leaf in chosenleafs:
-        url = """https://localhost/api/node/class/fabricPathEp.json?query-target-filter=and(not(wcard(fabricPathEp.dn,%22__ui_%22)),""" \
+        url = """https://{apic}/api/node/class/fabricPathEp.json?query-target-filter=and(not(wcard(fabricPathEp.dn,%22__ui_%22)),""" \
               """and(eq(fabricPathEp.lagT,"not-aggregated"),eq(fabricPathEp.pathT,"leaf"),wcard(fabricPathEp.dn,"topology/pod-1/paths-{leaf}/"),""" \
-              """not(or(wcard(fabricPathEp.name,"^tunnel"),wcard(fabricPathEp.name,"^vfc")))))&order-by=fabricPathEp.dn|desc""".format(leaf=leaf)
+              """not(or(wcard(fabricPathEp.name,"^tunnel"),wcard(fabricPathEp.name,"^vfc")))))&order-by=fabricPathEp.dn|desc""".format(leaf=leaf,apic=apic)
         result, totalcount = GetResponseData(url)
         compoundedleafresult.append(result)
     result = compoundedleafresult
@@ -266,9 +275,8 @@ def physical_selection(all_leaflist, allepglist):
            interfacedict[interf] = str(num) + '.) '
            interf.number = num
     listlen = len(finalsortedinterfacelist) / 3
-    #firstgrouped = [x for x in grouper(finalsortedinterfacelist,40)]
     firstgrouped = [x for x in grouper(finalsortedinterfacelist,listlen)]
-    finalgrouped = zip(*firstgrouped)
+    finalgrouped = list(zip(*firstgrouped))
     for column in finalgrouped:
         a = column[0].number
         b = goodspacing(column[0]) + '  ' + column[0].descr[:25]
@@ -282,32 +290,32 @@ def physical_selection(all_leaflist, allepglist):
             e = column[2].number
             f = goodspacing(column[2])
             #f = row[2].leaf + ' ' + row[2].fex + ' ' + str(row[2].name)
-        print('{:6}.) {:45}{}.) {:45}{}.) {}'.format(a,b,c,d,e,f))
+        print(('{:6}.) {:45}{}.) {:45}{}.) {}'.format(a,b,c,d,e,f)))
     while True:
-        try:
-            selectedinterfaces = raw_input("\nSelect interface(s) by number: ")
+        #try:
+            selectedinterfaces = custom_raw_input("\nSelect interface(s) by number: ")
             print('\r')
             if selectedinterfaces.strip().lstrip() == '':
                 continue
             intsinglelist = parseandreturnsingelist(selectedinterfaces,finalsortedinterfacelist)
             if intsinglelist == 'invalid':
                 continue
-            choseninterfaceobjectlist = filter(lambda x: x.number in intsinglelist, finalsortedinterfacelist)
+            choseninterfaceobjectlist = [x for x in finalsortedinterfacelist if x.number in intsinglelist]
            # for number in intsinglelist:
            #     if not (0 < int(number) <= len(finalsortedinterfacelist)):
            #         print('here')
            #         print("\n\x1b[1;37;41mInvalid format and/or range...Try again\x1b[0m\n")
            #         continue
             break
-        except KeyboardInterrupt as k:
-            print('\n\nEnding Script....\n')
-            exit()
+        #except KeyboardInterrupt as k:
+        #    print('\n\nEnding Script....\n')
+        #    exit()
     return choseninterfaceobjectlist
 
       #  except Exception as e:
 
 def shutinterfaces(interfaces):
-    queue = Queue.Queue()
+    queue = queue.Queue()
     interfacelist = []
     interfacelist2 =[]
     for interface in interfaces:
@@ -321,16 +329,15 @@ def shutinterfaces(interfaces):
         print(x)
 
 def postshut(interface,queue):
-        url = 'https://localhost/api/node/mo/uni/fabric/outofsvc.json' 
+        url = 'https://{apic}/api/node/mo/uni/fabric/outofsvc.json'.format(apic=apic)
         # data is the 'POST' data sent in the REST call to 'blacklist' (shutdown) on a normal interface
         data = """'{{"fabricRsOosPath":{{"attributes":{{"tDn":"{interface}","lc":"blacklist"}},"children":[]}}}}'""".format(interface=interface)
         result =  PostandGetResponseData(url, data)
         if result == []:
-            #print(interface.leaf + ' ' +  interface.name + ' shut')
-            queue.put('shut ' + interface.name)
+            queue.put('[Complete] shut ' + interface.name)
 
 def noshutinterfaces(interfaces):
-    queue = Queue.Queue()
+    queue = queue.Queue()
     interfacelist = []
     interfacelist2 =[]
     for interface in interfaces:
@@ -343,59 +350,47 @@ def noshutinterfaces(interfaces):
     for x in sorted(interfacelist2):
         print(x)
 
-        #url = 'https://localhost/api/node/mo/uni/fabric/outofsvc.json' 
-        # data is the 'POST' data sent in the REST call to 'blacklist' (shutdown) on a normal interface
-        #data = """'{{"fabricRsOosPath":{{"attributes":{{"dn":"uni/fabric/outofsvc/rsoosPath-[{interface}]","status":"deleted"}},"children":[]}}}}'""".format(interface=interface)
-        #result =  PostandGetResponseData(url, data)
-        #if result == []:
-        #    print(interface.leaf + ' ' +  interface.name + ' no shut')
-
 def postnoshut(interface,queue):
-        url = 'https://localhost/api/node/mo/uni/fabric/outofsvc.json' 
-        # data is the 'POST' data sent in the REST call to 'blacklist' (shutdown) on a normal interface
+        url = 'https://{apic}/api/node/mo/uni/fabric/outofsvc.json'.format(apic=apic)
+        # data is the 'POST' data sent in the REST call to delete object from 'blacklist' (no shut)
         data = """'{{"fabricRsOosPath":{{"attributes":{{"dn":"uni/fabric/outofsvc/rsoosPath-[{interface}]","status":"deleted"}},"children":[]}}}}'""".format(interface=interface)
         result =  PostandGetResponseData(url, data)
         if result == []:
-           # queue.put(interface.leaf + ' ' +  interface.name + ' no shut')
-            queue.put('no shut ' + interface.name)
+            queue.put('[Complete] no shut ' + interface.name)
+
 def port_channel_selection(allpclist,allepglist):
-    pcdict = {}  
     pcobjectlist = []
     for pc in allpclist:
         pcobjectlist.append(pcObject(name = pc['fabricPathEp']['attributes']['name'],
                                      dn = pc['fabricPathEp']['attributes']['dn'] ))
-    #for pc in allpclist:
-    #    pcdict[pc['fabricPathEp']['attributes']['name']] = pc['fabricPathEp']['attributes']['dn']
-    print("\n{:>4} |  {}".format("#","Port-Channel Name"))
-    print("-"* 65)
-   # numpcdict = {}
+    print(("\n{:>4} |  {}".format("#","Port-Channel Name")))
+    print(("-"* 65))
     for num,pc in enumerate(sorted(pcobjectlist),1):
-        print("{:>4}.) {}".format(num,pc.name))
+        print(("{:>4}.) {}".format(num,pc.name)))
         pc.number = num
-    #    numpcdict[num] = pc
     while True:
         try:
-            askpcnum = raw_input("\nWhich number(s)?: ")
+            askpcnum = custom_raw_input("\nWhich number(s)?: ")
             print('\r')
             if askpcnum.strip().lstrip() == '':
                 continue
-            #askpcnum = '1,2,3,6,9,12,14'
             pcsinglelist = parseandreturnsingelist(askpcnum,pcobjectlist)
             if pcsinglelist == 'invalid':
                 continue
-            choseninterfaceobjectlist = filter(lambda x: x.number in pcsinglelist, pcobjectlist)
-           # for chosennumber in pcsinglelist:
-           #     #if chosennumber in 
-           #     pcdict[pcobjectlist[int(t)]]
+            choseninterfaceobjectlist = [x for x in pcobjectlist if x.number in pcsinglelist]
             break
-        except:
+        except ValueError:
             print("\n\x1b[1;37;41mInvalid format and/or range...Try again\x1b[0m\n")
     return choseninterfaceobjectlist
 
 
-def main():
+def main(import_apic, import_cookie):
     while True:
-        get_Cookie()
+        #get_Cookie()
+        global apic
+        global cookie
+        cookie = import_cookie
+        apic = import_apic
         allepglist = get_All_EGPs()
         allpclist = get_All_PCs()
         allvpclist = get_All_vPCs()
@@ -407,22 +402,29 @@ def main():
             interfaces = physical_selection(all_leaflist, allepglist)
             #print(interfaces)
             print('\r')
-            option = raw_input(("Would you like to do?\n\
+            while True:
+                option = custom_raw_input(("Would you like to do?\n\
                         \n1.) shut\
                         \n2.) no shut\
                         \n3.) bounce \n\
                         \nSelect a number: "))
-            if option == '1':
-                print('\n')
-                shutinterfaces(interfaces)
-            elif option == '2':
-                print('\n')
-                noshutinterfaces(interfaces)
-            else:
-                print('\n')
-                shutinterfaces(interfaces)
-                noshutinterfaces(interfaces)
-            raw_input('\n#Press enter to continue...')
+                if option == '1':
+                    print('\n')
+                    shutinterfaces(interfaces)
+                    break
+                elif option == '2':
+                    print('\n')
+                    noshutinterfaces(interfaces)
+                    break
+                elif option == '3':
+                    print('\n')
+                    shutinterfaces(interfaces)
+                    noshutinterfaces(interfaces)
+                    break
+                else:
+                    print('\n\x1b[1;31;40mInvalid option, please try again...\x1b[0m\n')
+                    continue
+            custom_raw_input('\n#Press enter to continue...')
         elif selection == '2':
             interfaces = port_channel_selection(allpclist,allepglist)
             print('\r')
@@ -430,7 +432,7 @@ def main():
           #          data = """{{"fvRsPathAtt":{{"attributes":{{"encap":"{vlan}","instrImedcy":"immediate","tDn":"{}","status":"created"}},"children":[]}}}}""".format(numepgdict[number],vlan=vlan)
           #          print(data)
             #result, totalcount = PostandGetResponseData(url, data)
-            option = raw_input(("Would you like to do?\n\
+            option = custom_raw_input(("Would you like to do?\n\
                         \n1.) shut\
                         \n2.) no shut\
                         \n3.) bounce \n\
@@ -445,7 +447,7 @@ def main():
                 print('\n')
                 shutinterfaces(interfaces)
                 noshutinterfaces(interfaces)
-            raw_input('\n#Press enter to continue...')
+            custom_raw_input('\n#Press enter to continue...')
 
         elif selection == '3':
             interfaces = port_channel_selection(allvpclist,allepglist)
@@ -454,7 +456,7 @@ def main():
           #          data = """{{"fvRsPathAtt":{{"attributes":{{"encap":"{vlan}","instrImedcy":"immediate","tDn":"{}","status":"created"}},"children":[]}}}}""".format(numepgdict[number],vlan=vlan)
           #          print(data)
             #result, totalcount = PostandGetResponseData(url, data)
-            option = raw_input(("Would you like to do?\n\
+            option = custom_raw_input(("Would you like to do?\n\
                         \n1.) shut\
                         \n2.) no shut\
                         \n3.) bounce \n\
@@ -469,10 +471,7 @@ def main():
                 print('\n')
                 shutinterfaces(interfaces)
                 noshutinterfaces(interfaces)
-            raw_input('\n#Press enter to continue...')
-        
-
-
+            custom_raw_input('\n#Press enter to continue...')
 
 if __name__ == "__main__":
     try:

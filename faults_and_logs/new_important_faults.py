@@ -11,41 +11,37 @@ import ssl
 import os
 import datetime
 import getpass
+import threading
+import Queue
 from localutils.custom_utils import *
+import logging
 
+# Create a custom logger
+# Allows logging to state detailed info such as module where code is running and 
+# specifiy logging levels for file vs console.  Set default level to DEBUG to allow more
+# grainular logging levels
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
-def getToken(apic, user, pwd):
-    ssl._create_default_https_context = ssl._create_unverified_context
-    url = "https://{apic}/api/aaaLogin.json".format(apic=apic)
-    payload = '{"aaaUser":{"attributes":{"name":"%(user)s","pwd":"%(pwd)s"}}}' % {"pwd":pwd,"user":user}
-    request = urllib2.Request(url, data=payload)
-    response = urllib2.urlopen(request, timeout=4)
-    token = json.loads(response.read())
-    global cookie
-    cookie = token["imdata"][0]["aaaLogin"]["attributes"]["token"]
-    return cookie
+# Define logging handler for file and console logging.  Console logging can be desplayed during
+# program run time, similar to print.  Program can display or write to log file if more debug 
+# info needed.  DEBUG is lowest and will display all logging messages in program.  
+c_handler = logging.StreamHandler()
+f_handler = logging.FileHandler('file.log')
+c_handler.setLevel(logging.CRITICAL)
+f_handler.setLevel(logging.DEBUG)
 
+# Create formatters and add it to handlers.  This creates custom logging format such as timestamp,
+# module running, function, debug level, and custom text info (message) like print.
+c_format = logging.Formatter('%(name)s - %(levelname)s - %(message)s')
+f_format = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(funcName)s - %(message)s')
+c_handler.setFormatter(c_format)
+f_handler.setFormatter(f_format)
 
-def GetRequest(url, icookie):
-    method = "GET"
-    cookies = 'APIC-cookie=' + str(icookie)
-    request = urllib2.Request(url)
-    request.add_header("cookie", cookies)
-    request.add_header("Content-Type", "application/json")
-    request.add_header('Accept', 'application/json')
-    return urllib2.urlopen(request, context=ssl._create_unverified_context())
-def GetResponseData(url, cookie):
-    response = GetRequest(url, cookie)
-    result = json.loads(response.read())
-    return result['imdata'], result["totalCount"]
+# Add handlers to the parent custom logger
+logger.addHandler(c_handler)
+logger.addHandler(f_handler)
 
-def clear_screen():
-    if os.name == 'posix':
-        os.system('clear')
-    else:
-        os.system('cls')
-
-    
 class faultobject():
     def __init__(self, faultstring='', code='', amount=0, order=None, results=None):
         self.faultstring = faultstring
@@ -61,19 +57,10 @@ class faultobject():
         else:
             return None
 
-def displaycurrenttime():
-    currenttime = datetime.datetime.now()
-    return str(currenttime)[:-3]
-
-def time_difference(fault_time):
-    currenttime = datetime.datetime.now()
-    ref_fault_time = datetime.datetime.strptime(fault_time, '%Y-%m-%d %H:%M:%S.%f')
-    return str(currenttime - ref_fault_time)[:-7]
-
 def faultSummary(apic, cookie):
     url = ("""https://{apic}/api/node/class/faultSummary.json?query-target-filter=and(not(wcard(faultSummary.dn,%22__ui_%22)),and())""" + \
           """&order-by=faultSummary.severity|desc&page=0&page-size=100""").format(apic=apic)
-    result, totalcount = GetResponseData(url, cookie)
+    result = GetResponseData(url, cookie)
     #print(result)
     reduced_fault_summary_dict = {}
     neededfaults = ['F1385', # OSPF
@@ -178,19 +165,23 @@ def displayfaultSummary(summarylist):
 def get_fault_results(apic, cookie, code):
     url = ("""https://{apic}/api/node/class/faultInfo.json?query-target-filter=and(ne(faultInfo.severity,"cleared"),""" +
           """eq(faultInfo.code,"{code}"))&order-by=faultInfo.lastTransition|Desc&page=0&order-by=faultInfo.lastTransition|Desc&page-size=100""").format(apic=apic,code=code.code)
-    result, totalcount = GetResponseData(url, cookie)
+    result = GetResponseData(url, cookie)
     code.results = result
-    code.amount = totalcount
+    code.amount 
     return code
 
 
 def detail_ospf_faults(listdetail,apic=None):
+    current_time = get_APIC_clock(apic,cookie)
+    print('\r')
+    print('Current Time = ' + current_time)
     print('\n')
     print("{:26}{:20}{:12}{:18}{}".format('Time', 'Time Diff','Leaf', 'State','Description'))
     print('-'*120)
     for fault in listdetail:
         timestamp = ' '.join(fault['faultInst']['attributes']['lastTransition'].split('T'))
-        diff_time = time_difference(timestamp[:-6])
+        logger.debug('{} {}'.format(current_time,timestamp))
+        diff_time = time_difference(current_time,timestamp[:-6])
         lc = fault['faultInst']['attributes']['lc']
         descr = fault['faultInst']['attributes']['descr']
         lc = fault['faultInst']['attributes']['lc']
@@ -198,43 +189,70 @@ def detail_ospf_faults(listdetail,apic=None):
         print("{:26}{:20}{:12}{:18}{}".format(timestamp[:-6],diff_time,controller.group(), lc,descr))
     print('\n')
 def detail_switch_availability_status_faults(listdetail,apic=None):
+    current_time = get_APIC_clock(apic,cookie)
+    print('\r')
+    print('Current Time = ' + current_time)
     print('\n')
     print("{:26}{:20}{:12}{:18}{}".format('Time', 'Time Diff','Leaf', 'State','Description'))
     print('-'*120)
     for fault in listdetail:
         timestamp = ' '.join(fault['faultInst']['attributes']['lastTransition'].split('T'))
-        diff_time = time_difference(timestamp[:-6])
+        logger.debug('{} {}'.format(current_time,timestamp))
+        diff_time = time_difference(current_time,timestamp[:-6])
         descr = fault['faultInst']['attributes']['descr']
         lc = fault['faultInst']['attributes']['lc']
         device = re.search(r'[nN]ode [0-9]{1,3}', descr).group()
         print("{:26}{:20}{:12}{:18}{}".format(timestamp[:-6],diff_time,device, lc,descr))
     print('\n')
-def detail_access_inter_faults(listdetail, apic):
+def detail_access_inter_faults(listdetail, apic=None):
+    current_time = get_APIC_clock(apic,cookie)
+    #import pdb; pdb.set_trace()
+    print('\r')
+    print('Current Time = ' + current_time)
     print('\n{:26}{:20}{:10}{:15}{:18}{:18}{}'.format('Time', 'Time Diff','Switch','Interface','Port-Channel', 'State', 'Description'))
     print('-'*120)
+    teststring = ''
     for fault in listdetail:
         timestamp = ' '.join(fault['faultInst']['attributes']['lastTransition'].split('T'))
-        diff_time = time_difference(timestamp[:-6])
+        diff_time = time_difference(current_time,timestamp[:-6])
         interface = re.search(r'\[.*\]', fault['faultInst']['attributes']['dn'])
-        leaf = re.search(r'leaf[0-9]{3}', fault['faultInst']['attributes']['descr'])
+        leaf = re.search(r'node [0-9]{3}', fault['faultInst']['attributes']['descr'])
+        if leaf == None:
+            leaf = re.search(r'leaf[0-9]{3}', fault['faultInst']['attributes']['descr'])
+        logger.debug('{} {} {}'.format(current_time,timestamp,interface.group()))
         lc = fault['faultInst']['attributes']['lc']
         description = ' '.join(fault['faultInst']['attributes']['descr'].split())
         #print(description_short)
         usedlocation =  description.find('used')
         description_final = description[:usedlocation - 2] 
+        que = Queue.Queue()
+        polisting = []
         if 'po' in interface.group():
-            poName = retrievePortChannelName(apic, cookie, interface.group(), leaf.group())
-            print('{:26}{:20}{:10}{:15}{:18}{:18}{}'.format(timestamp[:-6],diff_time, leaf.group(), interface.group(), poName, lc, description_final))
+            t = threading.Thread(target=retrievePortChannelName, args=(apic, cookie, interface.group(), leaf.group(), que))
+            t.start()
+            polisting.append(t)
         else:
-            print('{:26}{:20}{:10}{:15}{:18}{:18}{}'.format(timestamp[:-6],diff_time, leaf.group(), interface.group(), '', lc,  description_final))
+            if leaf == None or interface == None:
+                import pdb; pdb.set_trace()
+            teststring += '{:26}{:20}{:10}{:15}{:18}{:18}{}\n'.format(timestamp[:-6],diff_time, leaf.group(), interface.group(), '', lc,  description_final)
+        for t in polisting:
+            t.join()
+            po = que.get()
+            logger.debug('{} {}'.format(fault, diff_time))
+            teststring += '{:26}{:20}{:10}{:15}{:18}{:18}{}\n'.format(timestamp[:-6],diff_time, leaf.group(), interface.group(), po, lc, description_final)
+    print(teststring)
     print('\n')
 def detail_leaf_spine_uplink_faults(listdetail,apic=None):
+    current_time = get_APIC_clock(apic,cookie)
+    print('\r')
+    print('Current Time = ' + current_time)
     print('\n')
     print("{:26}{:20}{:12}{:12}{:18}{}".format('Time', 'Time Diff','Leaf','Interface', 'State','Description'))
     print('-'*120)
     for fault in listdetail:
         timestamp = ' '.join(fault['faultInst']['attributes']['lastTransition'].split('T'))
-        diff_time = time_difference(timestamp[:-6])
+        logger.debug('{} {}'.format(current_time,timestamp))
+        diff_time = time_difference(current_time,timestamp[:-6])
         descr = fault['faultInst']['attributes']['descr']
         lc = fault['faultInst']['attributes']['lc']
         controller = re.search(r'[nN]ode-[0-9]{0,3}', fault['faultInst']['attributes']['dn'])
@@ -242,12 +260,16 @@ def detail_leaf_spine_uplink_faults(listdetail,apic=None):
         print("{:26}{:20}{:12}{:12}{:18}{}".format(timestamp[:-6],diff_time,controller.group(), interface.group(), lc,descr))
     print('\n')
 def detail_vpc_full_faults(listdetail,apic=None):
+    current_time = get_APIC_clock(apic,cookie)
+    print('\r')
+    print('Current Time = ' + current_time)
     print('\n{:26}{:20}{:10}{:15}{:18}{:18}{}'.format('Time', 'Time Diff','Switch','Interface','Port-Channel', 'State', 'Description'))
     print('-'*120)
     for fault in listdetail:
         if fault.get('faultInst'):
             timestamp = ' '.join(fault['faultInst']['attributes']['lastTransition'].split('T'))
-            diff_time = time_difference(timestamp[:-6])
+            logger.debug('{} {}'.format(current_time,timestamp))
+            diff_time = time_difference(current_time,timestamp[:-6])
             descr = fault['faultInst']['attributes']['descr']
             #interface = re.search(r'\[.*\]', fault['faultInst']['attributes']['dn'])
             #leaf = re.search(r'leaf[0-9]{3}', fault['faultInst']['attributes']['descr'])
@@ -255,6 +277,9 @@ def detail_vpc_full_faults(listdetail,apic=None):
             print('{:26}{:20}{:10}{:18}{}'.format(timestamp[:-6],diff_time, '', lc, descr))
     print('\n')
 def detail_vpc_part_faults(listdetail,apic=None):
+    current_time = get_APIC_clock(apic,cookie)
+    print('\r')
+    print('Current Time = ' + current_time)
     print("\n{:26}{:20}{:15}{:18}{}".format('Time', 'Time Diff','Leaf', 'State','Description'))
     print('-'*120)
     for fault in listdetail:
@@ -264,38 +289,51 @@ def detail_vpc_part_faults(listdetail,apic=None):
             descr = fault['faultInst']['attributes']['descr']   
             changeSet = fault['faultInst']['attributes']['changeSet']
             timestamp = ' '.join(fault['faultInst']['attributes']['lastTransition'].split('T'))
-            diff_time = time_difference(timestamp[:-6])
+            logger.debug('{} {}'.format(current_time,timestamp))
+            diff_time = time_difference(current_time,timestamp[:-6])
             lc = fault['faultInst']['attributes']['lc']
-            print("{:26}{:20}{:15}{:18}{:18}{}".format(timestamp[:23],dn,lc,descr,'changeSet: ' + changeSet))
+            print("{:26}{:20}{:15}{:18}{}".format(timestamp[:23],dn,lc,descr,'changeSet: ' + changeSet))
     print('\n')
 def detail_apic_replica_faults(listdetail,apic=None):
+    current_time = get_APIC_clock(apic,cookie)
+    print('\r')
+    print('Current Time = ' + current_time)
     print("{:26}{:20}{:12}{:18}{}".format('Time', 'Time Diff','Controller', 'State','Description'))
     print('-'*120)
     for fault in listdetail:
         timestamp = ' '.join(fault['faultInst']['attributes']['lastTransition'].split('T'))
-        diff_time = time_difference(timestamp[:-6])
+        logger.debug('{} {}'.format(current_time,timestamp))
+        diff_time = time_difference(current_time,timestamp[:-6])
         descr = fault['faultInst']['attributes']['descr']
         lc = fault['faultInst']['attributes']['lc']
         controller = re.search(r'controller [0-9]', fault['faultInst']['attributes']['descr'])
         print("{:26}{:20}{:12}{:18}{}".format(timestamp[:-6],diff_time,controller.group()[-1],lc,descr))
     print('\n')
 def detail_apic_health_faults(listdetail,apic=None):
+    current_time = get_APIC_clock(apic,cookie)
+    print('\r')
+    print('Current Time = ' + current_time)
     print("{:26}{:20}{:12}{:18}{}".format('Time', 'Time Diff','Controller', 'State','Description'))
     print('-'*120)
     for fault in listdetail:
         timestamp = ' '.join(fault['faultInst']['attributes']['lastTransition'].split('T'))
-        diff_time = time_difference(timestamp[:-6])
+        logger.debug('{} {}'.format(current_time,timestamp))
+        diff_time = time_difference(current_time,timestamp[:-6])
         descr = fault['faultInst']['attributes']['descr']
         lc = fault['faultInst']['attributes']['lc']
         controller = re.search(r'[nN]ode-[0-9]', fault['faultInst']['attributes']['dn'])
         print("{:26}{:20}{:^12}{:18}{}".format(timestamp[:-6],diff_time,controller.group()[-1],lc,descr))
     print('\n')
 def detail_ntp_faults(listdetail,apic=None):
+    current_time = get_APIC_clock(apic,cookie)
+    print('\r')
+    print('Current Time = ' + current_time)
     print("{:26}{:20}{:12}{:18}{}".format('Time', 'Time Diff', 'Device', 'State','Description'))
     print('-'*120)
     for fault in listdetail:
         timestamp = ' '.join(fault['faultInst']['attributes']['lastTransition'].split('T'))
-        diff_time = time_difference(timestamp[:-6])
+        logger.debug('{} {}'.format(current_time,timestamp))
+        diff_time = time_difference(current_time,timestamp[:-6])
         descr = fault['faultInst']['attributes']['descr']
         lc = fault['faultInst']['attributes']['lc']
         node = re.search(r'[nN]ode [0-9]{1,3}', descr)
@@ -306,17 +344,22 @@ def detail_ntp_faults(listdetail,apic=None):
         print("{:26}{:20}{:12}{:18}{}".format(timestamp[:-6],diff_time,node,lc,descr))
     print('\n')
 def detail_vcenter_reachable(listdetail,apic=None):
+    current_time = get_APIC_clock(apic,cookie)
+    print('\r')
+    print('Current Time = ' + current_time)
     print("{:26}{:20}{:18}{}".format('Time', 'Time Diff', 'State','Description'))
     print('-'*120)
     for fault in listdetail:
         if fault.get('faultInst'):
             timestamp = ' '.join(fault['faultInst']['attributes']['lastTransition'].split('T'))
-            diff_time = time_difference(timestamp[:-6])
+            logger.debug('{} {}'.format(current_time,timestamp))
+            diff_time = time_difference(current_time,timestamp[:-6])
             descr = fault['faultInst']['attributes']['descr']
             lc = fault['faultInst']['attributes']['lc']
         elif fault.get('faultDelegate'):
             timestamp = ' '.join(fault['faultDelegate']['attributes']['lastTransition'].split('T'))
-            diff_time = time_difference(timestamp[:-6])
+            logger.debug('{} {}'.format(current_time,timestamp))
+            diff_time = time_difference(current_time,timestamp[:-6])
             descr = fault['faultDelegate']['attributes']['descr']
             lc = fault['faultDelegate']['attributes']['lc']
         if len(descr) > 80:
@@ -324,14 +367,17 @@ def detail_vcenter_reachable(listdetail,apic=None):
             print('\n')
         else:
             print("{:26}{:20}{:18}{}".format(timestamp[:-6],diff_time,lc,descr))
-
     print('\n')
 def detail_phys_apic_port_faults(listdetail,apic=None):
+    current_time = get_APIC_clock(apic,cookie)
+    print('\r')
+    print('Current Time = ' + current_time)
     print("{:26}{:20}{:12}{:18}{}".format('Time', 'Time Diff', 'Device', 'State','Description'))
     print('-'*120)
     for fault in listdetail:
         timestamp = ' '.join(fault['faultInst']['attributes']['lastTransition'].split('T'))
-        diff_time = time_difference(timestamp[:-6])
+        logger.debug('{} {}'.format(current_time,timestamp))
+        diff_time = time_difference(current_time,timestamp[:-6])
         descr = fault['faultInst']['attributes']['descr']
         lc = fault['faultInst']['attributes']['lc']
         node = re.search(r'[nN]ode [0-9]{1,3}', descr)
@@ -342,11 +388,15 @@ def detail_phys_apic_port_faults(listdetail,apic=None):
         print("{:26}{:20}{:12}{:18}{}".format(timestamp[:-6],diff_time,node,lc,descr))
     print('\n')
 def detail_port_channel_neighbor_faults(listdetail,apic=None):
+    current_time = get_APIC_clock(apic,cookie)
+    print('\r')
+    print('Current Time = ' + current_time)
     print("{:26}{:20}{:25}{:18}{}".format('Time', 'Time Diff','Description', 'State','Path'))
     print('-'*120)
     for fault in listdetail:
         timestamp = ' '.join(fault['faultInst']['attributes']['lastTransition'].split('T'))
-        diff_time = time_difference(timestamp[:-6])
+        logger.debug('{} {}'.format(current_time,timestamp))
+        diff_time = time_difference(current_time,timestamp[:-6])
         descr = fault['faultInst']['attributes']['descr']
         dn = fault['faultInst']['attributes']['dn']
         #interface = re.search(r'pod-1.*\]agg', dn)
@@ -354,11 +404,15 @@ def detail_port_channel_neighbor_faults(listdetail,apic=None):
         print("{:26}{:20}{:25}{:18}{}".format(timestamp[:-6],diff_time,lc,descr, dn))
     print('\n')
 def detail_missing_psu_faults(listdetail,apic=None):
+    current_time = get_APIC_clock(apic,cookie)
+    print('\r')
+    print('Current Time = ' + current_time)
     print("{:26}{:20}{:18}{:12}{:12}{}".format('Time', 'Time Diff', 'State','Device', 'PSU Slot', 'Description'))
     print('-'*120)
     for fault in listdetail:
         timestamp = ' '.join(fault['faultInst']['attributes']['lastTransition'].split('T'))
-        diff_time = time_difference(timestamp[:-6])
+        logger.debug('{} {}'.format(current_time,timestamp))
+        diff_time = time_difference(current_time,timestamp[:-6])
         descr = fault['faultInst']['attributes']['descr']
         dn = fault['faultInst']['attributes']['dn']
         node = re.search(r'node-[0-9]{1,3}', dn)
@@ -367,11 +421,15 @@ def detail_missing_psu_faults(listdetail,apic=None):
         print("{:26}{:20}{:18}{:12}{:12}{}".format(timestamp[:-6],diff_time,lc,node.group(),psu.group(),descr))
     print('\n')
 def detail_shutdown_psu_faults(listdetail,apic=None):
+    current_time = get_APIC_clock(apic,cookie)
+    print('\r')
+    print('Current Time = ' + current_time)
     print("{:26}{:20}{:18}{:12}{:12}{}".format('Time', 'Time Diff', 'State','Device','PSU Slot','Description'))
     print('-'*120)
     for fault in listdetail:
         timestamp = ' '.join(fault['faultInst']['attributes']['lastTransition'].split('T'))
-        diff_time = time_difference(timestamp[:-6])
+        logger.debug('{} {}'.format(current_time,timestamp))
+        diff_time = time_difference(current_time,timestamp[:-6])
         descr = fault['faultInst']['attributes']['descr']
         dn = fault['faultInst']['attributes']['dn']
         node = re.search(r'node-[0-9]{1,3}', dn)
@@ -380,11 +438,15 @@ def detail_shutdown_psu_faults(listdetail,apic=None):
         print("{:26}{:20}{:18}{:12}{:12}{}".format(timestamp[:-6],diff_time,lc,node.group(),psu.group(),descr))
     print('\n')
 def detail_failed_psu_faults(listdetail,apic=None):
+    current_time = get_APIC_clock(apic,cookie)
+    print('\r')
+    print('Current Time = ' + current_time)
     print("{:26}{:20}{:12}{:18}{}".format('Time', 'Time Diff', 'Device', 'State','Description'))
     print('-'*120)
     for fault in listdetail:
         timestamp = ' '.join(fault['faultInst']['attributes']['lastTransition'].split('T'))
-        diff_time = time_difference(timestamp[:-6])
+        logger.debug('{} {}'.format(current_time,timestamp))
+        diff_time = time_difference(current_time,timestamp[:-6])
         descr = fault['faultInst']['attributes']['descr']
         lc = fault['faultInst']['attributes']['lc']
         node = re.search(r'[nN]ode [0-9]{1,3}', descr)
@@ -394,21 +456,16 @@ def detail_failed_psu_faults(listdetail,apic=None):
             node = node.group().replace('Node', 'APIC')
         print("{:26}{:20}{:12}{:18}{}".format(timestamp[:-6],diff_time,node,lc,descr))
     print('\n')
-
-def retrievePortChannelName(apic, cookie, PoNum, leaf):
-    url = """https://{apic}/api/node/mo/topology/pod-1/node-{leaf}/sys/aggr-{PoNum}/rtaccBndlGrpToAggrIf.json""".format(apic=apic,leaf=leaf[4:],PoNum=PoNum)
+def retrievePortChannelName(apic, cookie, PoNum, leaf, que):
+    #import pdb; pdb.set_trace()
+    url = """https://{apic}/api/node/mo/topology/pod-1/node-{leaf}/sys/aggr-{PoNum}/rtaccBndlGrpToAggrIf.json""".format(apic=apic,leaf=leaf[4:].lstrip(),PoNum=PoNum)
+    logger.info(url)
     result = GetResponseData(url, cookie)
-    poresult = result[0][0][u"pcRtAccBndlGrpToAggrIf"][u"attributes"][u'tDn']
-    poposition = result[0][0][u"pcRtAccBndlGrpToAggrIf"][u"attributes"][u'tDn'].rfind('accbundle-')
+    logger.debug(result)
+    poresult = result[0][u"pcRtAccBndlGrpToAggrIf"][u"attributes"][u'tDn']
+    poposition = result[0][u"pcRtAccBndlGrpToAggrIf"][u"attributes"][u'tDn'].rfind('accbundle-')
     poName = poresult[poposition+10:]
-    return poName
-
-def getCookie():
-    with open('/.aci/.sessions/.token', 'r') as f:
-        global cookie
-        cookie = f.read()
-        return cookie
-
+    que.put(poName)
 
 def askrefresh(detail_function, is_function):
     while True:
@@ -423,139 +480,27 @@ def askrefresh(detail_function, is_function):
                 detail_function(result[0]) 
         else:
             break
-            
     clear_screen()
-    #print('\n')
     return
-    
-
-
-
-def askmoreDetail(apic):
-    while True:
-        listdetail = []
-        faultdict = {}
-        print('\t')
-        while True:
-            userselected = custom_raw_input("Which fault?: ")
-            if userselected.isdigit():
-                userselected = int(userselected) 
-                break
-        #if faultdict[userselected] == 'exit':
-        #    exit()
-        if faultdict[userselected][0]['fault-type'] == 'OSPF peer issues':
-            detail_ospf_faults(faultdict[userselected])
-            complete_refresh = askrefresh(detail_ospf_faults, OSPF_fault_check)
-        elif faultdict[userselected][0]['fault-type'] == 'Leaf/Spine(s) are Down':
-            detail_switch_availability_status_faults(faultdict[userselected])
-            complete_refresh = askrefresh(detail_switch_availability_status_faults, is_Leaf_Spine_Down)
-        elif faultdict[userselected][0]['fault-type'] == 'Server ports Down':
-            detail_access_inter_faults(faultdict[userselected],apic)
-            complete_refresh = askrefresh(detail_access_inter_faults, is_Leaf_interface_Down)
-        elif faultdict[userselected][0]['fault-type'] == 'Switch UPLINK':
-            detail_leaf_spine_uplink_faults(faultdict[userselected])
-            complete_refresh = askrefresh(detail_leaf_spine_uplink_faults, is_Leaf_uplink_Down)
-        elif faultdict[userselected][0]['fault-type'] == 'vPC Fully Down':
-            detail_vpc_full_faults(faultdict[userselected])
-            complete_refresh = askrefresh(detail_vpc_full_faults, is_VPC_interface_fully_down)
-        elif faultdict[userselected][0]['fault-type'] == 'VPC Partialty DOWN':
-            detail_vpc_part_faults(faultdict[userselected])
-            complete_refresh = askrefresh(detail_vpc_part_faults, is_VPC_paritally_down)
-        elif faultdict[userselected][0]['fault-type'] == 'APIC Database Replication':
-            detail_apic_replica_faults(faultdict[userselected])
-            complete_refresh = askrefresh(detail_apic_replica_faults, APIC_replica_issues)
-        elif faultdict[userselected][0]['fault-type'] == 'APIC HEALTH':
-            detail_apic_health_faults(faultdict[userselected])
-            complete_refresh = askrefresh(detail_apic_health_faults, APIC_Health_issues)
-        elif faultdict[userselected][0]['fault-type'] == 'APIC Phys Port issues':
-            detail_phys_apic_port_faults(faultdict[userselected])
-            complete_refresh = askrefresh(detail_phys_apic_port_faults, is_APIC_physical_ports_down)
-        elif faultdict[userselected][0]['fault-type'] == 'NTP issues':
-            detail_ntp_faults(faultdict[userselected])
-            complete_refresh = askrefresh(detail_ntp_faults, is_NTP_issues)
-        elif faultdict[userselected][0]['fault-type'] == "APIC can't reach VCenter":
-            detail_vcenter_reachable(faultdict[userselected])
-            complete_refresh = askrefresh(detail_vcenter_reachable, is_VCENTER_reachable)
-        elif faultdict[userselected][0]['fault-type'] == 'vPC/PC Connection issues':
-            detail_port_channel_neighbor_faults(faultdict[userselected])
-            complete_refresh = askrefresh(detail_port_channel_neighbor_faults, is_Port_Channel_Neighbor_fail)
-        elif faultdict[userselected][0]['fault-type'] == 'Missing Power Supply':
-            detail_missing_psu_faults(faultdict[userselected])
-            complete_refresh = askrefresh(detail_missing_psu_faults, is_Missing_PowerSupply)
-        elif faultdict[userselected][0]['fault-type'] == 'Unused/Shutdown Power Supply':
-            detail_shutdown_psu_faults(faultdict[userselected])
-            complete_refresh = askrefresh(detail_shutdown_psu_faults, is_PowerSupply_shutdown)
-        elif faultdict[userselected][0]['fault-type'] == 'Failed Power Supply':
-            detail_failed_psu_faults(faultdict[userselected])
-            complete_refresh = askrefresh(detail_failed_psu_faults, is_PowerSupply_failure)
-
-        clear_screen()
-        print('\n')
-        if complete_refresh == 1:
-            return True
-        #if answer.lower() == 'n':
-        #    exitquestion = custom_raw_input("\nWould you like to exit? [y/n]:  ")
-        #    if exitquestion.lower() == 'y':
-        #        exit()
-        #    else:
-        #        break
 
         
 def refreshloop(detail_function, fault, apic, cookie):
-    print('\r')
-    print('Current Time = ' + displaycurrenttime())            
+    refreshcount = 0      
     while True:
+        if refreshcount == 5:
+            cookie = refreshToken(apic, cookie)
+            refreshcount = 0
+            print(cookie)
         get_fault_results(apic, cookie, fault)
         detail_function(fault.results,apic)
         if fault.results == []:
             print("No Faults, all have been resolved...\n")
         ask = custom_raw_input('Would you like to refresh? [y=default|n]:  ') or 'y'
         if ask[0].lower() == 'y' and not ask == '':
-            print('\r')
-            print('Current Time = ' + displaycurrenttime())            
+            refreshcount +=1
             continue
         else:
             return
-
-
-def localOrRemote():
-    if os.path.isfile('/.aci/.sessions/.token'):
-        apic = "localhost"
-        cookie = getCookie()
-        return apic, cookie
-    else:
-        unauthenticated = False
-        timedout = False
-        error = ''
-        while True:
-            clear_screen()
-            if unauthenticated:
-                print(error)
-                unauthenticated = False
-            elif timedout:
-                print(error)
-                apic = custom_raw_input("Enter IP address or FQDN of APIC: ")
-                timedout = False
-            else:
-                print(error)
-                apic = custom_raw_input("\nEnter IP address or FQDN of APIC: ")
-            try:
-                user = custom_raw_input('\nUsername: ')
-                pwd = getpass.getpass('Password: ')
-                cookie = getToken(apic, user,pwd)
-            except urllib2.HTTPError as auth:
-                unauthenticated = True
-                error = '\n\x1b[1;31;40mAuthentication failed\x1b[0m\n'
-                continue
-            except urllib2.URLError as e:
-                timedout = True
-                error = "\n\x1b[1;31;40mThere was an '%s' error connecting to APIC '%s'\x1b[0m\n" % (e.reason,apic)
-                continue
-            except Exception as e:
-                print("\n\x1b[1;31;40mError has occured, please try again\x1b[0m\n")
-                continue
-            break
-    return apic, cookie
 
 
 def main(import_apic,import_cookie):
@@ -564,16 +509,10 @@ def main(import_apic,import_cookie):
     cookie = import_cookie
     apic = import_apic
     unauthenticated = False
-    #apic, cookie = localOrRemote()
-
+    global current_time
+    current_time = get_APIC_clock(apic,cookie)
     while True:
-        #try:
-        #if unauthenticated:
-        #    clear_screen()
-        #    print('Authentication Token timed out...restarting program')
-        #else:
         clear_screen()
-        #unauthenticated = False
         ordered, objectdict = faultSummary(apic, cookie)
         displayfaultSummary(objectdict)
         faultselected = displayfaultSummaryandSelection(ordered)
@@ -609,17 +548,3 @@ def main(import_apic,import_cookie):
         elif fault.code == 'F1940': # failed psu
             refreshloop(detail_failed_psu_faults, fault, apic, cookie)
         cookie = refreshToken(apic, cookie)
-
-
-       # except urllib2.HTTPError as e:
-       #     unauthenticated = True
-       #     pass
-
-
-if __name__ == '__main__':
-    try:
-        main()
-    except KeyboardInterrupt as k:
-        print("\n\nExiting Program....")
-        exit()
-    
