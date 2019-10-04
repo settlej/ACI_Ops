@@ -113,6 +113,7 @@ def postremove(interface_epg,queue):
         queue.put('\x1b[1;37;41mFailure!\x1b[0m -- ' + result[0])
 
 def remove_all_epgs_every_interface(interfacelist, apic, cookie):
+    print('\n')
     for interface in sorted(interfacelist, key=lambda x:x.dn):
         url = 'https://{apic}/api/node/class/fvRsPathAtt.json?query-target-filter=and(eq(fvRsPathAtt.tDn,"{interface}"))&order-by=fvRsPathAtt.modTs|desc'.format(interface=interface,apic=apic)
         logger.info(url)
@@ -123,7 +124,6 @@ def remove_all_epgs_every_interface(interfacelist, apic, cookie):
         else:
             for epg in result:
                 interface.epgfvRsPathAttlist.append(epg['fvRsPathAtt']['attributes']['dn'])
-            print('\n')
             removeepgs(interface.epgfvRsPathAttlist)
             interface.epgfvRsPathAttlist = []
             print('Removal of static epgs on interface: {} [Complete]'.format(str(interface)))
@@ -132,6 +132,7 @@ def remove_all_epgs_every_interface(interfacelist, apic, cookie):
 def remove_selection_from_all_interfaces(interfacelist, apic, cookie):
     allepgsfoundlist = []
     interfaceswithoutepgs = []
+    print('\n')
     for interface in interfacelist:
         url = 'https://{apic}/api/node/class/fvRsPathAtt.json?query-target-filter=and(eq(fvRsPathAtt.tDn,"{interface}"))&order-by=fvRsPathAtt.modTs|desc'.format(interface=interface,apic=apic)
         logger.info(url)
@@ -154,7 +155,7 @@ def remove_selection_from_all_interfaces(interfacelist, apic, cookie):
         return
     for num,epg in enumerate(allepgsfoundlist,1):
         print("{}.) {}".format(num,epg))
-    selectedremovalepgs = custom_raw_input("Which EPG(s) would you like to remove? [example 1 or 1,2 or 1-3,5]: ")
+    selectedremovalepgs = custom_raw_input("\nWhich EPG(s) would you like to remove? [example 1 or 1,2 or 1-3,5]: ")
     removableegps = parseandreturnsingelist(selectedremovalepgs, allepgsfoundlist)
     filteredepglist = []
     for num in removableegps:
@@ -165,9 +166,9 @@ def remove_selection_from_all_interfaces(interfacelist, apic, cookie):
             for tDn in filteredepglist:
                 if tDn in epgfvRsPathAtt:
                     currentremovalegplist.append(epgfvRsPathAtt)
-    print(currentremovalegplist)
     while True:
-        verify = custom_raw_input('Continue removal of EPGs? [y|n]: ')
+        #import pdb; pdb.set_trace()
+        verify = custom_raw_input('\nContinue removal of EPGs? [y|n]: ')
         if verify == '':
             print("\n\x1b[1;37;41mInvalid option...Try again\x1b[0m\n")
             continue
@@ -178,6 +179,7 @@ def remove_selection_from_all_interfaces(interfacelist, apic, cookie):
         else:
             print("\n\x1b[1;37;41mInvalid option...Try again\x1b[0m\n")
             continue    
+    print('\n')
     removeepgs(currentremovalegplist)
     raw_input("\n\n#Press enter to continue...")
 
@@ -228,6 +230,18 @@ def main(import_apic,import_cookie):
             while True:
                 removaloption = custom_raw_input('Selection: ')
                 if removaloption == '1':
+                    while True:
+                         verify = custom_raw_input('\nContinue removal of EPGs? [y|n]: ')
+                         if verify == '':
+                             print("\n\x1b[1;37;41mInvalid option...Try again\x1b[0m\n")
+                             continue
+                         elif verify[0].lower() == 'y':
+                             break
+                         elif verify[0].lower() == 'n':
+                             raise KeyboardInterrupt
+                         else:
+                             print("\n\x1b[1;37;41mInvalid option...Try again\x1b[0m\n")
+                             continue    
                     remove_all_epgs_every_interface(interfacelist, apic, cookie)
                     break
                 elif removaloption == '2':
