@@ -253,8 +253,8 @@ def main():
                             '\t ---------------------------------------------------\n\n' +
                             '\t  [CONFIGURATION]\n'
                             '\t ---------------------------------------------------\n' +
-                            '\t| 19.) Configure Local Span\n' + 
-                            '\t| 20.) Capture server traffic ERSPAN to server (beta)\n' + 
+                            '\t| 17.) Configure Local Span\n' + 
+                            '\t| 18.) Capture server traffic ERSPAN to server (beta)\n' + 
                             #'\t| 20.) Create EPGs (Not Available)\n' +
                             #'\t| 21.) Configure interface Descriptions (Not Available)\n' + 
                             #'\t| 21.) Import/Export interface Descriptions (Not Available)\n' + 
@@ -432,7 +432,7 @@ def main():
             #        keyinterrupt = True
             #        continue
 
-            elif choosen == '19':
+            elif choosen == '17':
                 try:
                     create_local_span_session.main(apic,cookie)
                     keyinterrupt = False
@@ -442,7 +442,7 @@ def main():
                     continue
             #elif choosen == 'exit':
             #    raise KeyboardInterrupt
-            elif choosen == '20':
+            elif choosen == '18':
                 try:
                     span_to_server.main(apic,cookie,current_user)
                     keyinterrupt = False
