@@ -66,12 +66,14 @@ def time_difference(current_time, event_time):
 
 def get_APIC_clock(apic,cookie):
     url = """https://{apic}/api/node/class/topSystem.json?query-target-filter=or(eq(topSystem.oobMgmtAddr,"{apic}"),eq(topSystem.inbMgmtAddr,"{apic}"))""".format(apic=apic)
+    logger.info(url)
     result = GetResponseData(url,cookie)
     return result[0]['topSystem']['attributes']['currentTime'][:-7].replace('T', ' ')
 
 def refreshToken(apic,icookie):
     ssl._create_default_https_context = ssl._create_unverified_context
     url = "https://{apic}/api/aaaRefresh.json".format(apic=apic)
+    logger.info(url)
     cookies = 'APIC-cookie=' + icookie
     request = urllib2.Request(url)
     request.add_header("Cookie", cookies)
@@ -333,7 +335,7 @@ def physical_selection(all_leaflist, apic, cookie, leafnum=None, provideleaf=Fal
             else:
                 chosenleafs
                 choseninterfaceobjectlist = filter(lambda x: x.number in intsinglelist, finalsortedinterfacelist)
-                import pdb; pdb.set_trace()
+                #import pdb; pdb.set_trace()
                 return choseninterfaceobjectlist, chosenleafs
            # for number in intsinglelist:
            #     if not (0 < int(number) <= len(finalsortedinterfacelist)):
@@ -417,6 +419,7 @@ def parseandreturnsingelist(liststring, collectionlist):
 
 def get_All_EGPs(apic, cookie, return_count=False):
     url = """https://{apic}/api/node/class/fvAEPg.json""".format(apic=apic)
+    logger.info(url)
     if return_count == True:
         result, totalcount = GetResponseData(url, cookie, return_count=True)
         return [epg['fvAEPg']['attributes']['dn'] for epg in result], totalcount
@@ -427,6 +430,7 @@ def get_All_EGPs(apic, cookie, return_count=False):
 def get_All_PCs(apic, cookie, return_count=False):
     url = """https://{apic}/api/node/class/fabricPathEp.json?query-target-filter=and(not(wcard(fabricPathEp.dn,%22__ui_%22)),""" \
           """eq(fabricPathEp.lagT,"link"))""".format(apic=apic)
+    logger.info(url)
     if return_count == True:
         result, totalcount = GetResponseData(url, cookie, return_count=True)
         return result, totalcount
@@ -437,6 +441,7 @@ def get_All_PCs(apic, cookie, return_count=False):
 def get_All_vPCs(apic, cookie, return_count=False):
     url = """https://{apic}/api/node/class/fabricPathEp.json?query-target-filter=and(not(wcard(fabricPathEp.dn,%22__ui_%22)),""" \
           """and(eq(fabricPathEp.lagT,"node"),wcard(fabricPathEp.dn,"^topology/pod-[\d]*/protpaths-")))""".format(apic=apic)
+    logger.info(url)
     if return_count == True:
         result, totalcount = GetResponseData(url, cookie, return_count=True)
         return result, totalcount
@@ -448,6 +453,7 @@ def get_All_vPCs(apic, cookie, return_count=False):
 def get_All_leafs(apic, cookie, return_count=False):
     url = """https://{apic}/api/node/class/fabricNode.json?query-target-filter=and(not(wcard(fabricNode.dn,%22__ui_%22)),""" \
           """and(eq(fabricNode.role,"leaf"),eq(fabricNode.fabricSt,"active"),ne(fabricNode.nodeType,"virtual")))""".format(apic=apic)
+    logger.info(url)
     if return_count == True:
         result, totalcount = GetResponseData(url, cookie, return_count=True)
         return result, totalcount

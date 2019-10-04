@@ -17,7 +17,7 @@ import logging
 # specifiy logging levels for file vs console.  Set default level to DEBUG to allow more
 # grainular logging levels
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.CRITICAL)
+logger.setLevel(logging.INFO)
 
 # Define logging handler for file and console logging.  Console logging can be desplayed during
 # program run time, similar to print.  Program can display or write to log file if more debug 
@@ -41,6 +41,7 @@ logger.addHandler(f_handler)
 def retrieve_leaf_list():
     # Display available leafs beginning of script
     url = """https://localhost/api/node/mo/topology/pod-1.json?query-target=children&target-subtree-class=fabricNode&query-target-filter=and(wcard(fabricNode.id,"^1[0-9][0-9]"))"""
+    logger.info(url)
     result = GetResponseData(url,cookie)
     #print(result)
     leafs = [leaf['fabricNode']['attributes']['id'] for leaf in result]
@@ -69,6 +70,7 @@ def displayepgs(result):
 
 def gatherandstoreinterfacesforleaf(leaf):
     url = """https://localhost/api/node/class/topology/pod-1/node-101/l1PhysIf.json"""
+    logger.info(url)
     result = GetResponseData(url,cookie)
     listofinterfaces = [interface['l1PhysIf']['attributes']['id'] for interface in result]
     return listofinterfaces
@@ -96,13 +98,6 @@ def main(import_apic,import_cookie):
             else:
                 print('\x1b[41;1mInvalid or leaf does not exist...try again\x1b[0m\n')
         availableinterfaces = gatherandstoreinterfacesforleaf(leaf)
-        #while True:
-        #    askfex = raw_input("Fex interface? [y|n] (default=n):  ") or 'n'
-        #    if askfex[0].lower() == 'y':
-        #        fex = True
-        #        break
-        #    else:
-        #        break
         while True:
             if fex == True:
                 interface = raw_input("What is the interface? (format: ethxxx/x/x): ")
@@ -114,7 +109,7 @@ def main(import_apic,import_cookie):
                 print('\x1b[41;1mInvalid or interface does not exist...try again\x1b[0m\n')
         
         url = """https://localhost/api/node/mo/topology/pod-1/node-{leaf}/sys/phys-[{interface}].json?rsp-subtree-include=full-deployment&target-node=all&target-path=l1EthIfToEPg""".format(leaf=leaf,interface=interface)
-        #print(url)
+        logger.info(url)
         result = GetResponseData(url,cookie)
         displayepgs(result)
     elif int_type == 2:
@@ -122,17 +117,6 @@ def main(import_apic,import_cookie):
     else:
         pass
 
-
-
-if __name__ == '__main__':
-    while True:
-        main()
-        ask = raw_input('Another interface? [y|n]:  ') or 'n'
-        #print(ask)
-        if ask[0].lower() == 'y':
-            continue
-        else:
-            break
 
 
 

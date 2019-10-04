@@ -13,7 +13,7 @@ import pdb
 from localutils.custom_utils import *
 import interfaces.change_interface_state as shut_noshut_interfaces
 import interfaces.assign_epg_interfaces as assign_epg_interfaces
-import interfaces.remove_epgs_interfaces_test as remove_egps
+import interfaces.remove_epgs_interfaces as remove_egps
 #import interfaces.show_interface_epgs as show_epgs
 import interfaces.show_all_endpoints_on_interface as show_all_endpoints_on_interface
 import interfaces.portsanddescriptions as portsanddescriptions
@@ -70,6 +70,7 @@ def getToken(apic, user, pwd):
     ssl._create_default_https_context = ssl._create_unverified_context
     # url POST request to login to APIC and recieve cookie hash
     url = "https://{apic}/api/aaaLogin.json".format(apic=apic)
+    logger.info(url)
     # POST Login requires user creds provided in the data section of url request
     payload = '{"aaaUser":{"attributes":{"name":"%(user)s","pwd":"%(pwd)s"}}}' % {"pwd":pwd,"user":user}
     request = urllib2.Request(url, data=payload)

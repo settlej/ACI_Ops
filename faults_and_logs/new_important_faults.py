@@ -60,6 +60,7 @@ class faultobject():
 def faultSummary(apic, cookie):
     url = ("""https://{apic}/api/node/class/faultSummary.json?query-target-filter=and(not(wcard(faultSummary.dn,%22__ui_%22)),and())""" + \
           """&order-by=faultSummary.severity|desc&page=0&page-size=100""").format(apic=apic)
+    logger.info(url)
     result = GetResponseData(url, cookie)
     #print(result)
     reduced_fault_summary_dict = {}
@@ -165,6 +166,7 @@ def displayfaultSummary(summarylist):
 def get_fault_results(apic, cookie, code):
     url = ("""https://{apic}/api/node/class/faultInfo.json?query-target-filter=and(ne(faultInfo.severity,"cleared"),""" +
           """eq(faultInfo.code,"{code}"))&order-by=faultInfo.lastTransition|Desc&page=0&order-by=faultInfo.lastTransition|Desc&page-size=100""").format(apic=apic,code=code.code)
+    logger.info(url)
     result = GetResponseData(url, cookie)
     code.results = result
     code.amount 

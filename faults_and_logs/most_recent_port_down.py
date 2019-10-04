@@ -11,7 +11,33 @@ import ssl
 import os
 import datetime
 from localutils.custom_utils import *
+import logging
 
+# Create a custom logger
+# Allows logging to state detailed info such as module where code is running and 
+# specifiy logging levels for file vs console.  Set default level to DEBUG to allow more
+# grainular logging levels
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+# Define logging handler for file and console logging.  Console logging can be desplayed during
+# program run time, similar to print.  Program can display or write to log file if more debug 
+# info needed.  DEBUG is lowest and will display all logging messages in program.  
+c_handler = logging.StreamHandler()
+f_handler = logging.FileHandler('file.log')
+c_handler.setLevel(logging.CRITICAL)
+f_handler.setLevel(logging.DEBUG)
+
+# Create formatters and add it to handlers.  This creates custom logging format such as timestamp,
+# module running, function, debug level, and custom text info (message) like print.
+c_format = logging.Formatter('%(name)s - %(levelname)s - %(message)s')
+f_format = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(funcName)s - %(message)s')
+c_handler.setFormatter(c_format)
+f_handler.setFormatter(f_format)
+
+# Add handlers to the parent custom logger
+logger.addHandler(c_handler)
+logger.addHandler(f_handler)
 
 def askrefresh():
     while True:
@@ -32,6 +58,7 @@ def gatheranddisplayrecentevents():
         print("Current time = " + current_time)
         print("\nEvents loading...\n")
         url = """https://{apic}/api/node/class/eventRecord.json?query-target-filter=or(eq(eventRecord.cause,"port-up"),eq(eventRecord.cause,"port-down"),eq(eventRecord.cause,"port-pfc-congested"),eq(eventRecord.cause,"port-security-config-not-supported"),eq(eventRecord.cause,"update-remote-port-to-dbgrelem-failed"),eq(eventRecord.cause,"addor-del-uplink-port-group-failed"),eq(eventRecord.cause,"addor-del-vtep-port-group-failed"),eq(eventRecord.cause,"port-state-change"),eq(eventRecord.cause,"port-pfc-congested"))&order-by=eventRecord.created|desc&page=0&page-size=100""".format(apic=apic)
+        logger.info(url)
         result = GetResponseData(url,cookie)
         clear_screen()
         print("Current time = " + current_time)
