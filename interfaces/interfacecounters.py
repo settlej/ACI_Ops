@@ -243,7 +243,7 @@ def main(import_apic,import_cookie):
         #print("\nWhat is the desired \x1b[1;33;40m'Destination'\x1b[0m leaf for span session?\r")
 
         chosendestinterfaceobject, leaf = physical_selection(all_leaflist, apic, cookie, provideleaf=True)
-        import pdb; pdb.set_trace()
+        #import pdb; pdb.set_trace()
         interface =  chosendestinterfaceobject[0].name
         #str(chosendestinterfaceobject[0]).replace('paths','nodes')
         epgurl = """https://{apic}/api/node-{leaf}/mo/sys/phys-[{interface}].json?rsp-subtree-include=full-deployment&target-node=all&target-path=l1EthIfToEPg""".format(interface=str(interface),leaf=str(leaf[0]),apic=apic)
