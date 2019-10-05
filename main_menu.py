@@ -94,83 +94,112 @@ def getCookie():
         return cookie # str
 
 # Test if script is run on APIC or on local computer
-def localOrRemote():
+# login function that will evaluate location of login and ask/retrieve credientals
+# Evaluates if cookie can be found locally, else check environment variables, then final asking ask for apic IP and creds
+def localOrRemote(error=False):
+    clear_screen()
+    if not error:
     # If path exisits the program is running on APIC server and bypass login
-    if os.path.isfile('/.aci/.sessions/.token'):
-        # APIC requires IP in urlpath to use a loopback address with said token above
-        apic = "localhost"
-        # Set global variable to access 'cookie' everywhere in current module
-        global cookie
-        cookie = getCookie()
-        user = getpass.getuser()
-        # return apic hostname and discovered cookie
-        return apic, user, cookie # str , str
-    else:
-        if os.environ.get('apic'):
-            apic = os.environ.get('apic')
-            user = os.environ.get('user')
-            pwd = os.environ.get('password')
-            cookie = getToken(apic,user,pwd)
-            return apic, user, cookie
-        else:    
-            # if '.token' file doesn't exist than prompt APIC ip and username/password login.
-            # Set defaults variables before login, allow variable to change if login attempts fail.
-            # if both are False the first to 'if' conditions will not match, cause haven't attempted login.
-            unauthenticated = False
-            timedout = False
-            # error value required to prevent Exception stating error variable not defined for use below
-            error = ''
-            # Loop for login Attempts, requires 'break' to exit loop
-            while True:
-                # Clear console ouput creating clean login screen for login attempt
-                clear_screen()
-                if unauthenticated:
-                    #import pdb; pdb.set_trace()
-                    # print error reason after cleared console screen
-                    print(error)
-                    # reset unauthenticated to prevent 'if' capture if failure is a different reason
+        if os.path.isfile('/.aci/.sessions/.token'):
+            # APIC requires IP in urlpath to use a loopback address with said token above
+            apic = "localhost"
+            # Set global variable to access 'cookie' everywhere in current module
+            global cookie
+            cookie = getCookie()
+            user = getpass.getuser()
+            # return apic hostname and discovered cookie
+            return apic, user, cookie # str , str
+        else:
+            # Automatic login if environment variables in terminal/cmd are set
+            try:
+                if os.environ.get('apic'):
+                    print('logging in using Environment Variables...')
+                    # find evnironment 'apic','user','pwd' pas to getToken function to retrieve cookie via REST POST Call
+                    apic = os.environ.get('apic')
+                    user = os.environ.get('user')
+                    pwd = os.environ.get('password')
+                    # POST REST call to APIC to get cookie/token for API calls
+                    cookie = getToken(apic,user,pwd)
+                    # some parts of the program needs apic address, username, and cookie for varise tasks
+                    return apic, user, cookie
+                else:    
+                    # if '.token' file doesn't exist than prompt APIC ip and username/password login.
+                    # Set defaults variables before login, allow variable to change if login attempts fail.
+                    # if both are False the first to 'if' conditions will not match, cause haven't attempted login.
                     unauthenticated = False
-                # Server doesn't respond in time to login request (unreachable default 4 sec)
-                elif timedout:
-                    import pdb; pdb.set_trace()
-                    # print error reason after cleared console screen
-                    print(error)
-                    # reask IP in cause IP typed incorrectly
-                    apic = raw_input("Enter IP address or FQDN of APIC: ")
-                    # reset time
                     timedout = False
-                else:
-                    print(error)
-                    apic = raw_input("\nEnter IP address or FQDN of APIC: ")
-                try:
-                    user = raw_input('\nUsername: ')
-                    pwd = getpass.getpass('Password: ')
-                    getToken(apic, user,pwd)
-                except urllib2.HTTPError as auth:
-                    unauthenticated = True
-                    error = '\n\x1b[1;31;40mAuthentication failed\x1b[0m\n'
-                    continue
-                except urllib2.URLError as e:
-                    timedout = True
-                    error = "\n\x1b[1;31;40mThere was an '%s' error connecting to APIC '%s'\x1b[0m\n" % (e.reason,apic)
-                    continue
-                except KeyboardInterrupt as k:
-                    print("\nEnding Program\n")
-                    exit()
-                except Exception as e:
-                    print(e)
-                    print("\n\x1b[1;31;40mError has occured, please try again\x1b[0m\n")
-                    continue
-                break
-    return apic, user, cookie
+                    # error value required to prevent Exception stating error variable not defined for use below
+                    error = ''
+                    # Loop for login Attempts, requires 'break' to exit loop
+                    while True:
+                        # Clear console ouput creating clean login screen for login attempt
+                        clear_screen()
+                        if unauthenticated:
+                            # print error reason after cleared console screen
+                            print(error)
+                            # reset unauthenticated to prevent 'if' capture if failure is a different reason
+                            unauthenticated = False
+                        # Server doesn't respond in time to login request (unreachable default 4 sec)
+                        elif timedout:
+                            # print error reason after cleared console screen
+                            print(error)
+                            # re-ask IP in cause IP typed incorrectly
+                            apic = raw_input("\nEnter IP address or FQDN of APIC: ")
+                            # reset timedout to False to prevent loop from accidently catching without timeout problem
+                            timedout = False
+                        elif error:
+                            # Catch any unforeseen errors and prompt for relogin
+                            print(error)
+                            apic = raw_input("\nEnter IP address or FQDN of APIC: ")
+                        else:
+                            # if no errors ask for APIC address
+                            apic = raw_input("\nEnter IP address or FQDN of APIC: ")
+                        try:
+                            user = raw_input('\nUsername: ')
+                            pwd = getpass.getpass('Password: ')
+                            getToken(apic, user,pwd)
+                        except urllib2.HTTPError:
+                            unauthenticated = True
+                            error = '\n\x1b[1;31;40mAuthentication failed\x1b[0m\n'
+                            continue
+                        except urllib2.URLError as e:
+                            timedout = True
+                            error = "\n\x1b[1;31;40mThere was an '%s' error connecting to APIC '%s'\x1b[0m\n" % (e.reason,apic)
+                            continue
+                        except KeyboardInterrupt:
+                            print("\nEnding Program\n")
+                            exit()
+                        except Exception as e:
+                            error = '\x1b[1;31;40m ' + str(e)
+                            error += "\nError has occured, please try again\x1b[0m\n"
+                            continue
+                        break
+            except urllib2.HTTPError as e:
+                unauthenticated = True
+                print('\n\x1b[1;31;40mAuthentication failed\x1b[0m\n')
+                exit()
+            except urllib2.URLError as e:
+                timedout = True
+                print("\n\x1b[1;31;40mThere was an '{}' error connecting to APIC {}\x1b[0m\n".format(e.reason,apic))
+                exit()
+            except KeyboardInterrupt:
+                print("\nEnding Program\n")
+                exit()
+            except Exception as e:
+                error = '\x1b[1;31;40m ' + str(e)
+                error += "\nError has occured, please try again\x1b[0m\n"
+                print(error)
+                exit()
+            else:
+                return apic, user, cookie
 
+# The difference between localOrRemote function is that reauthenticate() presents error info
 def reauthenticate(apic, error):
     unauthenticated = True
     timedout = False
     while True:
         clear_screen()
         if unauthenticated:
-            #import pdb; pdb.set_trace()
             print(error)
             unauthenticated = False
         elif timedout:
@@ -198,8 +227,8 @@ def reauthenticate(apic, error):
             error = "\n\x1b[1;31;40mThere was an '%s' error connecting to APIC '%s'\x1b[0m\n" % (e.reason,apic)
             continue
         except Exception as e:
-            print("\n\x1b[1;31;40mError has occured, please try again\x1b[0m\n")
-            import pdb; pdb.set_trace()
+            error = '\x1b[1;31;40m ' + str(e)
+            error += "\nError has occured, please try again\x1b[0m\n"
             continue
         return cookie
 
@@ -208,8 +237,8 @@ class AuthenticationFailure(Exception):
     pass
 
 def main():
-    unauthenticated = False
     apic, current_user, cookie = localOrRemote()
+    unauthenticated = False
     keyinterrupt = False
     while True:
         try:
@@ -458,7 +487,7 @@ def main():
             continue
 
         except KeyboardInterrupt:
-            logger.exception('KeyboardInterrupt')
+            logger.exception('main KeyboardInterrupt')
             print('\nEnding Program\n')
             exit()
         except Exception:
