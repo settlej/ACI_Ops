@@ -12,7 +12,6 @@ import trace
 import os
 import time
 import itertools
-import ipaddress
 from localutils.custom_utils import *
 import logging
 
@@ -21,7 +20,7 @@ import logging
 # specifiy logging levels for file vs console.  Set default level to DEBUG to allow more
 # grainular logging levels
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.CRITICAL)
+logger.setLevel(logging.INFO)
 
 # Define logging handler for file and console logging.  Console logging can be desplayed during
 # program run time, similar to print.  Program can display or write to log file if more debug 
@@ -157,6 +156,7 @@ def gather_fvCEp_fullinfo(result):
 
 def mac_path_function():
     url = """https://{apic}/api/node/class/fvCEp.json?rsp-subtree=full&target-subtree-class=fvCEp,fvRsCEpToPathEp""".format(apic=apic)
+    logger.info(url)
     result = GetResponseData(url,cookie)
     fvCEplist = gather_fvCEp_fullinfo(result)
     return fvCEplist

@@ -20,7 +20,7 @@ import logging
 # specifiy logging levels for file vs console.  Set default level to DEBUG to allow more
 # grainular logging levels
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.CRITICAL)
+logger.setLevel(logging.INFO)
 
 # Define logging handler for file and console logging.  Console logging can be desplayed during
 # program run time, similar to print.  Program can display or write to log file if more debug 
@@ -58,8 +58,10 @@ def shutinterfaces(interfaces, apic, cookie):
 
 def postshut(interface,queue, apic, cookie):
         url = 'https://{apic}/api/node/mo/uni/fabric/outofsvc.json'.format(apic=apic)
+        logger.info(url)
         # data is the 'POST' data sent in the REST call to 'blacklist' (shutdown) on a normal interface
         data = """'{{"fabricRsOosPath":{{"attributes":{{"tDn":"{interface}","lc":"blacklist"}},"children":[]}}}}'""".format(interface=interface)
+        logger.info(data)
         result, error =  PostandGetResponseData(url, data, cookie)
         if result == []:
             queue.put('[Complete] shut ' + interface.name)
@@ -80,8 +82,10 @@ def noshutinterfaces(interfaces, apic, cookie):
 
 def postnoshut(interface,queue, apic, cookie):
         url = 'https://{apic}/api/node/mo/uni/fabric/outofsvc.json'.format(apic=apic)
+        logger.info(url)
         # data is the 'POST' data sent in the REST call to delete object from 'blacklist' (no shut)
         data = """'{{"fabricRsOosPath":{{"attributes":{{"dn":"uni/fabric/outofsvc/rsoosPath-[{interface}]","status":"deleted"}},"children":[]}}}}'""".format(interface=interface)
+        logger.info(data)
         result, error =  PostandGetResponseData(url, data, cookie)
         if result == []:
             queue.put('[Complete] no shut ' + interface.name)

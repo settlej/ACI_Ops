@@ -18,6 +18,7 @@ import logging
 # specifiy logging levels for file vs console.  Set default level to DEBUG to allow more
 # grainular logging levels
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 # Define logging handler for file and console logging.  Console logging can be desplayed during
 # program run time, similar to print.  Program can display or write to log file if more debug 
@@ -55,6 +56,7 @@ def gatheranddisplayrecentfaults():
         current_time = get_APIC_clock(apic,cookie)
         print("Current time = " + current_time)
         url = """https://{apic}/api/node/class/faultInfo.json?query-target-filter=and(ne(faultInfo.severity,"cleared"))&order-by=faultInfo.lastTransition|desc&page=0&page-size=100""".format(apic=apic)
+        logger.info(url)
         result = GetResponseData(url,cookie)
         print('\n{:>5}   {:26}{:20}{:18}{:18}{}'.format('#','Time','Time Difference', 'Type','Fault-State','Fault Summary'))
         print('-'*175)

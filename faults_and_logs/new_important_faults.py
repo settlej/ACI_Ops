@@ -60,6 +60,7 @@ class faultobject():
 def faultSummary(apic, cookie):
     url = ("""https://{apic}/api/node/class/faultSummary.json?query-target-filter=and(not(wcard(faultSummary.dn,%22__ui_%22)),and())""" + \
           """&order-by=faultSummary.severity|desc&page=0&page-size=100""").format(apic=apic)
+    logger.info(url)
     result = GetResponseData(url, cookie)
     #print(result)
     reduced_fault_summary_dict = {}
@@ -165,6 +166,7 @@ def displayfaultSummary(summarylist):
 def get_fault_results(apic, cookie, code):
     url = ("""https://{apic}/api/node/class/faultInfo.json?query-target-filter=and(ne(faultInfo.severity,"cleared"),""" +
           """eq(faultInfo.code,"{code}"))&order-by=faultInfo.lastTransition|Desc&page=0&order-by=faultInfo.lastTransition|Desc&page-size=100""").format(apic=apic,code=code.code)
+    logger.info(url)
     result = GetResponseData(url, cookie)
     code.results = result
     code.amount 
@@ -216,9 +218,9 @@ def detail_access_inter_faults(listdetail, apic=None):
         timestamp = ' '.join(fault['faultInst']['attributes']['lastTransition'].split('T'))
         diff_time = time_difference(current_time,timestamp[:-6])
         interface = re.search(r'\[.*\]', fault['faultInst']['attributes']['dn'])
-        leaf = re.search(r'node [0-9]{3}', fault['faultInst']['attributes']['descr'])
+        leaf = re.search(r'(node [0-9]{3})|(node-[0-9]{3})', fault['faultInst']['attributes']['dn'])
         if leaf == None:
-            leaf = re.search(r'leaf[0-9]{3}', fault['faultInst']['attributes']['descr'])
+            leaf = re.search(r'leaf[0-9]{3}', fault['faultInst']['attributes']['dn'])
         logger.debug('{} {} {}'.format(current_time,timestamp,interface.group()))
         lc = fault['faultInst']['attributes']['lc']
         description = ' '.join(fault['faultInst']['attributes']['descr'].split())
@@ -458,7 +460,7 @@ def detail_failed_psu_faults(listdetail,apic=None):
     print('\n')
 def retrievePortChannelName(apic, cookie, PoNum, leaf, que):
     #import pdb; pdb.set_trace()
-    url = """https://{apic}/api/node/mo/topology/pod-1/node-{leaf}/sys/aggr-{PoNum}/rtaccBndlGrpToAggrIf.json""".format(apic=apic,leaf=leaf[4:].lstrip(),PoNum=PoNum)
+    url = """https://{apic}/api/node/mo/topology/pod-1/node-{leaf}/sys/aggr-{PoNum}/rtaccBndlGrpToAggrIf.json""".format(apic=apic,leaf=leaf[5:].lstrip(),PoNum=PoNum)
     logger.info(url)
     result = GetResponseData(url, cookie)
     logger.debug(result)

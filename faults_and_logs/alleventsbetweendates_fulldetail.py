@@ -18,6 +18,7 @@ import logging
 # specifiy logging levels for file vs console.  Set default level to DEBUG to allow more
 # grainular logging levels
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 # Define logging handler for file and console logging.  Console logging can be desplayed during
 # program run time, similar to print.  Program can display or write to log file if more debug 
@@ -203,14 +204,17 @@ def gather_and_display_related_events():
         date1,time1,date2,time2 = get_and_seperate_dates()
         print('\nGathering Audit Logs...')
         url = """https://{apic}/api//class/aaaModLR.json?query-target-filter=and(gt(aaaModLR.created,"{}T{}"),lt(aaaModLR.created,"{}T{}"))&order-by=aaaModLR.created|desc""".format(date1,time1,date2,time2,apic=apic)
+        logger.info(url)
         auditresult = GetResponseData(url,cookie)
         list1 = auditgather(auditresult)
         print('Gathering Fault Logs...')
         url = """https://{apic}/api/node/class/faultRecord.json?query-target-filter=and(gt(faultRecord.created,"{}T{}"),lt(faultRecord.created,"{}T{}"))&order-by=faultRecord.created|desc""".format(date1,time1,date2,time2,apic=apic)
+        logger.info(url)
         faultresult = GetResponseData(url,cookie)
         list2 = faultgather(faultresult)
         print('Gathering Event Logs...\n')
         url = """https://{apic}/api/node/class/eventRecord.json?query-target-filter=and(gt(eventRecord.created,"{}T{}"),lt(eventRecord.created,"{}T{}"))&order-by=eventRecord.created|desc""".format(date1,time1,date2,time2,apic=apic)
+        logger.info(url)
         eventresult = GetResponseData(url,cookie)
         list3 = eventgather(eventresult)
         print('{:6}{:8}{:26}{:10}{:18}{}'.format('Order','Type', 'Date & Time ', 'User','Fault-State','Summary Description'))

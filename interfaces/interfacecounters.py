@@ -43,63 +43,6 @@ logger.addHandler(c_handler)
 logger.addHandler(f_handler)
 
 
-#def goodspacing(column):
-#    if column.fex:
-#        return column.leaf + ' ' + column.fex + ' ' + str(column.name)
-#    elif column.fex == '':
-#        return column.leaf + ' ' + str(column.name)
-#
-#def grouper(iterable, n, fillvalue=''):
-#    "Collect data into fixed-length chunks or blocks"
-#    # grouper('ABCDEFG', 3, 'x') --> ABC DEF Gxx"
-#    args = [iter(iterable)] * n  # creates list * n so args is a list of iters for iterable
-#    return itertools.izip_longest(*args, fillvalue=fillvalue)
-#
-#def parseandreturnsingelist(liststring, collectionlist):
-#    try:
-#        rangelist = []
-#        singlelist = []
-#        seperated_list = liststring.split(',')
-#        for x in seperated_list:
-#            if '-' in x:
-#                rangelist.append(x)
-#            else:
-#                singlelist.append(int(x))
-#        if len(rangelist) >= 1:
-#            for foundrange in rangelist:
-#                tempsplit = foundrange.split('-')
-#                for i in xrange(int(tempsplit[0]), int(tempsplit[1])+1):
-#                    singlelist.append(int(i))
-#   #     print(sorted(singlelist))
-#        if max(singlelist) > len(collectionlist) or min(singlelist) < 1:
-#            print('\n\x1b[1;37;41mInvalid format and/or range...Try again\x1b[0m\n')
-#            return 'invalid'
-#        return list(set(singlelist)) 
-#    except ValueError as v:
-#        print('\n\x1b[1;37;41mInvalid format and/or range...Try again\x1b[0m\n')
-#        return 'invalid'
-#
-#class fabricPathEp(object):
-#    def __init__(self, descr=None, dn=None,name=None, number=None):
-#        self.name = name
-#        self.descr = descr
-#        self.dn = dn
-#        self.number = number
-#        self.leaf =  dn.split('/')[2].replace('paths','leaf')
-#        self.shortname = name.replace('eth1/','')
-#        self.removedint = '/'.join(dn.split('/')[:-2])
-#        if 'extpaths' in self.dn:
-#            self.fex = self.dn.split('/')[3].replace('extpaths','fex')
-#        else:
-#            self.fex = ''
-#    def __repr__(self):
-#        return self.dn
-#    def __getitem__(self, number):
-#        if number in self.dn:
-#            return self.dn
-#        else:
-#            return None
-
 class l1PhysIf():
     def __init__(self, interface):
         self.interface = interface
@@ -120,92 +63,8 @@ class l1PhysIf():
     def __repr__(self):
         return self.interface
 
-#def physical_selection(all_leaflist,leaf=None):
-#    import pdb; pdb.set_trace()
-#    if leaf == None:
-#        nodelist = [node['fabricNode']['attributes']['id'] for node in all_leaflist]
-#        nodelist.sort()
-#        for num,node in enumerate(nodelist,1):
-#            print("{}.) {}".format(num,node))
-#        while True:
-#            #try:
-#                asknode = custom_raw_input('\nWhat leaf: ')
-#                print('\r')
-#                if asknode.strip().lstrip() == '' or '-' in asknode or ',' in asknode or not asknode.isdigit():
-#                    print("\n\x1b[1;37;41mInvalid format or number...Try again\x1b[0m\n")
-#                    continue
-#                returnedlist = parseandreturnsingelist(asknode, nodelist)
-#                if returnedlist == 'invalid':
-#                    continue
-#                chosenleafs = [nodelist[int(node)-1] for node in returnedlist]
-#                break
-#            #except KeyboardInterrupt as k:
-#            #    print('\n\nEnding Script....\n')
-#            #    return
-#    else:
-#        chosenleafs = [leaf]
-#    compoundedleafresult = []
-#    for leaf in chosenleafs:
-#        url = """https://{apic}/api/node/class/fabricPathEp.json?query-target-filter=and(not(wcard(fabricPathEp.dn,%22__ui_%22)),""" \
-#              """and(eq(fabricPathEp.lagT,"not-aggregated"),eq(fabricPathEp.pathT,"leaf"),wcard(fabricPathEp.dn,"topology/pod-1/paths-{leaf}/"),""" \
-#              """not(or(wcard(fabricPathEp.name,"^tunnel"),wcard(fabricPathEp.name,"^vfc")))))&order-by=fabricPathEp.dn|desc""".format(leaf=leaf,apic=apic)
-#        result = GetResponseData(url, cookie)
-#        compoundedleafresult.append(result)
-#    result = compoundedleafresult
-#    interfacelist = []
-#    interfacelist2 = []
-#    for x in result:
-#        for pathep in x:
-#            dn = pathep['fabricPathEp']['attributes']['dn']
-#            name = pathep['fabricPathEp']['attributes']['name']
-#            descr = pathep['fabricPathEp']['attributes']['descr']
-#            if 'extpaths' in dn:
-#                interfacelist2.append(fabricPathEp(descr=descr, dn=dn ,name=name))
-#            else:
-#                interfacelist.append(fabricPathEp(descr=descr, dn=dn ,name=name))
-#            
-#    interfacelist2 = sorted(interfacelist2, key=lambda x: (x.fex, int(x.shortname)))
-#    interfacelist = sorted(interfacelist, key=lambda x: int(x.shortname))
-#    interfacenewlist = interfacelist2 + interfacelist
-#    interfacelist = []
-#    interfacelist2 = []
-#    finalsortedinterfacelist = sorted(interfacenewlist, key=lambda x: x.removedint)
-#    interfacedict = {}
-#    for num,interf in enumerate(finalsortedinterfacelist,1):
-#        if interf != '':
-#           interfacedict[interf] = str(num) + '.) '
-#           interf.number = num
-#    listlen = len(finalsortedinterfacelist) / 3
-#    firstgrouped = [x for x in grouper(finalsortedinterfacelist,listlen)]
-#    finalgrouped = zip(*firstgrouped)
-#    for column in finalgrouped:
-#        a = column[0].number
-#        b = goodspacing(column[0]) + '  ' + column[0].descr
-#        c = column[1].number
-#        d = goodspacing(column[1]) + '  ' + column[1].descr
-#        if column[2] == '' or column[2] == None:
-#            e = ''
-#            f = ''
-#        else:
-#            #e = interfacedict[column[2]]
-#            e = column[2].number
-#            f = goodspacing(column[2]) + '  ' + column[2].descr
-#            #f = row[2].leaf + ' ' + row[2].fex + ' ' + str(row[2].name)
-#        print('{:6}.) {:42}{}.) {:42}{}.) {}'.format(a,b,c,d,e,f))
-#    while True:
-#        #try:
-#            selectedinterfaces = custom_raw_input("\nSelect interface(s) by number: ")
-#            print('\r')
-#            if selectedinterfaces.strip().lstrip() == '' or '-' in selectedinterfaces or ',' in selectedinterfaces: # or not selectedinterfaces.isdigit():
-#                print("\n\x1b[1;37;41mInvalid format or number...Try again\x1b[0m\n")
-#                continue
-#            intsinglelist = parseandreturnsingelist(selectedinterfaces,finalsortedinterfacelist)
-#            if intsinglelist == 'invalid':
-#                continue
-#            return filter(lambda x: x.number in intsinglelist, finalsortedinterfacelist), leaf
 
 def displayepgs(result):
-    #print(result)
     if result[0]['l1PhysIf']['attributes']['layer'] == 'Layer3':
         print(' Layer 3 interface, no layer 2 EPGs\n')
         return
@@ -243,27 +102,19 @@ def main(import_apic,import_cookie):
         #print("\nWhat is the desired \x1b[1;33;40m'Destination'\x1b[0m leaf for span session?\r")
 
         chosendestinterfaceobject, leaf = physical_selection(all_leaflist, apic, cookie, provideleaf=True)
-        import pdb; pdb.set_trace()
+        #import pdb; pdb.set_trace()
         interface =  chosendestinterfaceobject[0].name
-        #str(chosendestinterfaceobject[0]).replace('paths','nodes')
         epgurl = """https://{apic}/api/node-{leaf}/mo/sys/phys-[{interface}].json?rsp-subtree-include=full-deployment&target-node=all&target-path=l1EthIfToEPg""".format(interface=str(interface),leaf=str(leaf[0]),apic=apic)
         #url = """https://{apic}/api/node/mo/{path}.json?rsp-subtree-include=full-deployment&target-node=all&target-path=l1EthIfToEPg""".format(apic=apic,path=str(chosendestinterfaceobject[0]))
-        #print(url)
+        logger.info(epgurl)
         epgresult = GetResponseData(epgurl, cookie)
-            
+        logger.debug(epgresult)
         url = """https://{apic}/api/node-{leaf}/mo/sys/phys-[{interface}].json?""".format(interface=str(interface),leaf=str(leaf[0]),apic=apic) \
                   + """query-target=subtree&rsp-subtree-include=stats&target-subtree-class=rmonIfOut,l1PhysIf,""" \
                   + """rmonIfIn,rmonEtherStats,ethpmPhysIf,l1RsAttEntityPCons,"""\
                   + """l1RsCdpIfPolCons,l1RtMbrIfs,pcAggrMbrIf,fvDomDef,eqptIngrTotal5min,eqptEgrTotal5min"""
         logger.info(url)
-#rsp-subtree-include=full-deployment&target-node=all&target-path=l1EthIfToEPg
-           # query-target=subtree&rsp-subtree-include=stats&target-subtree-class=rmonIfOut,l1PhysIf,rmonIfIn,rmonEtherStats,ethpmPhysIf,l1RsAttEntityPCons,l1RsCdpIfPolCons,l1RtMbrIfs,pcAggrMbrIf,fvDomDef,eqptIngrTotal5min,eqptEgrTotal5min
         result = GetResponseData(url, cookie)
-        
-            #print(result)
-            #https://192.168.255.2/api/node-101/mo/sys/phys-[eth1/12].json?query-target=subtree&target-subtree-class=rmonIfOut,l1PhysIf,rmonIfIn,rmonEtherStats,ethpmPhysIf,l1RsAttEntityPCons,l1RsCdpIfPolCons,l1RtMbrIfs,pcAggrMbrIf,fvDomDef
-            #for x in kk['imdata'][0]['l1PhysIf']['children']:    
-            #     for y in x:
         clear_screen() 
         while True:   
             interfaceObject = l1PhysIf(interface)
@@ -366,28 +217,21 @@ def single_interface_pull(import_apic,import_cookie, selectedleaf, interfacepull
     apic = import_apic
     authcounter = 0
     while True:
-        #interface =  chosendestinterfaceobject[0].name
         leaf = selectedleaf
         interface = interfacepull
         #str(chosendestinterfaceobject[0]).replace('paths','nodes')
-        epgurl = """https://{apic}/api/node-{leaf}/mo/sys/phys-[{interface}].json?rsp-subtree-include=full-deployment&target-node=all&target-path=l1EthIfToEPg""".format(interface=str(interface),leaf=str(leaf[0]),apic=apic)
+        epgurl = """https://{apic}/api/node-{leaf}/mo/sys/phys-[{interface}].json?rsp-subtree-include=full-deployment&target-node=all&target-path=l1EthIfToEPg""".format(interface=str(interface),leaf=str(leaf),apic=apic)
         #url = """https://{apic}/api/node/mo/{path}.json?rsp-subtree-include=full-deployment&target-node=all&target-path=l1EthIfToEPg""".format(apic=apic,path=str(chosendestinterfaceobject[0]))
-        #print(url)
+        logger.info(epgurl)
         epgresult = GetResponseData(epgurl, cookie)
             
-        url = """https://{apic}/api/node-{leaf}/mo/sys/phys-[{interface}].json?""".format(interface=str(interface),leaf=str(leaf[0]),apic=apic) \
+        url = """https://{apic}/api/node-{leaf}/mo/sys/phys-[{interface}].json?""".format(interface=str(interface),leaf=str(leaf),apic=apic) \
                   + """query-target=subtree&rsp-subtree-include=stats&target-subtree-class=rmonIfOut,l1PhysIf,""" \
                   + """rmonIfIn,rmonEtherStats,ethpmPhysIf,l1RsAttEntityPCons,"""\
                   + """l1RsCdpIfPolCons,l1RtMbrIfs,pcAggrMbrIf,fvDomDef,eqptIngrTotal5min,eqptEgrTotal5min"""
-
-#rsp-subtree-include=full-deployment&target-node=all&target-path=l1EthIfToEPg
+        logger.info(url)
            # query-target=subtree&rsp-subtree-include=stats&target-subtree-class=rmonIfOut,l1PhysIf,rmonIfIn,rmonEtherStats,ethpmPhysIf,l1RsAttEntityPCons,l1RsCdpIfPolCons,l1RtMbrIfs,pcAggrMbrIf,fvDomDef,eqptIngrTotal5min,eqptEgrTotal5min
         result = GetResponseData(url, cookie)
-            #print(result)
-            #https://192.168.255.2/api/node-101/mo/sys/phys-[eth1/12].json?query-target=subtree&target-subtree-class=rmonIfOut,l1PhysIf,rmonIfIn,rmonEtherStats,ethpmPhysIf,l1RsAttEntityPCons,l1RsCdpIfPolCons,l1RtMbrIfs,pcAggrMbrIf,fvDomDef
-            #for x in kk['imdata'][0]['l1PhysIf']['children']:    
-            #     for y in x:
-       # clear_screen() 
         while True:   
             interfaceObject = l1PhysIf(interface)
             for x in result:

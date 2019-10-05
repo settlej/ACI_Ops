@@ -24,7 +24,7 @@ import logging
 # specifiy logging levels for file vs console.  Set default level to DEBUG to allow more
 # grainular logging levels
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 # Define logging handler for file and console logging.  Console logging can be desplayed during
 # program run time, similar to print.  Program can display or write to log file if more debug 
@@ -75,6 +75,7 @@ def vlan_and_url_generating(epgsinglelist,numepgdict,choseninterfaceobjectlist, 
     confirmationlist = []
     for epg in sorted(epgsinglelist):
         url = """https://{apic}/api/node/mo/{}.json""".format(numepgdict[epg],apic=apic)
+        logger.info(url)
         print("\nProvide a vlan number for epg: {}".format(numepgdict[epg]))
         while True:
             try:

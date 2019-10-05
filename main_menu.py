@@ -13,7 +13,7 @@ import pdb
 from localutils.custom_utils import *
 import interfaces.change_interface_state as shut_noshut_interfaces
 import interfaces.assign_epg_interfaces as assign_epg_interfaces
-import interfaces.remove_epgs_interfaces_test as remove_egps
+import interfaces.remove_epgs_interfaces as remove_egps
 #import interfaces.show_interface_epgs as show_epgs
 import interfaces.show_all_endpoints_on_interface as show_all_endpoints_on_interface
 import interfaces.portsanddescriptions as portsanddescriptions
@@ -26,11 +26,11 @@ import faults_and_logs.most_recent_admin_changes as most_recent_admin_changes
 import faults_and_logs.most_recent_event_changes as most_recent_event_changes
 import faults_and_logs.alleventsbetweendates as alleventsbetweendates
 import faults_and_logs.alleventsbetweendates_fulldetail as alleventsbetweendates_fulldetail
-import information.endpoint_search as ipendpoint
-import information.routetranslation as epg_troubleshooting
-import information.routetranslation as routetranslation
-import information.routetrace as check_routing
-import information.show_static_routes as show_static_routes
+import information.endpoint_search as ipendpoint_search
+#import information.routetranslation as epg_troubleshooting
+#import information.routetranslation as routetranslation
+#import information.routetrace as check_routing
+#import information.show_static_routes as show_static_routes
 import configuration.create_local_span_session as create_local_span_session
 import configuration.span_to_server as span_to_server
 import logging
@@ -70,6 +70,7 @@ def getToken(apic, user, pwd):
     ssl._create_default_https_context = ssl._create_unverified_context
     # url POST request to login to APIC and recieve cookie hash
     url = "https://{apic}/api/aaaLogin.json".format(apic=apic)
+    logger.info(url)
     # POST Login requires user creds provided in the data section of url request
     payload = '{"aaaUser":{"attributes":{"name":"%(user)s","pwd":"%(pwd)s"}}}' % {"pwd":pwd,"user":user}
     request = urllib2.Request(url, data=payload)
@@ -260,7 +261,7 @@ def main():
                             '\t| 5.)  Show interface stats and EPGs\n' + 
                             '\t| 6.)  Show leaf port view\n' +
                             '\t| 7.)  Show leaf port view (detail)\n' + 
-                            '\t| 8.)  Show Endpoints on interface (alpha)\n' +
+                            '\t| 8.)  Show Endpoints on interface (beta)\n' +
                             '\t ---------------------------------------------------\n\n' +
                             '\t  [FAULTS and LOGS]\n'
                             '\t ---------------------------------------------------\n' +
@@ -420,7 +421,7 @@ def main():
                     continue
             elif choosen == '16':
                 try:
-                    ipendpoint.main(apic,cookie)
+                    ipendpoint_search.main(apic,cookie)
                     keyinterrupt = False
                 except KeyboardInterrupt as k:
                     print('\nExit to Main menu\n')
