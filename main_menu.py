@@ -102,6 +102,7 @@ def localOrRemote(error=False):
     if not error:
     # If path exisits the program is running on APIC server and bypass login
         if os.path.isfile('/.aci/.sessions/.token'):
+            logger.info('Logging using local apic cookie')
             # APIC requires IP in urlpath to use a loopback address with said token above
             apic = "localhost"
             # Set global variable to access 'cookie' everywhere in current module
@@ -114,7 +115,8 @@ def localOrRemote(error=False):
             # Automatic login if environment variables in terminal/cmd are set
             try:
                 if os.environ.get('apic'):
-                    print('logging in using Environment Variables...')
+                    print('Logging in using Environment Variables...')
+                    logger.info('Logging in using Environment Variables...')
                     # find evnironment 'apic','user','pwd' pas to getToken function to retrieve cookie via REST POST Call
                     apic = os.environ.get('apic')
                     user = os.environ.get('user')
@@ -192,6 +194,7 @@ def localOrRemote(error=False):
                 print(error)
                 exit()
             else:
+                logger.info('Logging using ip, user, password')
                 return apic, user, cookie
 
 # The difference between localOrRemote function is that reauthenticate() presents error info

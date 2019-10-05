@@ -522,7 +522,7 @@ def main(import_apic,import_cookie):
             logger.debug('Matched MAC lookup')
             endpoint = search.upper()
             mac_path_function(endpoint)
-        elif re.match(r"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$",search):
+        elif re.match(r"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$",search.strip().lstrip()):
             logger.debug('Matched IP lookup')
             endpoint = search
             ip_path_function(endpoint)
