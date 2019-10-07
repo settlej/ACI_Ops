@@ -90,7 +90,7 @@ class l1PhysIf():
             color = '\x1b[2;30;42m{:2}\x1b[0m'.format(self.shortnum)
             return color
         elif self.layer == "Layer2" and not self.pcmode == 'off' and self.pctype == 'pc':
-            color = '\x1b[5;30;42m{:2}\x1b[0m'.format(self.shortnum)
+            color = '\x1b[0;30;42m{:2}\x1b[0m'.format(self.shortnum)
             return color
         elif self.layer == "Layer2" and not self.pcmode == 'off' and self.pctype == 'vpc':
             color = '\x1b[2;37;44m{:2}\x1b[0m'.format(self.shortnum)
@@ -103,10 +103,10 @@ class l1PhysIf():
             color = '\x1b[2;30;43m{:2}\x1b[0m'.format(self.shortnum)
             return color
         elif self.fex == True:
-            color = '\x1b[5;30;41m{:2}\x1b[0m'.format(self.shortnum)
+            color = '\x1b[0;30;41m{:2}\x1b[0m'.format(self.shortnum)
             return color
         else:
-            color = '\x1b[5;30;37m{:2}\x1b[0m'.format(self.shortnum)
+            color = '\x1b[0;30;37m{:2}\x1b[0m'.format(self.shortnum)
             return color
     def port_error_color(self):
         #if 100 <= self.allerrors >= 10 :
@@ -468,7 +468,7 @@ def display_port_types(nodeinterfacegrouping):
         oddlist = []
         for group in groups:
             print('{} (Port Type)'.format(group[0].nodeid))
-            #print('\x1b[5;37;47m')
+            #print('\x1b[0;37;47m')
             for num,inters in enumerate(group):
                 if num % 2:
                     evenlist.append(inters)
@@ -508,7 +508,7 @@ def display_port_errors(nodeinterfacegrouping):
 
             #print('Green: , Green:L2 + EPGS , Yellow:L3 , Black:L2')
 
-            #print('\x1b[5;37;47m')
+            #print('\x1b[0;37;47m')
             for num,inters in enumerate(group):
                 if num % 2:
                     evenlist.append(inters)
