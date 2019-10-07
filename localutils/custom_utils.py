@@ -201,6 +201,18 @@ def interface_menu():
 #    ref_admin_time = datetime.datetime.strptime(admin_time, '%Y-%m-%d %H:%M:%S.%f')
 #    return str(currenttime - ref_admin_time)[:-7]
 #
+class epgformater():
+    def __init__(self, epgdn):
+        self.dnsplit = epgdn.split('/')
+        self.tenant = self.dnsplit[1]
+        self.app = self.dnsplit[2]
+        self.epg = self.dnsplit[3]
+        self.clean = '|'.join((self.tenant.replace('tn-',''),self.app.replace('ap-',''),self.epg.replace('epg-','')))
+    def __repr__(self):
+        return self.clean
+    def __str__(self):
+        return self.clean
+
 class fabricPathEp(object):
     def __init__(self, descr=None, dn=None,name=None, number=None):
         self.name = name
@@ -256,6 +268,7 @@ def display_and_select_epgs(choseninterfaceobjectlist, allepglist):
                 continue
             chosenepgs = [allepglist[x-1] for x in epgsinglelist]
             break
+    import pdb; pdb.set_trace()
     return epgsinglelist, numepgdict, choseninterfaceobjectlist
 
 

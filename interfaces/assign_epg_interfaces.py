@@ -195,6 +195,7 @@ def main(import_apic,import_cookie):
             returnedlist = physical_selection(all_leaflist, apic, cookie)
             #import pdb; pdb.set_trace()
             epgsinglelist, numepgdict, choseninterfaceobjectlist = display_and_select_epgs(returnedlist, allepglist)
+            import pdb; pdb.set_trace()
             interface_type_and_deployement(epgsinglelist, numepgdict, choseninterfaceobjectlist, apic)
             print('\r')
             custom_raw_input('#Press enter to continue...')

@@ -150,11 +150,11 @@ def remove_selection_from_all_interfaces(interfacelist, apic, cookie):
         logger.info(empty_result)
         print('\n')
         print(empty_result)
-        print('\n\n')
+        print('\n')
         custom_raw_input('#Press enter to continue...')
         return
     for num,epg in enumerate(allepgsfoundlist,1):
-        print("{}.) {}".format(num,epg))
+        print("{}.) {}".format(num,epgformater(epg)))
     selectedremovalepgs = custom_raw_input("\nWhich EPG(s) would you like to remove? [example 1 or 1,2 or 1-3,5]: ")
     removableegps = parseandreturnsingelist(selectedremovalepgs, allepgsfoundlist)
     filteredepglist = []
@@ -166,6 +166,25 @@ def remove_selection_from_all_interfaces(interfacelist, apic, cookie):
             for tDn in filteredepglist:
                 if tDn in epgfvRsPathAtt:
                     currentremovalegplist.append(epgfvRsPathAtt)
+    formatedconfirmationlist = []
+    for epg in currentremovalegplist:
+        epgandlocation = epg.split('/rspathAtt-')
+        formatedepg = epgformater(epgandlocation[0])
+        location = epgandlocation[1][1:-1]
+        formatedconfirmationlist.append((formatedepg, location))
+    groups = []
+    uniquekeys = []
+    for k, g in itertools.groupby(formatedconfirmationlist, lambda x:x[1]):
+        groups.append(list(g))      # Store group iterator as a list
+        uniquekeys.append(k)
+
+    print('\n')
+    print('Please Confirm Removeal:\n')
+    for x in range(len(groups)):
+        print(groups[x][0][1][9:].replace('paths','nodes'))
+        for epgpath,interface in groups[x]:
+            print('  Remove: {}'.format(epgpath))
+    #import pdb; pdb.set_trace()
     while True:
         #import pdb; pdb.set_trace()
         verify = custom_raw_input('\nContinue removal of EPGs? [y|n]: ')
@@ -225,7 +244,7 @@ def main(import_apic,import_cookie):
             #print(interfaces)
             print('What would you like to do for static EPGS on Port(s)?:\n\n'
                 + '1.) Remove ALL EPGs\n'
-                + '2.) Remove Selected from all interfaces\n\n')
+                + '2.) Remove Selected from all interfaces\n')
                 #+ '3.) Remove based on individual interface selection\n\n')
             while True:
                 removaloption = custom_raw_input('Selection: ')
