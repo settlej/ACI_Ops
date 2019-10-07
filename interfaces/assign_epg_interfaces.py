@@ -11,8 +11,8 @@ import ssl
 import os
 import datetime
 import itertools
-import trace
-import pdb
+#import trace
+#import pdb
 import threading
 import Queue
 from collections import namedtuple
@@ -70,13 +70,13 @@ def parseandreturnsingelist2(liststring, collectionlist):
         print('\n\x1b[1;37;41mInvalid format and/or range...Try again\x1b[0m\n')
         return 'invalid'
 
-def vlan_and_url_generating(epgsinglelist,numepgdict,choseninterfaceobjectlist, apic, epg_type):
+def vlan_and_url_generating(chosenepgs,choseninterfaceobjectlist, apic, epg_type):
     urllist = []
     confirmationlist = []
-    for epg in sorted(epgsinglelist):
-        url = """https://{apic}/api/node/mo/{}.json""".format(numepgdict[epg],apic=apic)
+    for epg in sorted(chosenepgs):
+        url = """https://{apic}/api/node/mo/{}.json""".format(epg,apic=apic)
         logger.info(url)
-        print("\nProvide a vlan number for epg: {}".format(numepgdict[epg]))
+        print("\nProvide a vlan number for epg: {}".format(epgformater(epg)))
         while True:
             try:
                 vlan = custom_raw_input('vlan number [1-3899]: ')
@@ -99,7 +99,7 @@ def vlan_and_url_generating(epgsinglelist,numepgdict,choseninterfaceobjectlist, 
                          "tDn":"{}","status":"created"}},"children":[]}}}}'""".format(interface.dn,vlan=vlan)
             urlmodify = namedtuple('urlmodify', ('url', 'interface', 'data'))
             urllist.append(urlmodify(url, interface, data))
-        confirmationlist.append((choseninterfaceobjectlist,numepgdict[epg], vlan))
+        confirmationlist.append((choseninterfaceobjectlist,epg, vlan))
     return urllist, confirmationlist
 
 def add_egps_to_interfaces(urllist, interfacetype, cookie):
@@ -134,7 +134,7 @@ def submit_add_post_request(url,interfacetype,queue, cookie):
         logger.error('{} modify: {}'.format(interfacetype, error))
         print(error)
 
-def interface_type_and_deployement(epgsinglelist, numepgdict, choseninterfaceobjectlist, apic, type="Physical"):
+def interface_type_and_deployement(chosenepgs, choseninterfaceobjectlist, apic, type="Physical"):
     while True:
         print('What is the inteface epg mode?:\n\n'
               + '**Use either 1 for trunks ports and 2 for normal access ports\n\n' 
@@ -155,7 +155,7 @@ def interface_type_and_deployement(epgsinglelist, numepgdict, choseninterfaceobj
             print("\n\x1b[1;37;41mInvalid option...Try again\x1b[0m\n")
             continue
         
-    urllist, confirmationlist =  vlan_and_url_generating(epgsinglelist,numepgdict,choseninterfaceobjectlist, apic, epg_type)
+    urllist, confirmationlist =  vlan_and_url_generating(chosenepgs,choseninterfaceobjectlist, apic, epg_type)
     print('')
     print('Please Confirm deployment:\n')
     for confirm in confirmationlist:
@@ -194,22 +194,22 @@ def main(import_apic,import_cookie):
         if selection == '1':
             returnedlist = physical_selection(all_leaflist, apic, cookie)
             #import pdb; pdb.set_trace()
-            epgsinglelist, numepgdict, choseninterfaceobjectlist = display_and_select_epgs(returnedlist, allepglist)
-            import pdb; pdb.set_trace()
-            interface_type_and_deployement(epgsinglelist, numepgdict, choseninterfaceobjectlist, apic)
+            chosenepgs, choseninterfaceobjectlist = display_and_select_epgs(returnedlist, allepglist)
+            #import pdb; pdb.set_trace()
+            interface_type_and_deployement(chosenepgs, choseninterfaceobjectlist, apic)
             print('\r')
             custom_raw_input('#Press enter to continue...')
         elif selection == '2':
             returnedlist = port_channel_selection(allpclist)
-            epgsinglelist, numepgdict, choseninterfaceobjectlist = display_and_select_epgs(returnedlist, allepglist)
-            interface_type_and_deployement(epgsinglelist, numepgdict, choseninterfaceobjectlist, apic, type="Port-Channel")
+            chosenepgs, choseninterfaceobjectlist = display_and_select_epgs(returnedlist, allepglist)
+            interface_type_and_deployement(chosenepgs, choseninterfaceobjectlist, apic, type="Port-Channel")
             #port_channel_selection(allpclist,allepglist)
             print('\r')
             custom_raw_input('#Press enter to continue...')
         elif selection == '3':
             returnedlist = port_channel_selection(allvpclist)
-            epgsinglelist, numepgdict, choseninterfaceobjectlist = display_and_select_epgs(returnedlist, allepglist)
-            interface_type_and_deployement(epgsinglelist, numepgdict, choseninterfaceobjectlist, apic, type="vPort-Channel")
+            chosenepgs, choseninterfaceobjectlist = display_and_select_epgs(returnedlist, allepglist)
+            interface_type_and_deployement(chosenepgs, choseninterfaceobjectlist, apic, type="vPort-Channel")
             print('\r')
             custom_raw_input('#Press enter to continue...')
         

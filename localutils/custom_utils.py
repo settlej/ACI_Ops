@@ -93,7 +93,7 @@ def refreshToken(apic,icookie):
 #############################################################################################################################################
 #                               What does this program do
 #                               What are you trying to accomplish
-#                               Who program the damn thing
+#                               Who program the thing
 #                               What version you are on
 #                               Date Created
 #                               Date Last time modify
@@ -101,7 +101,7 @@ def refreshToken(apic,icookie):
 
 #############################################################################################################################################
 #                               What does this def do period
-#                               Who program the damn thing
+#                               Who program the thing
 #                               What version you are on
 #                               Date Created
 #                               Date Last time modify
@@ -186,21 +186,7 @@ def interface_menu():
         else:
             continue
     return selection 
-#
-##def getCookie():
-##    global cookie
-##    with open('/.aci/.sessions/.token', 'r') as f:
-##        cookie = f.read()
-#
-#def displaycurrenttime():
-#    currenttime = datetime.datetime.now()
-#    return str(currenttime)[:-3]
-#
-#def time_difference(admin_time):
-#    currenttime = datetime.datetime.now()
-#    ref_admin_time = datetime.datetime.strptime(admin_time, '%Y-%m-%d %H:%M:%S.%f')
-#    return str(currenttime - ref_admin_time)[:-7]
-#
+
 class epgformater():
     def __init__(self, epgdn):
         self.dnsplit = epgdn.split('/')
@@ -248,7 +234,6 @@ def goodspacing(column):
         return column.leaf + ' ' + str(column.name)
 
 def display_and_select_epgs(choseninterfaceobjectlist, allepglist):
-    #import pdb; pdb.set_trace()
     numepgdict = {}
     print("\n{:>4} | {:8}|  {:15}|  {}".format("#","Tenant","App-Profile","EPG"))
     print("-"* 65)
@@ -258,18 +243,16 @@ def display_and_select_epgs(choseninterfaceobjectlist, allepglist):
         egpslit = epg.split('/')[1:]
         print("{:4}.) {:8}|  {:15}|  {}".format(num,egpslit[0][3:],egpslit[1][3:],egpslit[2][4:]))
     while True:
-        #try:
-            askepgnum = custom_raw_input("\nWhich number(s)?: ")
-            print('\r')
-            if askepgnum.strip().lstrip() == '':
-                continue
-            epgsinglelist = parseandreturnsingelist(askepgnum,numepgdict)
-            if epgsinglelist == 'invalid':
-                continue
-            chosenepgs = [allepglist[x-1] for x in epgsinglelist]
-            break
-    import pdb; pdb.set_trace()
-    return epgsinglelist, numepgdict, choseninterfaceobjectlist
+        askepgnum = custom_raw_input("\nWhich number(s)?: ")
+        print('\r')
+        if askepgnum.strip().lstrip() == '':
+            continue
+        epgsinglelist = parseandreturnsingelist(askepgnum,numepgdict)
+        if epgsinglelist == 'invalid':
+            continue
+        chosenepgs = [allepglist[x-1] for x in epgsinglelist]
+        break
+    return chosenepgs, choseninterfaceobjectlist
 
 
 def physical_selection(all_leaflist, apic, cookie, leafnum=None, provideleaf=False):
@@ -279,17 +262,13 @@ def physical_selection(all_leaflist, apic, cookie, leafnum=None, provideleaf=Fal
         for num,node in enumerate(nodelist,1):
             print("{}.) {}".format(num,node))
         while True:
-            #try:
-                asknode = custom_raw_input('\nWhich leaf(s): ')
-                print('\r')
-                returnedlist = parseandreturnsingelist(asknode, nodelist)
-                if returnedlist == 'invalid':
-                    continue
-                chosenleafs = [nodelist[int(node)-1] for node in returnedlist]
-                break
-            #except KeyboardInterrupt as k:
-            #    print('\n\nEnding Script....\n')
-            #    return
+            asknode = custom_raw_input('\nWhich leaf(s): ')
+            print('\r')
+            returnedlist = parseandreturnsingelist(asknode, nodelist)
+            if returnedlist == 'invalid':
+                continue
+            chosenleafs = [nodelist[int(node)-1] for node in returnedlist]
+            break
     else:
         chosenleafs = [leafnum]
     compoundedleafresult = []
@@ -343,32 +322,20 @@ def physical_selection(all_leaflist, apic, cookie, leafnum=None, provideleaf=Fal
             #f = row[2].leaf + ' ' + row[2].fex + ' ' + str(row[2].name)
         print('{:6}.) {:45}{}.) {:45}{}.) {}'.format(a,b,c,d,e,f))
     while True:
-        #try:
-            selectedinterfaces = custom_raw_input("\nSelect interface(s) by number: ")
-            print('\r')
-            if selectedinterfaces.strip().lstrip() == '':
-                continue
-            intsinglelist = parseandreturnsingelist(selectedinterfaces,finalsortedinterfacelist)
-            if intsinglelist == 'invalid':
-                continue
-            if provideleaf == False:
-                choseninterfaceobjectlist = filter(lambda x: x.number in intsinglelist, finalsortedinterfacelist)
-                return choseninterfaceobjectlist
-            else:
-                chosenleafs
-                choseninterfaceobjectlist = filter(lambda x: x.number in intsinglelist, finalsortedinterfacelist)
-                #import pdb; pdb.set_trace()
-                return choseninterfaceobjectlist, chosenleafs
-           # for number in intsinglelist:
-           #     if not (0 < int(number) <= len(finalsortedinterfacelist)):
-           #         print('here')
-           #         print("\n\x1b[1;37;41mInvalid format and/or range...Try again\x1b[0m\n")
-           #         continue
- #           break
- #       #except KeyboardInterrupt as k:
- #       #    print('\n\nEnding Script....\n')
- #       #    exit()
- #   return choseninterfaceobjectlist
+        selectedinterfaces = custom_raw_input("\nSelect interface(s) by number: ")
+        print('\r')
+        if selectedinterfaces.strip().lstrip() == '':
+            continue
+        intsinglelist = parseandreturnsingelist(selectedinterfaces,finalsortedinterfacelist)
+        if intsinglelist == 'invalid':
+            continue
+        if provideleaf == False:
+            choseninterfaceobjectlist = filter(lambda x: x.number in intsinglelist, finalsortedinterfacelist)
+            return choseninterfaceobjectlist
+        else:
+            #chosenleafs
+            choseninterfaceobjectlist = filter(lambda x: x.number in intsinglelist, finalsortedinterfacelist)
+            return choseninterfaceobjectlist, chosenleafs
 
 
 
