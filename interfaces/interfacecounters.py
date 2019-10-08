@@ -102,7 +102,7 @@ def main(import_apic,import_cookie):
        
         #print("\nWhat is the desired \x1b[1;33;40m'Destination'\x1b[0m leaf for span session?\r")
         chosenleafs = physical_leaf_selection(all_leaflist, apic, cookie)
-        switchpreviewutil.main(apic,cookie,chosenleafs, purpose='port_status')
+        switchpreviewutil.main(apic,cookie,chosenleafs, purpose='port_switching')
         chosendestinterfaceobject = physical_interface_selection(apic, cookie, chosenleafs, provideleaf=False)
         leaf = chosenleafs
         #chosendestinterfaceobject, leaf = physical_selection(all_leaflist, apic, cookie, provideleaf=True)

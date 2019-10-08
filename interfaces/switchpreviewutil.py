@@ -102,12 +102,12 @@ def display_port_switchingSt(nodeinterfacegrouping):
                     oddlist.append(inters)
             oddstring = ''
             for odd in oddlist:
-                oddstring += odd.port_switchingSt_color() + ' '
+                oddstring += odd.port_epgusage_color() + ' '
                 #print odd.port_status_color(),
             print('{:^85}'.format(oddstring))
             evenstring = ''
             for even in evenlist:
-                evenstring += even.port_switchingSt_color() + ' '
+                evenstring += even.port_epgusage_color() + ' '
             print('{:^85}'.format(evenstring))
             print('\n')
             oddlist = []

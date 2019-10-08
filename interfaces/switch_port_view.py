@@ -45,85 +45,85 @@ f_handler.setFormatter(f_format)
 logger.addHandler(c_handler)
 logger.addHandler(f_handler)
 
-class l1PhysIf():
-    def __init__(self, **kwargs):
-        self.__dict__.update(kwargs)
-        self.fex = None
-        self.typefex = None 
-        self.uplink = None 
-        self.pctype = None
-       # self.
-        self.pc_mbmr = []
-        self.children = []
-    def __repr__(self):
-        return self.id
-    def __setitem__(self, a,b):
-        setattr(self, a, b)
-    def add_child(self, obj):
-        self.children.append(obj)
-    def __getitem__(self, x):
-        if x == self.id:
-            return True
-    def add_portchannel(self, p):
-        self.pc_mbmr.append(p) 
-    def port_status_color(self):
-        if self.portstatus == 'up/up' and self.switchingSt == 'enabled':
-            color = '\x1b[1;37;42m{:2}\x1b[0m'.format(self.shortnum)
-            return color
-        elif self.portstatus == 'up/up' and self.switchingSt == 'disabled':
-            color = '\x1b[0;30;43m{:2}\x1b[0m'.format(self.shortnum)
-            return color
-        elif self.portstatus == 'admin-down':
-            #2;30;47
-            color = '\x1b[2;30;47m{:2}\x1b[0m'.format(self.shortnum)
-            #color = '\x1b[0;37;45m{:2}\x1b[0m'.format(self.shortnum)
-            return color
-        else:
-            color = '\x1b[1;37;41m{:2}\x1b[0m'.format(self.shortnum)
-            return color
-    def port_type_color(self):
-        if 'controller' in self.usage:
-            color = '\x1b[1;37;45m{:2}\x1b[0m'.format(self.shortnum)
-            return color
-        elif self.layer == "Layer2" and self.pcmode == 'off' and self.epgs_status == 'Yes':
-            #light green
-            color = '\x1b[2;30;42m{:2}\x1b[0m'.format(self.shortnum)
-            return color
-        elif self.layer == "Layer2" and not self.pcmode == 'off' and self.pctype == 'pc':
-            color = '\x1b[5;30;42m{:2}\x1b[0m'.format(self.shortnum)
-            return color
-        elif self.layer == "Layer2" and not self.pcmode == 'off' and self.pctype == 'vpc':
-            color = '\x1b[2;37;44m{:2}\x1b[0m'.format(self.shortnum)
-            return color
-        elif 'fabric' in self.usage:
-            color = '\x1b[3;30;47m{:2}\x1b[0m'.format(self.shortnum)
-            return color
-        elif self.layer == "Layer3":
-            #orange
-            color = '\x1b[2;30;43m{:2}\x1b[0m'.format(self.shortnum)
-            return color
-        elif self.fex == True:
-            color = '\x1b[5;30;41m{:2}\x1b[0m'.format(self.shortnum)
-            return color
-        else:
-            color = '\x1b[5;30;37m{:2}\x1b[0m'.format(self.shortnum)
-            return color
-    def port_error_color(self):
-        #if 100 <= self.allerrors >= 10 :
-        #    color = '\x1b[1;37;42{:2}\x1b[0m'.format(self.shortnum)
-        #    return color
-        if self.allerrors <= 100:
-            color = '\x1b[2;30;47m{:2}\x1b[0m'.format(self.shortnum)
-            return color        
-        elif 1000 <= self.allerrors >= 101:
-            color = '\x1b[3;30;46m{:2}\x1b[0m'.format(self.shortnum)
-            return color
-        elif self.allerrors >= 1001:
-            color = '\x1b[3;37;41m{:2}\x1b[0m'.format(self.shortnum)
-            return color          
-        else:
-            color = '\x1b[1;37;42m{:2}\x1b[0m'.format(self.shortnum)
-            return color
+#class l1PhysIf():
+#    def __init__(self, **kwargs):
+#        self.__dict__.update(kwargs)
+#        self.fex = None
+#        self.typefex = None 
+#        self.uplink = None 
+#        self.pctype = None
+#       # self.
+#        self.pc_mbmr = []
+#        self.children = []
+#    def __repr__(self):
+#        return self.id
+#    def __setitem__(self, a,b):
+#        setattr(self, a, b)
+#    def add_child(self, obj):
+#        self.children.append(obj)
+#    def __getitem__(self, x):
+#        if x == self.id:
+#            return True
+#    def add_portchannel(self, p):
+#        self.pc_mbmr.append(p) 
+#    def port_status_color(self):
+#        if self.portstatus == 'up/up' and self.switchingSt == 'enabled':
+#            color = '\x1b[1;37;42m{:2}\x1b[0m'.format(self.shortnum)
+#            return color
+#        elif self.portstatus == 'up/up' and self.switchingSt == 'disabled':
+#            color = '\x1b[0;30;43m{:2}\x1b[0m'.format(self.shortnum)
+#            return color
+#        elif self.portstatus == 'admin-down':
+#            #2;30;47
+#            color = '\x1b[2;30;47m{:2}\x1b[0m'.format(self.shortnum)
+#            #color = '\x1b[0;37;45m{:2}\x1b[0m'.format(self.shortnum)
+#            return color
+#        else:
+#            color = '\x1b[1;37;41m{:2}\x1b[0m'.format(self.shortnum)
+#            return color
+#    def port_type_color(self):
+#        if 'controller' in self.usage:
+#            color = '\x1b[1;37;45m{:2}\x1b[0m'.format(self.shortnum)
+#            return color
+#        elif self.layer == "Layer2" and self.pcmode == 'off' and self.epgs_status == 'Yes':
+#            #light green
+#            color = '\x1b[2;30;42m{:2}\x1b[0m'.format(self.shortnum)
+#            return color
+#        elif self.layer == "Layer2" and not self.pcmode == 'off' and self.pctype == 'pc':
+#            color = '\x1b[5;30;42m{:2}\x1b[0m'.format(self.shortnum)
+#            return color
+#        elif self.layer == "Layer2" and not self.pcmode == 'off' and self.pctype == 'vpc':
+#            color = '\x1b[2;37;44m{:2}\x1b[0m'.format(self.shortnum)
+#            return color
+#        elif 'fabric' in self.usage:
+#            color = '\x1b[3;30;47m{:2}\x1b[0m'.format(self.shortnum)
+#            return color
+#        elif self.layer == "Layer3":
+#            #orange
+#            color = '\x1b[2;30;43m{:2}\x1b[0m'.format(self.shortnum)
+#            return color
+#        elif self.fex == True:
+#            color = '\x1b[5;30;41m{:2}\x1b[0m'.format(self.shortnum)
+#            return color
+#        else:
+#            color = '\x1b[5;30;37m{:2}\x1b[0m'.format(self.shortnum)
+#            return color
+#    def port_error_color(self):
+#        #if 100 <= self.allerrors >= 10 :
+#        #    color = '\x1b[1;37;42{:2}\x1b[0m'.format(self.shortnum)
+#        #    return color
+#        if self.allerrors <= 100:
+#            color = '\x1b[2;30;47m{:2}\x1b[0m'.format(self.shortnum)
+#            return color        
+#        elif 1000 <= self.allerrors >= 101:
+#            color = '\x1b[3;30;46m{:2}\x1b[0m'.format(self.shortnum)
+#            return color
+#        elif self.allerrors >= 1001:
+#            color = '\x1b[3;37;41m{:2}\x1b[0m'.format(self.shortnum)
+#            return color          
+#        else:
+#            color = '\x1b[1;37;42m{:2}\x1b[0m'.format(self.shortnum)
+#            return color
 
         
 class pcAggrMbrIf():
@@ -386,10 +386,14 @@ def print_interfaces_layout(leafallinterfacesdict,leafs):
             else:
                 sfp = column.children[4].children[0]
             column['sfp'] = sfp
-            if column.switchingSt == 'enabled':
-                epgs_status = 'Yes'
-            elif column.switchingSt == 'disabled':
-                epgs_status = 'No'
+            if 'epg' in column.usage:
+                epgs_status = 'yes'
+            elif not 'epg' in column.usage:
+                epgs_status = 'no'
+            #if column.switchingSt == 'enabled':
+            #    epgs_status = 'Yes'
+            #elif column.switchingSt == 'disabled':
+            #    epgs_status = 'No'
             column['epgs_status'] = epgs_status
             packets = column.children[0].rXNoErrors + '/' + column.children[0].tXNoErrors
             #import pdb; pdb.set_trace()
@@ -453,7 +457,7 @@ def dispaly_port_status(nodeinterfacegrouping):
 
 def display_port_types(nodeinterfacegrouping):
     print('='*80)
-    print('Blue:VPC, Green:L2 + EPGS, Yellow:L3, Purple:APIC, Red:Fex-uplinks, White:Uplinks, Black:L2\n')
+    print('Blue:VPC, Green:L2 + EPGS, Yellow:L3, Purple:APIC, Red:Fex-uplinks, White:Uplinks\nRed-Numbers:Span-dest, Black:Not-Setup\n')
 
     for node in nodeinterfacegrouping:
         #print(node)
@@ -467,7 +471,7 @@ def display_port_types(nodeinterfacegrouping):
         evenlist = []
         oddlist = []
         for group in groups:
-            print('{:^80}'.format(group[0].nodeid + ' (Port Usage)'))
+            print('\x1b[1;33;40m{:^80}\x1b[0m'.format(group[0].nodeid + ' (Port Usage)'))
             #print('\x1b[5;37;47m')
             for num,inters in enumerate(group):
                 if num % 2:

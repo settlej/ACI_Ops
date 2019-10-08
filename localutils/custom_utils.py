@@ -244,75 +244,55 @@ class l1PhysIf():
         self.pc_mbmr.append(p) 
     def port_adminstatus_color(self):
         if self.adminSt == 'up':
-            color = '\x1b[3;47;40m{:2}\x1b[0m'.format(self.shortnum)
-            return color
+            return '\x1b[3;47;40m{:2}\x1b[0m'.format(self.shortnum)
         else:
-            color = '\x1b[2;30;47m{:2}\x1b[0m'.format(self.shortnum)
-            return color
-    def port_switchingSt_color(self):
-        if self.switchingSt == 'enabled':
-            #color = '\x1b[1;37;42m{:2}\x1b[0m'.format(self.shortnum)
-            color = '\x1b[1;37;42m{:2}\x1b[0m'.format(self.shortnum)
-            return color
+            return '\x1b[2;30;47m{:2}\x1b[0m'.format(self.shortnum)
+    def port_epgusage_color(self):
+        if 'epg' in self.usage:
+            #return '\x1b[1;37;42m{:2}\x1b[0m'.format(self.shortnum)
+            return '\x1b[1;37;42m{:2}\x1b[0m'.format(self.shortnum)
         else:
-            #color = '\x1b[2;30;47m{:2}\x1b[0m'.format(self.shortnum)
-            color = '\x1b[3;47;40m{:2}\x1b[0m'.format(self.shortnum)
-            return color            
+            #return '\x1b[2;30;47m{:2}\x1b[0m'.format(self.shortnum)
+            return '\x1b[3;47;40m{:2}\x1b[0m'.format(self.shortnum)            
     def port_status_color(self):
         if self.portstatus == 'up/up' and self.switchingSt == 'enabled':
-            color = '\x1b[1;37;42m{:2}\x1b[0m'.format(self.shortnum)
-            return color
+            return '\x1b[1;37;42m{:2}\x1b[0m'.format(self.shortnum)
         elif self.portstatus == 'up/up' and self.switchingSt == 'disabled':
-            color = '\x1b[0;30;43m{:2}\x1b[0m'.format(self.shortnum)
-            return color
+            return '\x1b[0;30;43m{:2}\x1b[0m'.format(self.shortnum)
         elif self.portstatus == 'admin-down':
             #2;30;47
-            color = '\x1b[2;30;47m{:2}\x1b[0m'.format(self.shortnum)
-            #color = '\x1b[0;37;45m{:2}\x1b[0m'.format(self.shortnum)
-            return color
+            return '\x1b[2;30;47m{:2}\x1b[0m'.format(self.shortnum)
+            #return '\x1b[0;37;45m{:2}\x1b[0m'.format(self.shortnum)
         else:
-            color = '\x1b[1;37;41m{:2}\x1b[0m'.format(self.shortnum)
-            return color
+            return '\x1b[1;37;41m{:2}\x1b[0m'.format(self.shortnum)
     def port_type_color(self):
-        if 'controller' in self.usage:
-            color = '\x1b[1;37;45m{:2}\x1b[0m'.format(self.shortnum)
-            return color
-        elif self.layer == "Layer2" and self.pcmode == 'off' and self.epgs_status == 'Yes':
-            #light green
-            color = '\x1b[2;30;42m{:2}\x1b[0m'.format(self.shortnum)
-            return color
+        if not 'not-a-span-dest' in self.spanMode:
+            return '\x1b[1;31;40m{:2}\x1b[0m'.format(self.shortnum)
+        elif 'controller' in self.usage:
+            return '\x1b[1;37;45m{:2}\x1b[0m'.format(self.shortnum)
+        elif self.layer == "Layer2" and self.pcmode == 'off' and self.epgs_status == 'yes':
+            return '\x1b[2;30;42m{:2}\x1b[0m'.format(self.shortnum)
         elif self.layer == "Layer2" and not self.pcmode == 'off' and self.pctype == 'pc':
-            color = '\x1b[5;30;42m{:2}\x1b[0m'.format(self.shortnum)
-            return color
+            return '\x1b[2;30;42m{:2}\x1b[0m'.format(self.shortnum)
         elif self.layer == "Layer2" and not self.pcmode == 'off' and self.pctype == 'vpc':
-            color = '\x1b[2;37;44m{:2}\x1b[0m'.format(self.shortnum)
-            return color
+            return '\x1b[2;37;44m{:2}\x1b[0m'.format(self.shortnum)
         elif 'fabric' in self.usage:
-            color = '\x1b[3;30;47m{:2}\x1b[0m'.format(self.shortnum)
-            return color
+            return '\x1b[3;30;47m{:2}\x1b[0m'.format(self.shortnum)
         elif self.layer == "Layer3":
-            #orange
-            color = '\x1b[2;30;43m{:2}\x1b[0m'.format(self.shortnum)
-            return color
+            return '\x1b[2;30;43m{:2}\x1b[0m'.format(self.shortnum)
         elif self.fex == True:
-            color = '\x1b[5;30;41m{:2}\x1b[0m'.format(self.shortnum)
-            return color
+            return '\x1b[2;30;41m{:2}\x1b[0m'.format(self.shortnum)
         else:
-            color = '\x1b[5;30;37m{:2}\x1b[0m'.format(self.shortnum)
-            return color
+            return '\x1b[2;30;37m{:2}\x1b[0m'.format(self.shortnum)
     def port_error_color(self):
         if self.allerrors <= 100:
-            color = '\x1b[2;30;47m{:2}\x1b[0m'.format(self.shortnum)
-            return color        
+            return '\x1b[2;30;47m{:2}\x1b[0m'.format(self.shortnum)        
         elif 1000 <= self.allerrors >= 101:
-            color = '\x1b[3;30;46m{:2}\x1b[0m'.format(self.shortnum)
-            return color
+            return '\x1b[3;30;46m{:2}\x1b[0m'.format(self.shortnum)
         elif self.allerrors >= 1001:
-            color = '\x1b[3;37;41m{:2}\x1b[0m'.format(self.shortnum)
-            return color          
+            return '\x1b[3;37;41m{:2}\x1b[0m'.format(self.shortnum)          
         else:
-            color = '\x1b[1;37;42m{:2}\x1b[0m'.format(self.shortnum)
-            return color
+            return '\x1b[1;37;42m{:2}\x1b[0m'.format(self.shortnum)
 
 
 def grouper(iterable, n, fillvalue=''):
