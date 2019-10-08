@@ -12,6 +12,7 @@ import trace
 import os
 import time
 import itertools
+import interfaces.switchpreviewutil as switchpreviewutil
 from localutils.custom_utils import *
 import logging
 
@@ -183,7 +184,11 @@ def main(import_apic,import_cookie):
             if selection == '1':
                 print("\nSelect leaf(s): ")
                 print("\r")
-                returnedlist = physical_selection(all_leaflist, apic, cookie)
+                chosenleafs = physical_leaf_selection(all_leaflist, apic, cookie)
+                switchpreviewutil.main(apic,cookie,chosenleafs, purpose='port_switching')
+                returnedlist = physical_interface_selection(apic, cookie, chosenleafs, provideleaf=False)
+
+                #returnedlist = physical_selection(all_leaflist, apic, cookie)
                 #interface =  interfacelist[0].name
                 #interfacelist = physical_selection(all_leaflist, allepglist)
                 #print(returnedlist)

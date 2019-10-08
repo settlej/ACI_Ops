@@ -418,7 +418,7 @@ def print_interfaces_layout(leafallinterfacesdict,leafs):
     return nodeinterfacegrouping
 
 def dispaly_port_status(nodeinterfacegrouping):
-    print('==================================================================')
+    print('='*80)
     print('Green:up/up, Yellow:up/down, Red:down/down, White:admin-down\n')
     for node in nodeinterfacegrouping:
         #print(node)
@@ -433,7 +433,7 @@ def dispaly_port_status(nodeinterfacegrouping):
         oddlist = []
         for group in groups:
             #if group[0].fex:
-            print(group[0].nodeid)
+            print('{:^80}'.format(group[0].nodeid))
             for num,inters in enumerate(group):
                 if num % 2:
                     evenlist.append(inters)
@@ -452,7 +452,7 @@ def dispaly_port_status(nodeinterfacegrouping):
         groups = []
 
 def display_port_types(nodeinterfacegrouping):
-    print('==================================================================')
+    print('='*80)
     print('Blue:VPC, Green:L2 + EPGS, Yellow:L3, Purple:APIC, Red:Fex-uplinks, White:Uplinks, Black:L2\n')
 
     for node in nodeinterfacegrouping:
@@ -467,7 +467,7 @@ def display_port_types(nodeinterfacegrouping):
         evenlist = []
         oddlist = []
         for group in groups:
-            print('{} (Port Type)'.format(group[0].nodeid))
+            print('{:^80}'.format(group[0].nodeid + ' (Port Usage)'))
             #print('\x1b[5;37;47m')
             for num,inters in enumerate(group):
                 if num % 2:
@@ -490,7 +490,7 @@ def display_port_types(nodeinterfacegrouping):
 
 
 def display_port_errors(nodeinterfacegrouping):
-    print('==================================================================')
+    print('='*80)
     print('White: 100 > errors, Yellow: 100 between 1000 errors, Red: > 1000 errors\n')
     for node in nodeinterfacegrouping:
         #print(node)
@@ -504,7 +504,7 @@ def display_port_errors(nodeinterfacegrouping):
         evenlist = []
         oddlist = []
         for group in groups:
-            print('{} Errors'.format(group[0].nodeid))
+            print('{:^80}'.format(group[0].nodeid + ' (Errors)'))
 
             #print('Green: , Green:L2 + EPGS , Yellow:L3 , Black:L2')
 
@@ -527,6 +527,7 @@ def display_port_errors(nodeinterfacegrouping):
             oddlist = []
             evenlist = []
         groups = []
+    
 
 
 
@@ -603,6 +604,7 @@ def main_detail(import_apic,import_cookie):
         location_banner('Switch View (Detail)')
         q = Queue.Queue()
         leafs = leaf_selection(get_All_leafs(apic, cookie))
+        #import pdb; pdb.set_trace()
         counter = 0
         authcounter = 0
         action = ''

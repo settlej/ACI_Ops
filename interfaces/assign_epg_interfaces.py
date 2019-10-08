@@ -16,6 +16,7 @@ import itertools
 import threading
 import Queue
 from collections import namedtuple
+import interfaces.switchpreviewutil as switchpreviewutil
 from localutils.custom_utils import *
 import logging
 
@@ -192,7 +193,11 @@ def main(import_apic,import_cookie):
         selection = interface_menu()
     
         if selection == '1':
-            returnedlist = physical_selection(all_leaflist, apic, cookie)
+            chosenleafs = physical_leaf_selection(all_leaflist, apic, cookie)
+            switchpreviewutil.main(apic,cookie,chosenleafs, purpose='port_switching')
+            returnedlist = physical_interface_selection(apic, cookie, chosenleafs, provideleaf=False)
+
+            #returnedlist = physical_selection(all_leaflist, apic, cookie)
             #import pdb; pdb.set_trace()
             chosenepgs, choseninterfaceobjectlist = display_and_select_epgs(returnedlist, allepglist)
             #import pdb; pdb.set_trace()

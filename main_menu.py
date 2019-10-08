@@ -19,6 +19,7 @@ import interfaces.show_all_endpoints_on_interface as show_all_endpoints_on_inter
 import interfaces.portsanddescriptions as portsanddescriptions
 import interfaces.interfacecounters as showinterface
 import interfaces.switch_port_view as switch_port_view
+import interfaces.switchpreviewutil as switchpreviewutil
 import faults_and_logs.new_important_faults as fault_summary
 import faults_and_logs.most_recent_port_down as recent_port_down
 import faults_and_logs.most_recent_fault_changes as most_recent_fault_changes
@@ -300,8 +301,8 @@ def main():
             print('\x1b[1;33;40m\x1b[9;70H -----------------------------\x1b[0m')
             print('\x1b[8')
             cookie = refreshToken(apic, cookie)
-            choosen = custom_raw_input('\x1b[u\x1b[40;1H Select a number: ')
-            if choosen == '1':
+            chosen = custom_raw_input('\x1b[u\x1b[40;1H Select a number: ')
+            if chosen == '1':
                 try:
                     shut_noshut_interfaces.main(apic,cookie)
                     keyinterrupt = False
@@ -309,7 +310,7 @@ def main():
                     print('\nExit to Main menu\n')
                     keyinterrupt = True
                     continue		
-            elif choosen == '2':
+            elif chosen == '2':
                 try:
                     assign_epg_interfaces.main(apic,cookie)
                     keyinterrupt = False
@@ -317,7 +318,7 @@ def main():
                     print('\nExit to Main menu\n')
                     keyinterrupt = True
                     continue            
-            elif choosen == '3':
+            elif chosen == '3':
                 try:
                     remove_egps.main(apic,cookie)
                     keyinterrupt = False
@@ -325,7 +326,7 @@ def main():
                     print('\nExit to Main menu\n')
                     keyinterrupt = True
                     continue		
-            elif choosen == '4':
+            elif chosen == '4':
                 try:
                     portsanddescriptions.main(apic,cookie)
                     keyinterrupt = False
@@ -333,7 +334,7 @@ def main():
                     print('\nExit to Main menu\n')
                     keyinterrupt = True
                     continue
-            elif choosen == '5':
+            elif chosen == '5':
                 try:
                     showinterface.main(apic,cookie)
                     keyinterrupt = False
@@ -341,7 +342,15 @@ def main():
                     print('\nExit to Main menu\n')
                     keyinterrupt = True
                     continue
-            elif choosen == '6':
+            elif chosen == '55':
+                try:
+                    switchpreviewutil.main(apic,cookie)
+                    keyinterrupt = False
+                except KeyboardInterrupt as k:
+                    print('\nExit to Main menu\n')
+                    keyinterrupt = True
+                    continue
+            elif chosen == '6':
                 try:
                     switch_port_view.main(apic,cookie)
                     keyinterrupt = False
@@ -349,7 +358,7 @@ def main():
                     print('\nExit to Main menu\n')
                     keyinterrupt = True
                     continue
-            elif choosen == '7':
+            elif chosen == '7':
                 try:
                     switch_port_view.main_detail(apic,cookie)
                     keyinterrupt = False
@@ -357,7 +366,7 @@ def main():
                     print('\nExit to Main menu\n')
                     keyinterrupt = True
                     continue              
-            elif choosen == '8':
+            elif chosen == '8':
                 try:
                     show_all_endpoints_on_interface.main(apic,cookie)
                     keyinterrupt = False
@@ -366,7 +375,7 @@ def main():
                     print('\nExit to Main menu\n')
                     keyinterrupt = True
                     continue
-            elif choosen == '9':
+            elif chosen == '9':
                 try:
                     fault_summary.main(apic,cookie)
                     keyinterrupt = False
@@ -374,7 +383,7 @@ def main():
                     print('\nExit to Main menu\n')
                     keyinterrupt = True
                     continue		
-            elif choosen == '10':
+            elif chosen == '10':
                 try:
                     recent_port_down.main(apic,cookie)
                     keyinterrupt = False
@@ -382,7 +391,7 @@ def main():
                     print('\nExit to Main menu\n')
                     keyinterrupt = True
                     continue	
-            elif choosen == '11':
+            elif chosen == '11':
                 try:
                     most_recent_fault_changes.main(apic,cookie)
                     keyinterrupt = False
@@ -390,7 +399,7 @@ def main():
                     print('\nExit to Main menu\n')
                     keyinterrupt = True
                     continue
-            elif choosen == '12':
+            elif chosen == '12':
                 try:
                     most_recent_admin_changes.main(apic,cookie)
                     keyinterrupt = False
@@ -398,7 +407,7 @@ def main():
                     print('\nExit to Main menu\n')
                     keyinterrupt = True
                     continue
-            elif choosen == '13':
+            elif chosen == '13':
                 try:
                     most_recent_event_changes.main(apic,cookie)
                     keyinterrupt = False
@@ -406,7 +415,7 @@ def main():
                     print('\nExit to Main menu\n')
                     keyinterrupt = True
                     continue		
-            elif choosen == '14':
+            elif chosen == '14':
                 try:
                     alleventsbetweendates.main(apic,cookie)
                     keyinterrupt = False
@@ -414,7 +423,7 @@ def main():
                     print('\nExit to Main menu\n')
                     keyinterrupt = True
                     continue
-            elif choosen == '15':
+            elif chosen == '15':
                 try:
                     alleventsbetweendates_fulldetail.main(apic,cookie)
                     keyinterrupt = False
@@ -422,7 +431,7 @@ def main():
                     print('\nExit to Main menu\n')
                     keyinterrupt = True
                     continue
-            elif choosen == '16':
+            elif chosen == '16':
                 try:
                     ipendpoint_search.main(apic,cookie)
                     keyinterrupt = False
@@ -430,7 +439,7 @@ def main():
                     print('\nExit to Main menu\n')
                     keyinterrupt = True
                     continue		
-            #elif choosen == '17':
+            #elif chosen == '17':
             #    try:
             #        epg_troubleshooting.main(apic,cookie)
             #        keyinterrupt = False
@@ -438,7 +447,7 @@ def main():
             #        print('\nExit to Main menu\n')
             #        keyinterrupt = True
             #        continue
-            #elif choosen == '18':
+            #elif chosen == '18':
             #    try:
             #        routetranslation.main(apic,cookie)
             #        keyinterrupt = False
@@ -447,7 +456,7 @@ def main():
             #        print('\nExit to Main menu\n')
             #        keyinterrupt = True
             #        continue
-            #elif choosen == '18':
+            #elif chosen == '18':
             #    try:
             #        check_routing.main(apic,cookie)
             #        keyinterrupt = False
@@ -456,7 +465,7 @@ def main():
             #        keyinterrupt = True
             #        continue      
 
-            #elif choosen == '17':
+            #elif chosen == '17':
             #    try:
             #        show_static_routes.main(apic,cookie)
             #        keyinterrupt = False
@@ -465,7 +474,7 @@ def main():
             #        keyinterrupt = True
             #        continue
 
-            elif choosen == '17':
+            elif chosen == '17':
                 try:
                     create_local_span_session.main(apic,cookie)
                     keyinterrupt = False
@@ -473,9 +482,9 @@ def main():
                     print('\nExit to Main menu\n')
                     keyinterrupt = True
                     continue
-            #elif choosen == 'exit':
+            #elif chosen == 'exit':
             #    raise KeyboardInterrupt
-            elif choosen == '18':
+            elif chosen == '18':
                 try:
                     span_to_server.main(apic,cookie,current_user)
                     keyinterrupt = False

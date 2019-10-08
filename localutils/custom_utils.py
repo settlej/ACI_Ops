@@ -221,6 +221,100 @@ class fabricPathEp(object):
         else:
             return None
 
+class l1PhysIf():
+    def __init__(self, **kwargs):
+        self.__dict__.update(kwargs)
+        self.fex = None
+        self.typefex = None 
+        self.uplink = None 
+        self.pctype = None
+       # self.
+        self.pc_mbmr = []
+        self.children = []
+    def __repr__(self):
+        return self.id
+    def __setitem__(self, a,b):
+        setattr(self, a, b)
+    def add_child(self, obj):
+        self.children.append(obj)
+    def __getitem__(self, x):
+        if x == self.id:
+            return True
+    def add_portchannel(self, p):
+        self.pc_mbmr.append(p) 
+    def port_adminstatus_color(self):
+        if self.adminSt == 'up':
+            color = '\x1b[3;47;40m{:2}\x1b[0m'.format(self.shortnum)
+            return color
+        else:
+            color = '\x1b[2;30;47m{:2}\x1b[0m'.format(self.shortnum)
+            return color
+    def port_switchingSt_color(self):
+        if self.switchingSt == 'enabled':
+            #color = '\x1b[1;37;42m{:2}\x1b[0m'.format(self.shortnum)
+            color = '\x1b[1;37;42m{:2}\x1b[0m'.format(self.shortnum)
+            return color
+        else:
+            #color = '\x1b[2;30;47m{:2}\x1b[0m'.format(self.shortnum)
+            color = '\x1b[3;47;40m{:2}\x1b[0m'.format(self.shortnum)
+            return color            
+    def port_status_color(self):
+        if self.portstatus == 'up/up' and self.switchingSt == 'enabled':
+            color = '\x1b[1;37;42m{:2}\x1b[0m'.format(self.shortnum)
+            return color
+        elif self.portstatus == 'up/up' and self.switchingSt == 'disabled':
+            color = '\x1b[0;30;43m{:2}\x1b[0m'.format(self.shortnum)
+            return color
+        elif self.portstatus == 'admin-down':
+            #2;30;47
+            color = '\x1b[2;30;47m{:2}\x1b[0m'.format(self.shortnum)
+            #color = '\x1b[0;37;45m{:2}\x1b[0m'.format(self.shortnum)
+            return color
+        else:
+            color = '\x1b[1;37;41m{:2}\x1b[0m'.format(self.shortnum)
+            return color
+    def port_type_color(self):
+        if 'controller' in self.usage:
+            color = '\x1b[1;37;45m{:2}\x1b[0m'.format(self.shortnum)
+            return color
+        elif self.layer == "Layer2" and self.pcmode == 'off' and self.epgs_status == 'Yes':
+            #light green
+            color = '\x1b[2;30;42m{:2}\x1b[0m'.format(self.shortnum)
+            return color
+        elif self.layer == "Layer2" and not self.pcmode == 'off' and self.pctype == 'pc':
+            color = '\x1b[5;30;42m{:2}\x1b[0m'.format(self.shortnum)
+            return color
+        elif self.layer == "Layer2" and not self.pcmode == 'off' and self.pctype == 'vpc':
+            color = '\x1b[2;37;44m{:2}\x1b[0m'.format(self.shortnum)
+            return color
+        elif 'fabric' in self.usage:
+            color = '\x1b[3;30;47m{:2}\x1b[0m'.format(self.shortnum)
+            return color
+        elif self.layer == "Layer3":
+            #orange
+            color = '\x1b[2;30;43m{:2}\x1b[0m'.format(self.shortnum)
+            return color
+        elif self.fex == True:
+            color = '\x1b[5;30;41m{:2}\x1b[0m'.format(self.shortnum)
+            return color
+        else:
+            color = '\x1b[5;30;37m{:2}\x1b[0m'.format(self.shortnum)
+            return color
+    def port_error_color(self):
+        if self.allerrors <= 100:
+            color = '\x1b[2;30;47m{:2}\x1b[0m'.format(self.shortnum)
+            return color        
+        elif 1000 <= self.allerrors >= 101:
+            color = '\x1b[3;30;46m{:2}\x1b[0m'.format(self.shortnum)
+            return color
+        elif self.allerrors >= 1001:
+            color = '\x1b[3;37;41m{:2}\x1b[0m'.format(self.shortnum)
+            return color          
+        else:
+            color = '\x1b[1;37;42m{:2}\x1b[0m'.format(self.shortnum)
+            return color
+
+
 def grouper(iterable, n, fillvalue=''):
     "Collect data into fixed-length chunks or blocks"
     # grouper('ABCDEFG', 3, 'x') --> ABC DEF Gxx"
@@ -255,7 +349,7 @@ def display_and_select_epgs(choseninterfaceobjectlist, allepglist):
     return chosenepgs, choseninterfaceobjectlist
 
 
-def physical_selection(all_leaflist, apic, cookie, leafnum=None, provideleaf=False):
+def physical_leaf_selection(all_leaflist, apic, cookie, leafnum=None):
     if leafnum == None:
         nodelist = [node['fabricNode']['attributes']['id'] for node in all_leaflist]
         nodelist.sort()
@@ -271,6 +365,9 @@ def physical_selection(all_leaflist, apic, cookie, leafnum=None, provideleaf=Fal
             break
     else:
         chosenleafs = [leafnum]
+    return chosenleafs
+
+def physical_interface_selection(apic, cookie, chosenleafs, provideleaf=False):
     compoundedleafresult = []
     for leaf in chosenleafs:
         url = """https://{apic}/api/node/class/fabricPathEp.json?query-target-filter=and(not(wcard(fabricPathEp.dn,%22__ui_%22)),""" \
@@ -318,7 +415,7 @@ def physical_selection(all_leaflist, apic, cookie, leafnum=None, provideleaf=Fal
         else:
             #e = interfacedict[column[2]]
             e = column[2].number
-            f = goodspacing(column[2])
+            f = goodspacing(column[2]) + '  ' + column[2].descr[:25]
             #f = row[2].leaf + ' ' + row[2].fex + ' ' + str(row[2].name)
         print('{:6}.) {:45}{}.) {:45}{}.) {}'.format(a,b,c,d,e,f))
     while True:

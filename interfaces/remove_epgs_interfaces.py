@@ -12,6 +12,7 @@ import os
 import itertools
 import threading
 import Queue
+import interfaces.switchpreviewutil as switchpreviewutil
 from localutils.custom_utils import *
 import logging
 
@@ -240,7 +241,11 @@ def main(import_apic,import_cookie):
         selection = interface_menu()
     
         if selection == '1':
-            interfacelist = physical_selection(all_leaflist, apic, cookie)
+            chosenleafs = physical_leaf_selection(all_leaflist, apic, cookie)
+            switchpreviewutil.main(apic,cookie,chosenleafs, purpose='port_switching')
+            interfacelist = physical_interface_selection(apic, cookie, chosenleafs, provideleaf=False)
+
+            #interfacelist = physical_selection(all_leaflist, apic, cookie)
             #print(interfaces)
             print('What would you like to do for static EPGS on Port(s)?:\n\n'
                 + '1.) Remove ALL EPGs\n'

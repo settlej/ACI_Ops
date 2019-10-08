@@ -13,6 +13,7 @@ import logging
 import os
 import time
 import itertools
+import interfaces.switchpreviewutil as switchpreviewutil
 from localutils.custom_utils import *
 import logging
 
@@ -100,8 +101,11 @@ def main(import_apic,import_cookie):
 #        desiredleaf = custom_custom_raw_input("\nWhat is the desired \x1b[1;33;40m'Source and Destination'\x1b[0m leaf for span session?\r")
        
         #print("\nWhat is the desired \x1b[1;33;40m'Destination'\x1b[0m leaf for span session?\r")
-
-        chosendestinterfaceobject, leaf = physical_selection(all_leaflist, apic, cookie, provideleaf=True)
+        chosenleafs = physical_leaf_selection(all_leaflist, apic, cookie)
+        switchpreviewutil.main(apic,cookie,chosenleafs, purpose='port_status')
+        chosendestinterfaceobject = physical_interface_selection(apic, cookie, chosenleafs, provideleaf=False)
+        leaf = chosenleafs
+        #chosendestinterfaceobject, leaf = physical_selection(all_leaflist, apic, cookie, provideleaf=True)
         #import pdb; pdb.set_trace()
         interface =  chosendestinterfaceobject[0].name
         epgurl = """https://{apic}/api/node-{leaf}/mo/sys/phys-[{interface}].json?rsp-subtree-include=full-deployment&target-node=all&target-path=l1EthIfToEPg""".format(interface=str(interface),leaf=str(leaf[0]),apic=apic)
@@ -206,8 +210,16 @@ def main(import_apic,import_cookie):
          #           print(interf['operSt'])
             epgresult = GetResponseData(epgurl, cookie)
             result = GetResponseData(url, cookie)
-            time.sleep(6)
-            clear_screen()
+            while True:
+                refresh = custom_raw_input('\nRefresh [Y]: ') or 'Y'
+                if refresh.strip().lstrip().upper() == 'Y':
+                    clear_screen()
+                    break
+                elif refresh.strip().lstrip().upper() == 'N':
+                    raise KeyboardInterrupt
+                else:
+                    print('\nInvalid Option, Try again..\n')
+                
 
 
 def single_interface_pull(import_apic,import_cookie, selectedleaf, interfacepull):
