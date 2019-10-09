@@ -11,6 +11,7 @@ import time
 import traceback
 import pdb
 from localutils.custom_utils import *
+import fabric_access.create_vpc as create_vpc
 import interfaces.change_interface_state as shut_noshut_interfaces
 import interfaces.assign_epg_interfaces as assign_epg_interfaces
 import interfaces.remove_epgs_interfaces as remove_egps
@@ -344,7 +345,7 @@ def main():
                     continue
             elif chosen == '55':
                 try:
-                    switchpreviewutil.main(apic,cookie)
+                    create_vpc.main(apic,cookie)
                     keyinterrupt = False
                 except KeyboardInterrupt as k:
                     print('\nExit to Main menu\n')
