@@ -148,7 +148,16 @@ def main(import_apic,import_cookie):
                     interfaceObject.l1RtMbrIfs.append(x['l1RtMbrIfs']['attributes'])
                 elif x.get('pcAggrMbrIf'):
                     interfaceObject.pcAggrMbrIf.append(x['pcAggrMbrIf']['attributes'])
-            print('\n {} is {}, line protocol is {}'.format(interface.capitalize(),interfaceObject.adminSt,interfaceObject.ethpmPhysIf['operSt']))
+            if interfaceObject.switchingSt == 'enabled' and interfaceObject.ethpmPhysIf['operSt'] == 'up' and not 'blacklist' in interfaceObject.usage:
+                link_status = 'up/up'
+            elif interfaceObject.switchingSt == 'disabled' and interfaceObject.ethpmPhysIf['operSt'] == 'up' and not 'blacklist' in interfaceObject.usage:
+                link_status = 'up/down'
+            else:
+                link_status = 'down/down'
+            if 'blacklist' in interfaceObject.usage:
+                print('\n {} is Administratively Down'.format(interface.capitalize()))
+            else:
+                print('\n {} is admin {}, link-status is {}'.format(interface.capitalize(),interfaceObject.adminSt,link_status))
             print(' Description: {}'.format(interfaceObject.descr))
             print(' MAC: {}'.format(interfaceObject.ethpmPhysIf['backplaneMac']))
             print(' Speed: {}, Duplex: {}, MTU: {}'.format(interfaceObject.ethpmPhysIf['operSpeed'],interfaceObject.ethpmPhysIf['operDuplex'].upper(),interfaceObject.mtu)) 
@@ -273,10 +282,16 @@ def single_interface_pull(import_apic,import_cookie, selectedleaf, interfacepull
                 elif x.get('pcAggrMbrIf'):
                     interfaceObject.pcAggrMbrIf.append(x['pcAggrMbrIf']['attributes'])
             print('\x1b[1;33;40m')
+            if interfaceObject.switchingSt == 'enabled' and interfaceObject.ethpmPhysIf['operSt'] == 'up' and not 'blacklist' in interfaceObject.usage:
+                link_status = 'up/up'
+            elif interfaceObject.switchingSt == 'disabled' and interfaceObject.ethpmPhysIf['operSt'] == 'up' and not 'blacklist' in interfaceObject.usage:
+                link_status = 'up/down'
+            else:
+                link_status = 'down/down'
             if 'blacklist' in interfaceObject.usage:
                 print('\n {} is Administratively Down'.format(interface.capitalize()))
             else:
-                print('\n {} is {}, line protocol is {}'.format(interface.capitalize(),interfaceObject.adminSt,interfaceObject.ethpmPhysIf['operSt']))
+                print('\n {} is admin {}, link-status is {}'.format(interface.capitalize(),interfaceObject.adminSt,link_status))
             print(' Description: {}'.format(interfaceObject.descr))
             print(' MAC: {}'.format(interfaceObject.ethpmPhysIf['backplaneMac']))
             print(' Speed: {}, Duplex: {}, MTU: {}'.format(interfaceObject.ethpmPhysIf['operSpeed'],interfaceObject.ethpmPhysIf['operDuplex'].upper(),interfaceObject.mtu)) 

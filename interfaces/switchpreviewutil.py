@@ -119,7 +119,7 @@ def display_port_switchingSt(nodeinterfacegrouping):
 
 def display_port_status(nodeinterfacegrouping):
     print('='*80)
-    print('Black:admin-UP, White:admin-DOWN\n')
+    print('Black:Admin-UP, White:Admin-DOWN\n')
     for node in nodeinterfacegrouping:
         #print(node)
         #print('\n\n\n')

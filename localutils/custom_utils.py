@@ -290,9 +290,9 @@ class l1PhysIf():
         if self.allerrors <= 100:
             return '\x1b[2;30;47m{:2}\x1b[0m'.format(self.shortnum)        
         elif 1000 <= self.allerrors >= 101:
-            return '\x1b[3;30;46m{:2}\x1b[0m'.format(self.shortnum)
+            return '\x1b[2;30;43m{:2}\x1b[0m'.format(self.shortnum)
         elif self.allerrors >= 1001:
-            return '\x1b[3;37;41m{:2}\x1b[0m'.format(self.shortnum)          
+            return '\x1b[2;30;47m{:2}\x1b[0m'.format(self.shortnum)          
         else:
             return '\x1b[1;37;42m{:2}\x1b[0m'.format(self.shortnum)
 
@@ -388,16 +388,25 @@ def physical_interface_selection(apic, cookie, chosenleafs, provideleaf=False):
     finalgrouped = zip(*firstgrouped)
     for column in finalgrouped:
         a = column[0].number
-        b = goodspacing(column[0]) + '  ' + column[0].descr[:25]
+        if len(goodspacing(column[0]) + '  ') >= 22:
+            b = goodspacing(column[0]) + '  ' + column[0].descr[:18]
+        else:
+            b = goodspacing(column[0]) + '  ' + column[0].descr[:25]
         c = column[1].number
-        d = goodspacing(column[1]) + '  ' + column[1].descr[:25]
+        if len(goodspacing(column[1]) + '  ') >= 22:
+            d = goodspacing(column[1]) + '  ' + column[1].descr[:18]
+        else:
+            d = goodspacing(column[1]) + '  ' + column[1].descr[:25]
         if column[2] == '' or column[2] == None:
             e = ''
             f = ''
         else:
             #e = interfacedict[column[2]]
             e = column[2].number
-            f = goodspacing(column[2]) + '  ' + column[2].descr[:25]
+            if len(goodspacing(column[2]) + '  ') >= 22:
+                f = goodspacing(column[2]) + '  ' + column[2].descr[:18]
+            else:
+                f = goodspacing(column[2]) + '  ' + column[2].descr[:25]
             #f = row[2].leaf + ' ' + row[2].fex + ' ' + str(row[2].name)
         print('{:6}.) {:45}{}.) {:45}{}.) {}'.format(a,b,c,d,e,f))
     while True:
