@@ -211,7 +211,7 @@ def detail_access_inter_faults(listdetail, apic=None):
     #import pdb; pdb.set_trace()
     print('\r')
     print('Current Time = ' + current_time)
-    print('\n{:26}{:20}{:10}{:15}{:18}{:18}{}'.format('Time', 'Time Diff','Switch','Interface','Port-Channel', 'State', 'Description'))
+    print('\n{:26}{:20}{:10}{:15}{:18}{:18}{}'.format('Time', 'Time Diff','Device','Interface','Port-Channel', 'State', 'Description'))
     print('-'*120)
     teststring = ''
     for fault in listdetail:
@@ -249,7 +249,7 @@ def detail_leaf_spine_uplink_faults(listdetail,apic=None):
     print('\r')
     print('Current Time = ' + current_time)
     print('\n')
-    print("{:26}{:20}{:12}{:12}{:18}{}".format('Time', 'Time Diff','Leaf','Interface', 'State','Description'))
+    print("{:26}{:20}{:12}{:12}{:18}{}".format('Time', 'Time Diff','Device','Interface', 'State','Description'))
     print('-'*120)
     for fault in listdetail:
         timestamp = ' '.join(fault['faultInst']['attributes']['lastTransition'].split('T'))
@@ -265,7 +265,7 @@ def detail_vpc_full_faults(listdetail,apic=None):
     current_time = get_APIC_clock(apic,cookie)
     print('\r')
     print('Current Time = ' + current_time)
-    print('\n{:26}{:20}{:10}{:15}{:18}{:18}{}'.format('Time', 'Time Diff','Switch','Interface','Port-Channel', 'State', 'Description'))
+    print('\n{:26}{:20}{:18}{}'.format('Time', 'Time Diff','State','Description'))
     print('-'*120)
     for fault in listdetail:
         if fault.get('faultInst'):
@@ -276,13 +276,13 @@ def detail_vpc_full_faults(listdetail,apic=None):
             #interface = re.search(r'\[.*\]', fault['faultInst']['attributes']['dn'])
             #leaf = re.search(r'leaf[0-9]{3}', fault['faultInst']['attributes']['descr'])
             lc = fault['faultInst']['attributes']['lc']
-            print('{:26}{:20}{:10}{:18}{}'.format(timestamp[:-6],diff_time, '', lc, descr))
+            print('{:26}{:20}{:18}{}'.format(timestamp[:-6],diff_time, lc, descr))
     print('\n')
 def detail_vpc_part_faults(listdetail,apic=None):
     current_time = get_APIC_clock(apic,cookie)
     print('\r')
     print('Current Time = ' + current_time)
-    print("\n{:26}{:20}{:15}{:18}{}".format('Time', 'Time Diff','Leaf', 'State','Description'))
+    print("\n{:26}{:20}{:15}{:18}{}".format('Time', 'Time Diff', 'State','Device','Description'))
     print('-'*120)
     for fault in listdetail:
         if fault.get('faultInst'):
@@ -294,7 +294,7 @@ def detail_vpc_part_faults(listdetail,apic=None):
             logger.debug('{} {}'.format(current_time,timestamp))
             diff_time = time_difference(current_time,timestamp[:-6])
             lc = fault['faultInst']['attributes']['lc']
-            print("{:26}{:20}{:15}{:18}{}".format(timestamp[:23],dn,lc,descr,'changeSet: ' + changeSet))
+            print("{:26}{:20}{:15}{:18}{}".format(timestamp[:23],diff_time,lc,dn,descr))#,'changeSet: ' + changeSet))
     print('\n')
 def detail_apic_replica_faults(listdetail,apic=None):
     current_time = get_APIC_clock(apic,cookie)
@@ -393,17 +393,19 @@ def detail_port_channel_neighbor_faults(listdetail,apic=None):
     current_time = get_APIC_clock(apic,cookie)
     print('\r')
     print('Current Time = ' + current_time)
-    print("{:26}{:20}{:25}{:18}{}".format('Time', 'Time Diff','Description', 'State','Path'))
+    print("{:26}{:20}{:18}{:28}{}".format('Time', 'Time Diff', 'State','Path','Description'))
     print('-'*120)
     for fault in listdetail:
         timestamp = ' '.join(fault['faultInst']['attributes']['lastTransition'].split('T'))
         logger.debug('{} {}'.format(current_time,timestamp))
         diff_time = time_difference(current_time,timestamp[:-6])
         descr = fault['faultInst']['attributes']['descr']
+        descr = ' '.join(descr.split())
         dn = fault['faultInst']['attributes']['dn']
+        dn = dn[:dn.find('/aggrmbrif')].replace('topology/', '').replace('sys/','').replace('/phys-', '')
         #interface = re.search(r'pod-1.*\]agg', dn)
         lc = fault['faultInst']['attributes']['lc']
-        print("{:26}{:20}{:25}{:18}{}".format(timestamp[:-6],diff_time,lc,descr, dn))
+        print("{:26}{:20}{:18}{:28}{}".format(timestamp[:-6],diff_time,lc, dn,descr))
     print('\n')
 def detail_missing_psu_faults(listdetail,apic=None):
     current_time = get_APIC_clock(apic,cookie)
