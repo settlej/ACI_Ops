@@ -471,7 +471,8 @@ def display_port_types(nodeinterfacegrouping):
         evenlist = []
         oddlist = []
         for group in groups:
-            print('\x1b[1;33;40m{:^80}\x1b[0m'.format(group[0].nodeid + ' (Port Usage)'))
+            print('{:^80}'.format(group[0].nodeid + ' (Port Usage)'))
+            #print('\x1b[1;33;40m{:^80}\x1b[0m'.format(group[0].nodeid + ' (Port Usage)'))
             #print('\x1b[5;37;47m')
             for num,inters in enumerate(group):
                 if num % 2:
