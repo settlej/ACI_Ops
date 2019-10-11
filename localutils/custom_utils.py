@@ -67,17 +67,19 @@ def time_difference(current_time, event_time):
 
 
 def get_APIC_clock(apic,cookie):
-    if apic == 'localhost':
-        serverhostname = socket.gethostname()
-        url = """https://{apic}/api/node/class/topSystem.json?query-target-filter=or(eq(topSystem.name,"{serverhostname}"))""".format(apic=apic,serverhostname=serverhostname)
-    elif not re.match(r"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$",apic.strip().lstrip()):
-        apic = socket.gethostbyname(apic)
-        url = """https://{apic}/api/node/class/topSystem.json?query-target-filter=or(eq(topSystem.oobMgmtAddr,"{apic}"),eq(topSystem.inbMgmtAddr,"{apic}"))""".format(apic=apic)
-    else:
-        url = """https://{apic}/api/node/class/topSystem.json?query-target-filter=or(eq(topSystem.oobMgmtAddr,"{apic}"),eq(topSystem.inbMgmtAddr,"{apic}"))""".format(apic=apic)
+    #if apic == 'localhost':
+    #    serverhostname = socket.gethostname()
+    #    url = """https://{apic}/api/node/class/topSystem.json?query-target-filter=or(eq(topSystem.name,"{serverhostname}"))""".format(apic=apic,serverhostname=serverhostname)
+    #elif not re.match(r"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$",apic.strip().lstrip()):
+    #    apicip = socket.gethostbyname(apic)
+    #    url = """https://{apic}/api/node/class/topSystem.json?query-target-filter=or(eq(topSystem.oobMgmtAddr,"{apicip}"),eq(topSystem.inbMgmtAddr,"{apicip}"))""".format(apic=apic,apicip=apicip)
+    #else:
+    #    url = """https://{apic}/api/node/class/topSystem.json?query-target-filter=or(eq(topSystem.oobMgmtAddr,"{apic}"),eq(topSystem.inbMgmtAddr,"{apic}"))""".format(apic=apic)
+    url = """https://{apic}/api/mo/info.json""".format(apic=apic)
     logger.info(url)
     result = GetResponseData(url,cookie)
-    return result[0]['topSystem']['attributes']['currentTime'][:-7].replace('T', ' ')
+    return result[0]['topInfo']['attributes']['currentTime'][:-7].replace('T', ' ')
+    #return result[0]['topSystem']['attributes']['currentTime'][:-7].replace('T', ' ')
 
 def refreshToken(apic,icookie):
     ssl._create_default_https_context = ssl._create_unverified_context
