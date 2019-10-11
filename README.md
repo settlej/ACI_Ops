@@ -1,6 +1,8 @@
 # ACI Ops
 (Pervious know as: Better ACI CLI Tools)
 Tools to enhance CLI experience replacing slower ACI show commands with additional information.</br></br>
+<strong>WARNING</strong>: Sandbox (sandboxapicdc.cisco.com) for APIC doesn't fully work with ACI Ops, this is due to the fact that the APICs and Fabric are virtual and don't have all the API object returns relating to real equipment.</br></br>
+Tested in 4.0(3d), 4.1(2m) and 4.2(1j) APIC/ACI</br>
 This program fully supports Python2 and will be updated to Python3 when ACI's internal platform migrates from Python2.</br></br>
 The entire program uses Python2 Standard Library!  </br><b>No 3rd party modules to import and update!</b></br>
 Program can run on Windows, Mac, and Linux.</br></br>
