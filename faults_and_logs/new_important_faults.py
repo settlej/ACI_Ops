@@ -492,7 +492,6 @@ def refreshloop(detail_function, fault, apic, cookie):
         if refreshcount == 5:
             cookie = refreshToken(apic, cookie)
             refreshcount = 0
-            print(cookie)
         get_fault_results(apic, cookie, fault)
         detail_function(fault.results,apic)
         if fault.results == []:
