@@ -248,9 +248,9 @@ class l1PhysIf():
         self.pc_mbmr.append(p) 
     def port_adminstatus_color(self):
         if self.adminSt == 'up':
-            return '\x1b[3;47;40m{:2}\x1b[0m'.format(self.shortnum)
+            return '\x1b[1;37;42m{:2}\x1b[0m'.format(self.shortnum)
         else:
-            return '\x1b[2;30;47m{:2}\x1b[0m'.format(self.shortnum)
+            return '\x1b[3;47;40m{:2}\x1b[0m'.format(self.shortnum)
     def port_epgusage_color(self):
         if 'epg' in self.usage:
             #return '\x1b[1;37;42m{:2}\x1b[0m'.format(self.shortnum)
