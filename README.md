@@ -15,6 +15,13 @@ Can be ran on local computer or on APIC itself.  If on the APIC you can store th
 5.) Option to select EGPs to remove from interfaces</br>
 6.) Option to tag or untag EPGs added to interfaces</br>
  </br>
+# Features in Development!
+1.) Clone access, trunk, or VPC/PC to new interfaces [Admin state, EPGs (selection possible), Same Leaf selector]</br>
+2.) Deploy Access, Trunk, or VPC/PC (EPGs, physical, AEP) in single flow</br>
+3.) Endpoint Search display physical location if endpoint resides on VPC/PC</br>
+4.) Display every contract between EPGs (vrf contracts, Taboo, and Normal EPGs) and filters in detail; in both directions</br>
+5.) Show all static routes </br>
+6.) Interface Description update (Option for csv to change multiple interfaces)</br>
 # Screen Shots:
 ![Image of Main Menu](https://github.com/settlej/Better_ACI_CLI_Tools/blob/master/images/main_menu.JPG)</br></br>
 # Important Fault Summary
