@@ -534,7 +534,7 @@ def main(import_apic,import_cookie):
             history = custom_raw_input("\nWould you like to search event logs for {}? [y|n=default]: ".format(endpoint)) or 'n'
             if history != '' and history[0].lower() == 'y':
                 eventhistory(endpoint)
-                raw_input('#Press enter to continue...')
+                custom_raw_input('#Press enter to continue...')
                 break
             elif history[0].lower() == 'n':
                 endpoint = None
