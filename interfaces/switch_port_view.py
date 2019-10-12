@@ -472,7 +472,6 @@ def display_port_types(nodeinterfacegrouping):
         oddlist = []
         for group in groups:
             print('{:^80}'.format(group[0].nodeid + ' (Port Usage)'))
-            #print('\x1b[1;33;40m{:^80}\x1b[0m'.format(group[0].nodeid + ' (Port Usage)'))
             #print('\x1b[5;37;47m')
             for num,inters in enumerate(group):
                 if num % 2:
@@ -498,8 +497,6 @@ def display_port_errors(nodeinterfacegrouping):
     print('='*80)
     print('White: 100 > errors, Yellow: 100 between 1000 errors, Red: > 1000 errors\n')
     for node in nodeinterfacegrouping:
-        #print(node)
-        #print('\n\n\n')
         groups = []
         uniquekeys = []
         data = node
@@ -510,10 +507,6 @@ def display_port_errors(nodeinterfacegrouping):
         oddlist = []
         for group in groups:
             print('{:^80}'.format(group[0].nodeid + ' (Errors)'))
-
-            #print('Green: , Green:L2 + EPGS , Yellow:L3 , Black:L2')
-
-            #print('\x1b[5;37;47m')
             for num,inters in enumerate(group):
                 if num % 2:
                     evenlist.append(inters)
@@ -522,13 +515,11 @@ def display_port_errors(nodeinterfacegrouping):
             oddstring = ''
             for odd in oddlist:
                 oddstring += odd.port_error_color() + ' '
-                #print odd.port_status_color(),
             print(oddstring)
             evenstring = ''
             for even in evenlist:
                 evenstring += even.port_error_color() + ' '
             print(evenstring + '\n')
-            #import pdb; pdb.set_trace()
             oddlist = []
             evenlist = []
         groups = []
@@ -563,7 +554,6 @@ def main(import_apic,import_cookie):
                     resultlist.append(q.get())
                 for result in resultlist:
                     leafdictwithresults[result[0]] = result[1]
-            #leafallinterfacesdict = pull_leaf_interfaces(leafs
                 nodeinterfacegrouping = print_interfaces_layout(leafdictwithresults,leafs)
                 counter += 1  
             clear_screen()
@@ -597,7 +587,6 @@ def main(import_apic,import_cookie):
                 leaf, interfacepull = interfacesearch.split()
                 showinterface.single_interface_pull(apic,cookie, leaf, interfacepull)
                 cookie = refreshToken(apic, cookie)
-            #import pdb; pdb.set_trace()
             
 def main_detail(import_apic,import_cookie):
     while True:
@@ -609,7 +598,6 @@ def main_detail(import_apic,import_cookie):
         location_banner('Switch View (Detail)')
         q = Queue.Queue()
         leafs = leaf_selection(get_All_leafs(apic, cookie))
-        #import pdb; pdb.set_trace()
         counter = 0
         authcounter = 0
         action = ''
@@ -627,7 +615,6 @@ def main_detail(import_apic,import_cookie):
                     resultlist.append(q.get())
                 for result in resultlist:
                     leafdictwithresults[result[0]] = result[1]
-            #leafallinterfacesdict = pull_leaf_interfaces(leafs)    
                 nodeinterfacegrouping = print_interfaces_layout(leafdictwithresults,leafs)
                 counter += 1
             clear_screen()
@@ -657,4 +644,3 @@ def main_detail(import_apic,import_cookie):
             action = custom_raw_input("Options ('a' = auto refresh 3 sec, 'm' = manual refresh) default=[m]:")
             if action == 'm':
                 continue
-            #import pdb; pdb.set_trace()

@@ -71,12 +71,16 @@ def get_APIC_clock(apic,cookie):
         serverhostname = socket.gethostname()
         url = """https://{apic}/api/node/class/topSystem.json?query-target-filter=or(eq(topSystem.name,"{serverhostname}"))""".format(apic=apic,serverhostname=serverhostname)
     elif not re.match(r"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$",apic.strip().lstrip()):
-        apic = socket.gethostbyname(apic)
-        url = """https://{apic}/api/node/class/topSystem.json?query-target-filter=or(eq(topSystem.oobMgmtAddr,"{apic}"),eq(topSystem.inbMgmtAddr,"{apic}","topology/pod-1/node-1/sys"))""".format(apic=apic)
+        apicip = socket.gethostbyname(apic)
+        url = """https://{apic}/api/node/class/topSystem.json?query-target-filter=or(eq(topSystem.oobMgmtAddr,"{apicip}"),eq(topSystem.inbMgmtAddr,"{apicip}"))""".format(apic=apic,apicip=apicip)
     else:
-        url = """https://{apic}/api/node/class/topSystem.json?query-target-filter=or(eq(topSystem.oobMgmtAddr,"{apic}"),eq(topSystem.inbMgmtAddr,"{apic}","topology/pod-1/node-1/sys"))""".format(apic=apic)
+        url = """https://{apic}/api/node/class/topSystem.json?query-target-filter=or(eq(topSystem.oobMgmtAddr,"{apic}"),eq(topSystem.inbMgmtAddr,"{apic}"))""".format(apic=apic)
     logger.info(url)
     result = GetResponseData(url,cookie)
+    if result == []:
+        url = """https://{apic}/api/mo/info.json""".format(apic=apic)
+        result = GetResponseData(url,cookie)
+        return result[0]['topInfo']['attributes']['currentTime'][:-7].replace('T', ' ')
     return result[0]['topSystem']['attributes']['currentTime'][:-7].replace('T', ' ')
 
 def refreshToken(apic,icookie):
@@ -244,9 +248,9 @@ class l1PhysIf():
         self.pc_mbmr.append(p) 
     def port_adminstatus_color(self):
         if self.adminSt == 'up':
-            return '\x1b[3;47;40m{:2}\x1b[0m'.format(self.shortnum)
+            return '\x1b[1;37;42m{:2}\x1b[0m'.format(self.shortnum)
         else:
-            return '\x1b[2;30;47m{:2}\x1b[0m'.format(self.shortnum)
+            return '\x1b[3;47;40m{:2}\x1b[0m'.format(self.shortnum)
     def port_epgusage_color(self):
         if 'epg' in self.usage:
             #return '\x1b[1;37;42m{:2}\x1b[0m'.format(self.shortnum)
@@ -288,9 +292,9 @@ class l1PhysIf():
         if self.allerrors <= 100:
             return '\x1b[2;30;47m{:2}\x1b[0m'.format(self.shortnum)        
         elif 1000 <= self.allerrors >= 101:
-            return '\x1b[3;30;46m{:2}\x1b[0m'.format(self.shortnum)
+            return '\x1b[2;30;43m{:2}\x1b[0m'.format(self.shortnum)
         elif self.allerrors >= 1001:
-            return '\x1b[3;37;41m{:2}\x1b[0m'.format(self.shortnum)          
+            return '\x1b[2;30;47m{:2}\x1b[0m'.format(self.shortnum)          
         else:
             return '\x1b[1;37;42m{:2}\x1b[0m'.format(self.shortnum)
 
@@ -386,16 +390,25 @@ def physical_interface_selection(apic, cookie, chosenleafs, provideleaf=False):
     finalgrouped = zip(*firstgrouped)
     for column in finalgrouped:
         a = column[0].number
-        b = goodspacing(column[0]) + '  ' + column[0].descr[:25]
+        if len(goodspacing(column[0]) + '  ') >= 22:
+            b = goodspacing(column[0]) + '  ' + column[0].descr[:18]
+        else:
+            b = goodspacing(column[0]) + '  ' + column[0].descr[:25]
         c = column[1].number
-        d = goodspacing(column[1]) + '  ' + column[1].descr[:25]
+        if len(goodspacing(column[1]) + '  ') >= 22:
+            d = goodspacing(column[1]) + '  ' + column[1].descr[:18]
+        else:
+            d = goodspacing(column[1]) + '  ' + column[1].descr[:25]
         if column[2] == '' or column[2] == None:
             e = ''
             f = ''
         else:
             #e = interfacedict[column[2]]
             e = column[2].number
-            f = goodspacing(column[2]) + '  ' + column[2].descr[:25]
+            if len(goodspacing(column[2]) + '  ') >= 22:
+                f = goodspacing(column[2]) + '  ' + column[2].descr[:18]
+            else:
+                f = goodspacing(column[2]) + '  ' + column[2].descr[:25]
             #f = row[2].leaf + ' ' + row[2].fex + ' ' + str(row[2].name)
         print('{:6}.) {:45}{}.) {:45}{}.) {}'.format(a,b,c,d,e,f))
     while True:

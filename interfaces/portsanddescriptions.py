@@ -277,4 +277,4 @@ def main(import_apic,import_cookie):
         leafs = leaf_selection(get_All_leafs(apic, cookie))
         leafallinterfacesdict = pull_leaf_interfaces(leafs)
         print_interfaces_layout(leafallinterfacesdict,leafs)
-        raw_input('#Press enter to continue...')
+        custom_raw_input('#Press enter to continue...')
