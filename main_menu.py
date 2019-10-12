@@ -269,8 +269,8 @@ def main():
                             '\t| 4.)  Show interfaces status\n' +
                             '\t| 5.)  Show interface stats and EPGs\n' + 
                             '\t| 6.)  Show leaf port view\n' +
-                            '\t| 7.)  Show leaf port view (detail)\n' + 
-                            '\t| 8.)  Show Endpoints on interface (beta)\n' +
+                            '\t| 7.)  Show leaf port view (Detail)\n' + 
+                            '\t| 8.)  Show Endpoints on interface (Beta)\n' +
                             '\t ---------------------------------------------------\n\n' +
                             '\t  [FAULTS and LOGS]\n'
                             '\t ---------------------------------------------------\n' +
@@ -293,7 +293,7 @@ def main():
                             '\t  [CONFIGURATION]\n'
                             '\t ---------------------------------------------------\n' +
                             '\t| 17.) Configure Local Span\n' + 
-                            '\t| 18.) Capture server traffic ERSPAN to server (beta)\n' + 
+                            '\t| 18.) Capture server traffic ERSPAN to server (Beta)\n' + 
                             #'\t| 20.) Create EPGs (Not Available)\n' +
                             #'\t| 21.) Configure interface Descriptions (Not Available)\n' + 
                             #'\t| 21.) Import/Export interface Descriptions (Not Available)\n' + 
