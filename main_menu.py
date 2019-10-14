@@ -12,6 +12,7 @@ import traceback
 import pdb
 from localutils.custom_utils import *
 import fabric_access.create_vpc as create_vpc
+import fabric_access.display_switch_to_leaf_structure as display_switch_to_leaf_structure
 import interfaces.change_interface_state as shut_noshut_interfaces
 import interfaces.assign_epg_interfaces as assign_epg_interfaces
 import interfaces.remove_epgs_interfaces as remove_egps
@@ -350,6 +351,14 @@ def main():
             elif chosen == '55':
                 try:
                     create_vpc.main(apic,cookie)
+                    keyinterrupt = False
+                except KeyboardInterrupt as k:
+                    print('\nExit to Main menu\n')
+                    keyinterrupt = True
+                    continue
+            elif chosen == '66':
+                try:
+                    display_switch_to_leaf_structure.main(apic,cookie)
                     keyinterrupt = False
                 except KeyboardInterrupt as k:
                     print('\nExit to Main menu\n')
