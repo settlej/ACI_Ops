@@ -109,6 +109,8 @@ def add_egps_to_interfaces(urllist, interfacetype, cookie):
     queuelist = []
     for url in urllist:
         t = threading.Thread(target=submit_add_post_request, args=(url,interfacetype,queue, cookie))
+        t.daemon = True
+        #t.setDaemon(True)
         t.start()
         threadlist.append(t)
     for t in threadlist:

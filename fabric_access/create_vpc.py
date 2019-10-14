@@ -61,88 +61,102 @@ class infraNodeP():
         self.infraRsAccPortPlist = []
         self.infraLeafSlist = []
         self.allleafs = None
+        self.leafprofiles = []
     def gatherallleafs(self):
         infraranges = []
         for local_infraNodeBlk in self.infraLeafSlist:
             #print(local_infraNodeBlk)
-            for x in local_infraNodeBlk.infraNodeBlk:
+            for x in local_infraNodeBlk.infraNodeBlklist:
                 infraranges.extend(range(int(x.from_), int(x.to_) + 1))
         allranges = list(set(infraranges))
         self.allleafs = allranges
         infraranges = []
         allranges = []
     def __repr__(self):
-        self.dn
+        return self.dn
 
 class infraAccPortP():
     def __init__(self, **kwargs):
         self.__dict__.update(kwargs)
         self.infraRtAccPortPlist = []
         self.infraHPortSlist = []
-        self.allleafs = None
+        self.allports = []
     def gatherallleafs(self):
-        print('hi')
         infraranges = []
-        import pdb; pdb.set_trace()
-        for local_infraNodeBlk in self.infraHPortSlist:
-            for x in local_infraNodeBlk:
-                print('hit')
+        for local_infraPortBlk in self.infraHPortSlist:
+            for x in local_infraPortBlk.infraPortslist:
                 infraranges.extend(range(x.from_, x.to_ + 1))
         allranges = list(set(infraranges))
         self.allleafs = allranges
     def __repr__(self):
-        self.dn
+        return self.dn
 
 def gather_infraNodeP(apic,cookie):
     url = """https://{apic}/api/node/class/infraNodeP.json?rsp-subtree=full""".format(apic=apic)
+    logger.info(url)
     result = GetResponseData(url,cookie)
     infraNodePlist = []
-    for infraapp in result:
+    infraNodePdict = {}
+    for infrnodep in result:
        # import pdb; pdb.set_trace()
-        tempNodeP = infraNodeP(**infraapp['infraNodeP']['attributes'])
-        if infraapp['infraNodeP'].get('children'):
-            #import pdb; pdb.set_trace()
-            for child in infraapp['infraNodeP']['children']:
+        tempNodeP = infraNodeP(**infrnodep['infraNodeP']['attributes'])
+        if infrnodep['infraNodeP'].get('children'):
+            for child in infrnodep['infraNodeP']['children']:
                 if child.get('infraRsAccPortP'):
                     tempNodeP.infraRsAccPortPlist.append(infraRsAccPortP(**child['infraRsAccPortP']['attributes']))
                 elif child.get('infraLeafS'):
                     tempinfraLeafS = infraLeafS(**child['infraLeafS']['attributes'])
                     if child['infraLeafS'].get('children'):
                         for blocks in child['infraLeafS']['children']:
-                            tempinfraLeafS.infraNodeBlk.append(infraNodeBlk(**blocks['infraNodeBlk']['attributes']))
+                            tempinfraLeafS.infraNodeBlklist.append(infraNodeBlk(**blocks['infraNodeBlk']['attributes']))
                     tempNodeP.infraLeafSlist.append(tempinfraLeafS)
         tempNodeP.gatherallleafs()
         infraNodePlist.append(tempNodeP)
+        infraNodePdict[tempNodeP.dn] = tempNodeP
     #for nodep in infraNodePlist:
     #    nodep.gatherallleafs()
-    return infraNodePlist
+    return infraNodePlist, infraNodePdict
     #import pdb; pdb.set_trace()
 
 
-#def gather_infraAccPortP(apic,cookie):
-#    url = """https://{apic}/api/node/class/infraAccPortP.json?rsp-subtree=full""".format(apic=apic)
-#    result = GetResponseData(url,cookie)
-#    infraNodePlist = []
-#    for infraapp in result:
-#       # import pdb; pdb.set_trace()
-#        tempNodeP = infraNodeP(**infraapp['infraAccPortP']['attributes'])
-#        if infraapp['infraAccPortP'].get('children'):
-#            import pdb; pdb.set_trace()
-#            for x in infraapp['infraAccPortP']['children']:
-#                if x.get('infraRtAccPortP'):
-#                    tempNodeP.infraRsAccPortPlist.append(infraRtAccPortPlist(**x['infraRtAccPortP']['attributes']))
-#                elif x.get('infraLeafS'):
-#                    tempNodeP.infraLeafSlist.append(infraHPortS(**x['infraHPortS']['attributes']))
-#        infraNodePlist.append(tempNodeP)
-#    #import pdb; pdb.set_trace()
-#    print(type(infraNodePlist))
-#    #for x in infraNodePlist:
-    #    print(x.dn)
+
+def gather_infraAccPortP(apic,cookie):
+    url = """https://{apic}/api/node/class/infraAccPortP.json?rsp-subtree=full""".format(apic=apic)
+    logger.info(url)
+    result = GetResponseData(url,cookie)
+    infraAccPortPlist = []
+    #print(result)
+    for outerobject in result:
+       # import pdb; pdb.set_trace()
+        tempAccp = infraAccPortP(**outerobject['infraAccPortP']['attributes'])
+        if outerobject['infraAccPortP'].get('children'):
+            for child in outerobject['infraAccPortP']['children']:
+                if child.get('infraRtAccPortP'):
+                    tempAccp.infraRtAccPortPlist.append(infraRtAccPortP(**child['infraRtAccPortP']['attributes']))
+                elif child.get('infraHPortS'):
+                    tempinfraaHPortS = infraHPortS(**child['infraHPortS']['attributes'])
+                    if child['infraHPortS'].get('children'):
+                        for blocks in child['infraHPortS']['children']:
+                            if blocks.get('infraRsAccBaseGrp'):
+                                tempinfraaHPortS.infraRsAccBaseGrp.append(infraRsAccBaseGrp(**blocks['infraRsAccBaseGrp']['attributes']))
+                            elif blocks.get('infraPortBlk'):
+                                module = list(xrange(int(blocks['infraPortBlk']['attributes']['fromCard']), int(blocks['infraPortBlk']['attributes']['toCard'])+1))
+                                portrange = list(xrange(int(blocks['infraPortBlk']['attributes']['fromPort']), int(blocks['infraPortBlk']['attributes']['toPort'])+1))
+                                print(portrange)
+                                for linecard in module:
+                                    tempAccp.allports.append({linecard:portrange})
+#                                tempAccp.allports.append({module:portrange})
+                                tempinfraaHPortS.infraPortslist.append(infraPortBlk(**blocks['infraPortBlk']['attributes']))
+                    tempAccp.infraHPortSlist.append(tempinfraaHPortS)
+                    #tempAccp.infraHPortslist.append(infraHPortS(**blocks['infraHPortS']['attributes']))
+        infraAccPortPlist.append(tempAccp)
+    #import pdb; pdb.set_trace()
+    return infraAccPortPlist
 
 class infraLeafS():
     def __init__(self, **kwargs):
         self.__dict__.update(kwargs)
-        self.infraNodeBlk = []
+        self.infraNodeBlklist = []
 class infraRsAccPortP():
     def __init__(self, **kwargs):
         self.__dict__.update(kwargs)
@@ -154,13 +168,17 @@ class infraNodeBlk():
 class infraHPortS():
     def __init__(self, **kwargs):
         self.__dict__.update(kwargs)
+        self.infraPortslist = []
+        self.infraRsAccBaseGrp = []
 class infraRsAccBaseGrp():
     def __init__(self, **kwargs):
         self.__dict__.update(kwargs)
 class infraPortBlk():
     def __init__(self, **kwargs):
         self.__dict__.update(kwargs)
-
+class infraRtAccPortP():
+    def __init__(self, **kwargs):
+        self.__dict__.update(kwargs)
 
 class leafprofile():
     def __init__(self, **kwargs):
@@ -193,13 +211,13 @@ def display_and_select_leafselector(apic,cookie):
     #print(leafprofilelist)
     profiledict = {}
     print('\nLEAF___')
-    for num1, type in enumerate(sorted(leafprofilelist),1):
-        print('{}.) {}'.format(num1,type.name))
-        profiledict[num1] = type
+    for num1, ltype in enumerate(sorted(leafprofilelist),1):
+        print('{}.) {}'.format(num1,ltype.name))
+        profiledict[num1] = ltype
     print('\nFEX____')
-    for num2, type in enumerate(sorted(fexprofilelist),num1+1):
-        print('{}.) {}'.format(num2,type.name))
-        profiledict[num2] = type
+    for num2, ltype in enumerate(sorted(fexprofilelist),num1+1):
+        print('{}.) {}'.format(num2,ltype.name))
+        profiledict[num2] = ltype
     import pdb; pdb.set_trace()
 
     
@@ -225,13 +243,42 @@ def main(import_apic,import_cookie):
         clear_screen()
         location_banner('Creating VPC')
         #gather_infraAccPortP(apic,cookie)
-        gather_infraFexP(apic,cookie)
-        nodeprofilelist = gather_infraNodeP(apic,cookie)
-        for x in sorted(nodeprofilelist, key=lambda x:x.dn):
-            #x.gatherallleafs()
-            print(x.allleafs)
-            
-            print(x.dn)
+        nodeprofilelist, nodedict = gather_infraNodeP(apic,cookie)
+        print(nodedict)
+        apps = gather_infraAccPortP(apic,cookie)
+        print('before')
+        for x in apps:
+            print(x.name)
+            for y in x.infraHPortSlist:
+                print('\t' + y.name)
+                for z in y.infraPortslist:
+                    print('\t\t ' + z.fromPort + ' - ' + z.toPort)
+            for y in x.infraRtAccPortPlist:
+                print('\tSwitchprof: ' + y.tDn)
+
+            for y in x.infraRtAccPortPlist:
+                nodedict[y.tDn].leafprofiles.append(x)
+    #    import pdb; pdb.set_trace()
+        for z in nodedict.values():
+            print(z)
+            for zz in z.leafprofiles:
+                print(zz.allports)
+        print('after')
+        #import pdb; pdb.set_trace()
+        #gather_infraFexP(apic,cookie)
+        #nodeprofilelist = gather_infraNodeP(apic,cookie)
+        #for x in sorted(nodeprofilelist, key=lambda x:x.dn):
+        #    #x.gatherallleafs()
+        #    print(x.allleafs)
+        #    
+        #    print(x.dn)
+        
+        
+        
+        
+        
+        
+        
         ##all_leaflist = get_All_leafs(apic,cookie)
         ##chosenleafs = ask_vPC_location(all_leaflist, apic, cookie)
         ##switchpreviewutil.main(apic,cookie,chosenleafs, purpose='port_status')
