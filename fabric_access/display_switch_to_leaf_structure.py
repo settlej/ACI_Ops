@@ -52,6 +52,7 @@ class infraNodeP():
         self.infraLeafSlist = []
         self.allleafs = None
         self.leafprofiles = []
+        self.fexprofiles = []
     def gatherallleafs(self):
         infraranges = []
         for local_infraNodeBlk in self.infraLeafSlist:
@@ -106,7 +107,7 @@ def gather_infraNodeP(apic,cookie):
 
 
 
-def gather_infraAccPortP(apic,cookie):
+def gather_infraAccPortP(apic,cookie,fexes):
     url = """https://{apic}/api/node/class/infraAccPortP.json?rsp-subtree=full""".format(apic=apic)
     logger.info(url)
     result = GetResponseData(url,cookie)
@@ -124,9 +125,18 @@ def gather_infraAccPortP(apic,cookie):
                             if blocks.get('infraRsAccBaseGrp'):
                                 tempinfraaHPortS.infraRsAccBaseGrplist.append(infraRsAccBaseGrp(**blocks['infraRsAccBaseGrp']['attributes']))
                                 if blocks['infraRsAccBaseGrp']['attributes']['tCl'] == "infraFexBndlGrp":
-                                    fexid = blocks['infraRsAccBaseGrp']['attributes']['tCl'] 
-                                    fexresult = searchfexP(fexid)
-                                    tempinfraaHPortS.infraFexPlist.append(fexresult)
+                                    
+                                    #import pdb; pdb.set_trace()
+                                    fexbndlgrppath = blocks['infraRsAccBaseGrp']['attributes']['tDn']# (ending) -> -> Fexp/infrafexbndlgrp.rn
+                                    fexp = '/'.join(fexbndlgrppath.split('/')[:-1])
+                                    fexbndlgp = fexbndlgrppath.split('/')[-1:][0]
+                                    #match fexp then find fexbndlgrp with rn
+                                   # fexid = blocks['infraRsAccBaseGrp']['attributes']['tCl'] 
+                                   # -> Fexp/infrafexbndlgrp.rn
+                                    #fexresult = searchfexP(fexid)
+                                    foundp = searchfexes(fexp,fexbndlgp,fexes)
+                                    
+                                    tempinfraaHPortS.infraFexPlist.append(foundp)
                             elif blocks.get('infraPortBlk'):
                                 module = list(xrange(int(blocks['infraPortBlk']['attributes']['fromCard']), int(blocks['infraPortBlk']['attributes']['toCard'])+1))
                                 portrange = list(xrange(int(blocks['infraPortBlk']['attributes']['fromPort']), int(blocks['infraPortBlk']['attributes']['toPort'])+1))
@@ -232,6 +242,15 @@ class infraFexP():
     def __repr__(self):
         return self.dn
 
+def searchfexes(fexp,fexbndlgp,fexes):
+    for f in fexes:
+        #import pdb; pdb.set_trace()
+        if f.dn == fexp:
+            if f.infraFexBndlGrplist:
+                for child in f.infraFexBndlGrplist:
+                    if child.rn == fexbndlgp:
+                        return f
+
 def main(import_apic,import_cookie):
         global apic
         global cookie
@@ -240,13 +259,17 @@ def main(import_apic,import_cookie):
         clear_screen()
         location_banner('Creating VPC')
         nodeprofilelist, nodedict = gather_infraNodeP(apic,cookie)
-        apps = gather_infraAccPortP(apic,cookie)
+        fexes = gather_infraFexP(apic,cookie)
+        apps = gather_infraAccPortP(apic,cookie, fexes)
         for x in apps:
             print(x.name)
             for y in x.infraHPortSlist:
                 print('\t' + y.name)
                 for z in y.infraPortslist:
                     print('\t\t ' + z.fromPort + ' - ' + z.toPort)
+                for fex in y.infraFexPlist:
+                    print('\t\t {}'.format(fex))
+                    print('\t\t  {}'.format(fex.allports))
             for y in x.infraRtAccPortPlist:
                 print('\tSwitchprof: ' + y.tDn)
             for y in x.infraRtAccPortPlist:
@@ -259,9 +282,9 @@ def main(import_apic,import_cookie):
             for zz in z.leafprofiles:
                 print('\t{}'.format(str(zz)[str(zz).find('prof-')+5:]))
                 print('\t\t{}'.format(zz.allports))
+
                 #print(sorted(zz.allports.items(), key=lambda x: x[1][1]))
         print('\n\n\n')
-        fexes = gather_infraFexP(apic,cookie)
         for f in fexes:
             print('{}'.format(f.dn))
             print('{}'.format(f.allports))
