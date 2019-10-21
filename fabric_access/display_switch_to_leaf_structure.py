@@ -74,7 +74,7 @@ class infraAccPortP():
 #    def gatherallleafs(self):
 #        infraranges = []
 #        for local_infraPortBlk in self.infraHPortSlist:
-#            for x in local_infraPortBlk.infraPortslist:
+#            for x in local_infraPortBlk.infraPortsBlklist:
 #                infraranges.extend(range(x.from_, x.to_ + 1))
 #        allranges = list(set(infraranges))
 #        self.allleafs = allranges
@@ -123,7 +123,7 @@ def gather_infraAccPortP(apic,cookie,fexes):
                     if child['infraHPortS'].get('children'):
                         for blocks in child['infraHPortS']['children']:
                             if blocks.get('infraRsAccBaseGrp'):
-                                tempinfraaHPortS.infraRsAccBaseGrplist.append(infraRsAccBaseGrp(**blocks['infraRsAccBaseGrp']['attributes']))
+                                tempinfraaHPortS.infraRsAccBaseGrp = infraRsAccBaseGrp(**blocks['infraRsAccBaseGrp']['attributes'])
                                 if blocks['infraRsAccBaseGrp']['attributes']['tCl'] == "infraFexBndlGrp":
                                     
                                     #import pdb; pdb.set_trace()
@@ -145,7 +145,7 @@ def gather_infraAccPortP(apic,cookie,fexes):
                                     tempAccp.allports[linecard].extend(portrange)
 #                                for linecard in module:
                                     tempAccp.allports[linecard].sort()
-                                tempinfraaHPortS.infraPortslist.append(infraPortBlk(**blocks['infraPortBlk']['attributes']))
+                                tempinfraaHPortS.infraPortsBlklist.append(infraPortBlk(**blocks['infraPortBlk']['attributes']))
                     tempAccp.infraHPortSlist.append(tempinfraaHPortS)
         infraAccPortPlist.append(tempAccp)
     return infraAccPortPlist
@@ -165,8 +165,8 @@ class infraNodeBlk():
 class infraHPortS():
     def __init__(self, **kwargs):
         self.__dict__.update(kwargs)
-        self.infraPortslist = []
-        self.infraRsAccBaseGrplist = []
+        self.infraPortsBlklist = []
+        self.infraRsAccBaseGrp = None
         self.infraFexPlist = []
 class infraRsAccBaseGrp():
     def __init__(self, **kwargs):
@@ -212,14 +212,14 @@ def gather_infraFexP(apic,cookie):
                     if child['infraHPortS'].get('children'):
                         for blocks in child['infraHPortS']['children']:
                             if blocks.get('infraRsAccBaseGrp'):
-                                tempinfraaHPortS.infraRsAccBaseGrplist.append(infraRsAccBaseGrp(**blocks['infraRsAccBaseGrp']['attributes']))
+                                tempinfraaHPortS.infraRsAccBaseGrp = infraRsAccBaseGrp(**blocks['infraRsAccBaseGrp']['attributes'])
                             elif blocks.get('infraPortBlk'):
                                 module = list(xrange(int(blocks['infraPortBlk']['attributes']['fromCard']), int(blocks['infraPortBlk']['attributes']['toCard'])+1))
                                 portrange = list(xrange(int(blocks['infraPortBlk']['attributes']['fromPort']), int(blocks['infraPortBlk']['attributes']['toPort'])+1))
                                 for linecard in module:
                                     tempFex.allports[linecard].extend(portrange)
                                     tempFex.allports[linecard].sort()
-                                tempinfraaHPortS.infraPortslist.append(infraPortBlk(**blocks['infraPortBlk']['attributes']))
+                                tempinfraaHPortS.infraPortsBlklist.append(infraPortBlk(**blocks['infraPortBlk']['attributes']))
                     tempFex.infraHPortSlist.append(tempinfraaHPortS)
                 elif child.get('infraFexBndlGrp'):
                     tempinfraFexBndlGrp = infraFexBndlGrp(**child['infraFexBndlGrp']['attributes'])
@@ -262,40 +262,74 @@ def main(import_apic,import_cookie):
         fexes = gather_infraFexP(apic,cookie)
         apps = gather_infraAccPortP(apic,cookie, fexes)
         for x in apps:
-            print(x.name)
-            for y in x.infraHPortSlist:
-                print('\t' + y.name)
-                for z in y.infraPortslist:
-                    print('\t\t ' + z.fromPort + ' - ' + z.toPort)
-                for fex in y.infraFexPlist:
-                    print('\t\t {}'.format(fex))
-                    print('\t\t  {}'.format(fex.allports))
-            for y in x.infraRtAccPortPlist:
-                print('\tSwitchprof: ' + y.tDn)
             for y in x.infraRtAccPortPlist:
                 nodedict[y.tDn].leafprofiles.append(x)
-    #    import pdb; pdb.set_trace()
-        print('\n\n\n')
-        for z in nodedict.values():
-            print('{}'.format(str(z)[str(z).find('nprof-')+6:]))
-            print('\t{}'.format(z.allleafs))
-            for zz in z.leafprofiles:
-                print('\t{}'.format(str(zz)[str(zz).find('prof-')+5:]))
-                print('\t\t{}'.format(zz.allports))
+        for switchp in sorted(nodedict.values(), key=lambda x: x.name):
+            print(switchp.name)
+           # import pdb; pdb.set_trace()
+            for leafp in switchp.leafprofiles:
+                print('\t' + leafp.name)
+                for portlist in leafp.infraHPortSlist:
+                    print('\t\t' + portlist.name)
+                    #print(portlist.__dict__)
+                    print('\t\t\t' + portlist.infraRsAccBaseGrp.tDn)
+                    if portlist.infraRsAccBaseGrp.tCl == 'infraAccPortGrp':
+                        print('\t\t\t' + 'individual')
+                    elif portlist.infraRsAccBaseGrp.tCl == 'infraAccBndlGrp':
+                        print('\t\t\t' + 'Port-channel')                    
+                    elif portlist.infraRsAccBaseGrp.tCl == 'infraFexBndlGrp':
+                        print('\t\t\t' + 'Fex-uplinks')
+                    if portlist.infraFexPlist:
+                        print('\t\t\t' + portlist.infraRsAccBaseGrp.fexId)
+                    
 
-                #print(sorted(zz.allports.items(), key=lambda x: x[1][1]))
-        print('\n\n\n')
-        for f in fexes:
-            print('{}'.format(f.dn))
-            print('{}'.format(f.allports))
-            for fn in f.infraHPortSlist:
-                print(fn.infraRsAccBaseGrplist[0].fexId)
-                for fnx in fn.infraRsAccBaseGrplist:
-                    print('\t{}'.format(fnx.tDn))
-            for x in f.infraFexBndlGrplist:
-                for xx in x.infraRtAccBaseGrplist:
-                    print('{}'.format(xx.rn))
-        print('\n\n')
-            #print('{}'.format())
-        import pdb; pdb.set_trace()
+                    #print('\t\t\t' + portlist.infraRsAccBaseGrp.tCl)
+                    for z in portlist.infraPortsBlklist:
+                        print('\t\t\t ' + z.fromPort + ' - ' + z.toPort)
+            print('\n')
+               # for fex in y.infraFexPlist:
+               #     print('\t\t {}'.format(fex))
+               #     print('\t\t  {}'.format(fex.allports))
+     
+
+
+
+ #       for x in apps:
+ #           print(x.name)
+ #           for y in x.infraHPortSlist:
+ #               print('\t' + y.name)
+ #               for z in y.infraPortsBlklist:
+ #                   print('\t\t ' + z.fromPort + ' - ' + z.toPort)
+ #               for fex in y.infraFexPlist:
+ #                   print('\t\t {}'.format(fex))
+ #                   print('\t\t  {}'.format(fex.allports))
+ #           #for y in x.infraRtAccPortPlist:
+ #           #    print('\tSwitchprof: ' + y.tDn)
+ #           for y in x.infraRtAccPortPlist:
+ #               nodedict[y.tDn].leafprofiles.append(x)
+        #import pdb; pdb.set_trace()
+        #print('\n\n\n')
+        #for z in nodedict.values():
+        #    print('{}'.format(str(z)[str(z).find('nprof-')+6:]))
+        #    print('\t{}'.format(z.allleafs))
+        #    for zz in z.leafprofiles:
+        #        print('\t{}'.format(str(zz)[str(zz).find('prof-')+5:]))
+        #        print('\t\t{}'.format(zz.allports))
+#
+        #        #print(sorted(zz.allports.items(), key=lambda x: x[1][1]))
+        #print('\n\n\n')
+        #for f in fexes:
+        #    print('{}'.format(f.dn))
+        #    print('{}'.format(f.allports))
+        #    for fn in f.infraHPortSlist:
+        #        #print(fn.infraRsAccBaseGrp[0].fexId)
+        #        #for fnx in fn.infraRsAccBaseGrp:
+        #        print(fn.infraRsAccBaseGrp.tDn)
+        #            #print('\t{}'.format(fnx.tDn))
+        #    for x in f.infraFexBndlGrplist:
+        #        for xx in x.infraRtAccBaseGrplist:
+        #            print('\t\t\t{}'.format(xx.rn))
+        #print('\n\n')
+        #    #print('{}'.format())
+        #import pdb; pdb.set_trace()
         raw_input()

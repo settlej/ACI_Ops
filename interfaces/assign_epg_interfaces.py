@@ -121,6 +121,8 @@ def add_egps_to_interfaces(urllist, interfacetype, cookie):
 
 def submit_add_post_request(url,interfacetype,queue, cookie):
     result, error = PostandGetResponseData(url.url, url.data, cookie)
+    logger.info(result)
+    logger.info(error)
     shorturl = url.url[30:-5]
     if error == None and result == []:
         finalresult = 'Success! -- Added ' + shorturl + ' > ' + str(url.interface)
