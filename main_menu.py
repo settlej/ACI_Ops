@@ -22,6 +22,7 @@ import interfaces.portsanddescriptions as portsanddescriptions
 import interfaces.interfacecounters as showinterface
 import interfaces.switch_port_view as switch_port_view
 import interfaces.switchpreviewutil as switchpreviewutil
+import interfaces.clonevpcanddeploy as clonevpcanddeploy
 import faults_and_logs.new_important_faults as fault_summary
 import faults_and_logs.most_recent_port_down as recent_port_down
 import faults_and_logs.most_recent_fault_changes as most_recent_fault_changes
@@ -359,6 +360,14 @@ def main():
             elif chosen == '66':
                 try:
                     display_switch_to_leaf_structure.main(apic,cookie)
+                    keyinterrupt = False
+                except KeyboardInterrupt as k:
+                    print('\nExit to Main menu\n')
+                    keyinterrupt = True
+                    continue
+            elif chosen == '67':
+                try:
+                    clonevpcanddeploy.main(apic,cookie)
                     keyinterrupt = False
                 except KeyboardInterrupt as k:
                     print('\nExit to Main menu\n')
