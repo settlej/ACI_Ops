@@ -261,6 +261,145 @@ def submit_add_post_request(url,interfacetype,queue, cookie):
         print(error)
 
 
+def retrieve_leafprofiles(apic, cookie):
+    url = """https://{apic}/api/node/class/infraAccPortP.json""".format(apic=apic)
+    logger.info(url)
+    result = GetResponseData(url,cookie)
+    return result
+
+def retrieve_fexprofiles(apic, cookie):
+    url = """https://{apic}/api/node/class/infraFexP.json""".format(apic=apic)
+    logger.info(url)
+    result = GetResponseData(url,cookie)
+    return result
+
+def retrieve_clone_portchannel_master(apic, cookie, returnedlist):
+    url = """https://{apic}/api/node/class/infraAccBndlGrp.json?query-target-filter=eq(infraAccBndlGrp.name,"{vpcname}")&rsp-subtree=full""".format(apic=apic,vpcname=returnedlist[0].name)
+    logger.info(url)
+    leafselectorresult = GetResponseData(url,cookie)
+    for infraAccBndlGrp in leafselectorresult:
+        for policy in infraAccBndlGrp['infraAccBndlGrp']['children']:
+            if policy.get('infraRtAccBaseGrp'):
+                try:
+                    currentleafifselector = policy['infraRtAccBaseGrp']['attributes']['tDn']
+                except Exception as e:
+                    print(e)
+    for x in leafselectorresult[0]['infraAccBndlGrp']['attributes'].keys():
+        del leafselectorresult[0]['infraAccBndlGrp']['attributes'][x]
+    for m in leafselectorresult[0]['infraAccBndlGrp']['children']:
+        for t in m.keys():
+            if t == 'infraRtAccBaseGrp':
+                del m[t]
+            else:
+                for x in m[t]['attributes'].keys():
+                    if t == 'infraRsAttEntP':
+                        if x != 'tDn':
+                            del m[t]['attributes'][x]
+                    elif x not in policygrouplist:
+                        del m[t]['attributes'][x]
+    leafselectorresult[0]['infraAccBndlGrp']['children'] = filter(None, leafselectorresult[0]['infraAccBndlGrp']['children'])
+    return leafselectorresult, currentleafifselector
+
+
+
+
+
+
+def portchannel_clone_and_deploy(apic, cookie, currentleafifselector, leafselectorresult, pctype='vpc'):
+    while True:
+        while True:
+            useifselector = custom_raw_input("Use selected VPC's leaf location? [y=default|n]: ") or 'y'
+            if useifselector.lower().strip().lstrip() == 'y':
+                leafifselector = currentleafifselector.split('/')[2]
+                print(leafifselector)
+                break
+            elif useifselector.lower().strip().lstrip() == 'n':
+                profilelist = []
+                leafp = retrieve_leafprofiles(apic, cookie)
+                for lp in leafp:
+                    profilelist.append(lp['infraAccPortP']['attributes']['dn'].split('/')[2])
+                fexp = retrieve_fexprofiles(apic, cookie)
+                for fp in fexp:
+                    profilelist.append(fp['infraFexP']['attributes']['dn'].split('/')[2])
+                print('\n')
+                print('\t # | Leaf Profile or Fex Profile')
+                print('\t------------------------------------')
+                for num,profile in enumerate(profilelist,1):
+                    print("\t{:2}.) {}".format(num,profile.replace("accportprof-","").replace("fexprof-", "")))
+                while True:
+                    selected = custom_raw_input("\nSelect interface 'desired' location: ")
+                    selected = selected.strip().lstrip()
+                    if selected.isdigit() and int(selected) > 0 and int(selected) <= len(profilelist):
+                        break
+                    else:
+                        print("\nInvalid selection, Please try again...")
+                        continue
+                leafifselector = profilelist[int(selected)-1]
+                #import pdb; pdb.set_trace()
+
+                break
+            else:
+                print('\n Invalid Option, try again...\n')
+                continue
+        vpcname = custom_raw_input("Name for new VPC: ")
+        if pctype == 'vpc':
+            leafselectorresult[0]['infraAccBndlGrp']['attributes'].update(lagT="node",name="LP_" + str(vpcname),status="created,modified")
+        else:
+            leafselectorresult[0]['infraAccBndlGrp']['attributes'].update(lagT="link",name="LP_" + str(vpcname),status="created,modified")
+        vpcpolicy = "uni/infra/funcprof/accbundle-LP_" + vpcname
+        vpclocation = custom_raw_input("Interface(s) for new VPC? [format=x/x or x/xx]: ")
+        fromCard = vpclocation.split('/')[0].replace('eth', '')
+        toCard = vpclocation.split('/')[0].replace('eth', '')
+        toPort = vpclocation.split('/')[1]
+        fromPort = vpclocation.split('/')[1]
+        blockname = 'block-' + str(random.randrange(0, 9999))
+    #method: POST
+    #url: https://192.168.255.2/api/node/mo/uni/infra/funcprof/accbundle-deleteme.json
+        #   payload{"infraAccBndlGrp":{"attributes":{"dn":"uni/infra/funcprof/accbundle-deleteme","lagT":"node","name":"deleteme","rn":"accbundle-deleteme","status":"created"},"children":[{"infraRsCdpIfPol":{"attributes":{"tnCdpIfPolName":"CDP_ON","status":"created,modified"},"children":[]}}]}}
+    ##https://192.168.255.2/api/node/mo/uni/infra/funcprof/accbundle-Host8.json?rsp-subtree=full
+        url = """https://{apic}/api/node/mo/uni/infra/funcprof/accbundle-{vpc}.json""".format(apic=apic,vpc="LP_" + str(vpcname))
+        logger.info(url)
+        data = json.dumps(leafselectorresult[0])
+        createvpcresult = PostandGetResponseData(url, data, cookie)
+        if createvpcresult[0] == 'invalid':
+            print("\n\x1b[1;37;41mFailure\x1b[0m -- " + str(createvpcresult[1]) + '\x1b[0m\n')
+            del(createvpcresult)
+            continue
+        #import pdb; pdb.set_trace()
+        #apply vpc to interface
+        #url = """https://{apic}/api/node/mo/uni/infra/accportprof-Switch101-102_Profile_ifselector/hports-int-test2-typ-range.json""".format(apic=apic,leafifselector=leafifselector,aps=apsname)
+        url = """https://{apic}/api/node/mo/uni/infra/{leafifselector}/hports-APS_{vpcname}-typ-range.json""".format(apic=apic,leafifselector=leafifselector,vpcname=vpcname)
+        logger.info(url)
+        #data = """{"infraHPortS":{"attributes":{"name":"int-test","status":"created,modified"},"children":[{"infraPortBlk":{"attributes":{"fromPort":"40","toPort":"40","name":"block2","status":"created,modified"},"children":[]}},{"infraRsAccBaseGrp":{"attributes":{"tDn":"uni/infra/funcprof/accbundle-TEST_VPC","status":"created,modified"},"children":[]}}]}}""" % {toPort:toPort, fromPort:fromPort, blockname:blockname, vpcpolicy=vpcpolicy}
+        data = """'{{"infraHPortS":{{"attributes":{{"name":"APS_{vpcname}","status":"created,modified"}},"children":[{{"infraPortBlk":{{"attributes":{{"fromPort":"{fromPort}",\
+            "toPort":"{toPort}","fromCard":"{fromCard}","toCard":"{toCard}",name":"{blockname}","status":"created,modified"}},"children":[]}}}},{{"infraRsAccBaseGrp":{{"attributes":{{"tDn":"{vpcpolicy}",\
+            "status":"created,modified"}},"children":[]}}}}]}}}}'""".format(toPort=toPort, fromPort=fromPort, fromCard=fromCard, toCard=toCard, blockname=blockname, vpcname=vpcname, vpcpolicy=vpcpolicy)
+        apscreationresult = PostandGetResponseData(url, data, cookie)
+        if apscreationresult[0] == 'invalid':
+            print("\n\x1b[1;37;41mFailure\x1b[0m -- " + str(apscreationresult[1]) + '\x1b[0m\n')
+            del(apscreationresult)
+            continue
+        if pctype == 'vpc':
+            url = """https://{apic}/api/node/class/fabricPathEp.json?query-target-filter=and(not(wcard(fabricPathEp.dn,%22__ui_%22)),and(eq(fabricPathEp.lagT,"node"),wcard(fabricPathEp.dn,"^topology/pod-[\d]*/protpaths-"),eq(fabricPathEp.name,"{vpc}")))""".format(apic=apic,vpc="LP_" + vpcname)
+        else:
+            url = """https://{apic}/api/node/class/fabricPathEp.json?query-target-filter=and(not(wcard(fabricPathEp.dn,%22__ui_%22)),and(eq(fabricPathEp.lagT,"link"),eq(fabricPathEp.name,"{vpc}")))""".format(apic=apic,vpc="LP_" + vpcname)
+        logger.info(url)
+        time.sleep(1)
+        searchvpcresult = GetResponseData(url,cookie)
+        if searchvpcresult[0] == 'invalid':
+            print("\n\x1b[1;37;41mFailure -- " + str(searchvpcresult[1]) + '\x1b[0m\n')
+            del(searchvpcresult)
+            continue
+        returnedlist = []
+        #import pdb; pdb.set_trace()
+        logger.debug(searchvpcresult)
+        returnedlist.append(searchvpcresult[0]['fabricPathEp']['attributes']['dn'])
+        break
+    return returnedlist
+        #import pdb; pdb.set_trace()
+
+
+
 #get vpcs list
 def main(import_apic,import_cookie):
     while True:
@@ -295,6 +434,8 @@ def main(import_apic,import_cookie):
                     continue
                 else:
                     break
+            leafselectorresult, currentleafifselector = retrieve_clone_portchannel_master(apic, cookie, returnedlist)
+            returnedlist = portchannel_clone_and_deploy(apic, cookie, currentleafifselector, leafselectorresult, pctype='pc')
             chosenepgs, choseninterfaceobjectlist = display_and_select_epgs(returnedlist, allepglist)
             interface_type_and_deployement(chosenepgs, choseninterfaceobjectlist, apic, type="Port-Channel")
             #port_channel_selection(allpclist,allepglist)
@@ -308,120 +449,8 @@ def main(import_apic,import_cookie):
                     continue
                 else:
                     break
-            url = """https://{apic}/api/node/class/infraAccBndlGrp.json?query-target-filter=eq(infraAccBndlGrp.name, "{vpcname}")&rsp-subtree=full""".format(apic=apic,vpcname=returnedlist[0].name)
-            logger.info(url)
-            result = GetResponseData(url,cookie)
-            for infraAccBndlGrp in result:
-               #import pdb; pdb.set_trace()
-                #vpcpolicy = infraAccBndlGrp['infraAccBndlGrp']['attributes']['dn']
-                for policy in infraAccBndlGrp['infraAccBndlGrp']['children']:
-                    #import pdb; pdb.set_trace()
-                    if policy.get('infraRtAccBaseGrp'):
-                        currentleafifselector = policy['infraRtAccBaseGrp']['attributes']['tDn']
-            for x in result[0]['infraAccBndlGrp']['attributes'].keys():
-                del result[0]['infraAccBndlGrp']['attributes'][x]
-            for m in result[0]['infraAccBndlGrp']['children']:
-                for t in m.keys():
-                    if t == 'infraRtAccBaseGrp':
-                        #del result[0]['infraAccBndlGrp']['children'][num]
-                        del m[t]
-                    else:
-                        for x in m[t]['attributes'].keys():
-                            if t == 'infraRsAttEntP':
-                                if x != 'tDn':
-                                    del m[t]['attributes'][x]
-                            elif x not in policygrouplist:
-                                del m[t]['attributes'][x]
-            result[0]['infraAccBndlGrp']['children'] = filter(None, result[0]['infraAccBndlGrp']['children'])
-                   # for m in k['infraAccBndlGrp']['children']:
-                   #     for policy in m:
-                   # if policy == 'infraRsStpIfPol':
-                   #     a = infraRsStpIfPol(**policy['infraRsStpIfPol']['attributes'])
-                   # elif policy == 'infraRsQosIngressDppIfPol':
-                   #     b  = infraRsQosIngressDppIfPol(**policy['infraRsQosIngressDppIfPol']['attributes'])
-                   # elif policy == 'infraRsStormctrlIfPol':
-                   #     c  = infraRsStormctrlIfPol(**policy['infraRsStormctrlIfPol']['attributes'])
-                   # elif policy == 'infraRsQosEgressDppIfPol':
-                   #     d  = infraRsQosEgressDppIfPol(**policy['infraRsQosEgressDppIfPol']['attributes'])
-                   # elif policy == 'infraRsMonIfInfraPol':
-                   #     e  = infraRsMonIfInfraPol(**policy['infraRsMonIfInfraPol']['attributes'])
-                   # elif policy == 'infraRsMcpIfPol':
-                   #     f  = infraRsMcpIfPol(**policy['infraRsMcpIfPol']['attributes'])
-                   # elif policy == 'infraRsMacsecIfPol':
-                   #     g  = infraRsMacsecIfPol(**policy['infraRsMacsecIfPol']['attributes'])
-                   # elif policy == 'infraRsQosSdIfPol':
-                   #     h  = infraRsQosSdIfPol(**policy['infraRsQosSdIfPol']['attributes'])
-                   # elif policy == 'infraRsAttEntP':
-                   #     i  = infraRsCdpIfPol(**policy['infraRsCdpIfPol']['attributes'])
-                   # elif policy == 'infraRsCdpIfPol':
-                   #     j  = infraRsCdpIfPol(**policy['infraRsCdpIfPol']['attributes'])
-                   # elif policy == 'infraRsL2IfPol':
-                   #     k  = infraRsL2IfPol(**policy['infraRsL2IfPol']['attributes'])
-                   # elif policy == 'infraRsQosDppIfPol':
-                   #     m  = infraRsQosDppIfPol(**policy['infraRsQosDppIfPol']['attributes'])
-                   # elif policy == 'infraRsCoppIfPol':
-                   #     n  = infraRsCoppIfPol(**policy['infraRsCoppIfPol']['attributes'])
-                   # elif policy == 'infraRsQosPfcIfPol':
-                   #     o  = infraRsQosPfcIfPol(**policy['infraRsQosPfcIfPol']['attributes'])
-                   # elif policy == 'infraRsHIfPol':
-                   #     p  = infraRsHIfPol(**policy['infraRsHIfPol']['attributes'])
-                   # elif policy == 'infraRsL2PortSecurityPol':
-                   #     q  = infraRsL2PortSecurityPol(**policy['infraRsL2PortSecurityPol']['attributes'])
-                   # elif policy == 'infraRsL2PortAuthPol':
-                   #     r  = infraRsL2PortAuthPol(**policy['infraRsL2PortAuthPol']['attributes'])
-                   # elif policy == 'infraRsLacpPol':
-                   #     s  = infraRsLacpPol(**policy['infraRsLacpPol']['attributes'])
-                   # elif policy == 'infraRsFcIfPol':
-                   #     t  = infraRsFcIfPol(**policy['infraRsFcIfPol']['attributes'])
-                   # elif policy == 'infraRsLldpIfPol':
-                   #     u  = infraRsLldpIfPol(**policy['infraRsLldpIfPol']['attributes'])
-#{"infraRsLacpPol":{"attributes":{"tnLacpLagPolName":"STATIC_ON"}}}
-#{"infraRsLacpPol":{"attributes":{"tnLacpLagPolName":"STATIC_ON"}}}
-#payload"{"infraAccBndlGrp":{"attributes":{"dn":"uni/infra/funcprof/accbundle-cat","lagT":"node","name":"cat"},"children":[{"infraRsLldpIfPol":{"attributes":{"rn":"rslldpIfPol","dn":"uni/infra/funcprof/accbundle-cat/rslldpIfPol"},"children":[]}},{"infraRsFcIfPol":{"attributes":{"rn":"rsfcIfPol","dn":"uni/infra/funcprof/accbundle-cat/rsfcIfPol"},"children":[]}},{"infraRsLacpPol":{"attributes":{"rn":"rslacpPol","tnLacpLagPolName":"STATIC_ON","dn":"uni/infra/funcprof/accbundle-cat/rslacpPol"},"children":[]}},{"infraRsL2PortAuthPol":{"attributes":{"rn":"rsl2PortAuthPol","dn":"uni/infra/funcprof/accbundle-cat/rsl2PortAuthPol"},"children":[]}},{"infraRsL2PortSecurityPol":{"attributes":{"rn":"rsl2PortSecurityPol","dn":"uni/infra/funcprof/accbundle-cat/rsl2PortSecurityPol"},"children":[]}},{"infraRsHIfPol":{"attributes":{"rn":"rshIfPol","dn":"uni/infra/funcprof/accbundle-cat/rshIfPol"},"children":[]}},{"infraRsQosPfcIfPol":{"attributes":{"rn":"rsqosPfcIfPol","dn":"uni/infra/funcprof/accbundle-cat/rsqosPfcIfPol"},"children":[]}},{"infraRsCoppIfPol":{"attributes":{"rn":"rscoppIfPol","dn":"uni/infra/funcprof/accbundle-cat/rscoppIfPol"},"children":[]}},{"infraRsQosDppIfPol":{"attributes":{"rn":"rsqosDppIfPol","dn":"uni/infra/funcprof/accbundle-cat/rsqosDppIfPol"},"children":[]}},{"infraRsL2IfPol":{"attributes":{"rn":"rsl2IfPol","dn":"uni/infra/funcprof/accbundle-cat/rsl2IfPol"},"children":[]}},{"infraRsStpIfPol":{"attributes":{"rn":"rsstpIfPol","dn":"uni/infra/funcprof/accbundle-cat/rsstpIfPol"},"children":[]}},{"infraRsQosIngressDppIfPol":{"attributes":{"rn":"rsQosIngressDppIfPol","dn":"uni/infra/funcprof/accbundle-cat/rsQosIngressDppIfPol"},"children":[]}},{"infraRsMacsecIfPol":{"attributes":{"rn":"rsmacsecIfPol","dn":"uni/infra/funcprof/accbundle-cat/rsmacsecIfPol"},"children":[]}},{"infraRsStormctrlIfPol":{"attributes":{"rn":"rsstormctrlIfPol","dn":"uni/infra/funcprof/accbundle-cat/rsstormctrlIfPol"},"children":[]}},{"infraRsQosEgressDppIfPol":{"attributes":{"rn":"rsQosEgressDppIfPol","dn":"uni/infra/funcprof/accbundle-cat/rsQosEgressDppIfPol"},"children":[]}},{"infraRsMonIfInfraPol":{"attributes":{"rn":"rsmonIfInfraPol","dn":"uni/infra/funcprof/accbundle-cat/rsmonIfInfraPol"},"children":[]}},{"infraRsMcpIfPol":{"attributes":{"rn":"rsmcpIfPol","dn":"uni/infra/funcprof/accbundle-cat/rsmcpIfPol"},"children":[]}},{"infraRsAttEntP":{"attributes":{"rn":"rsattEntP","tDn":"uni/infra/attentp-AEP_VMM","dn":"uni/infra/funcprof/accbundle-cat/rsattEntP"},"children":[]}},{"infraRsQosSdIfPol":{"attributes":{"rn":"rsqosSdIfPol","dn":"uni/infra/funcprof/accbundle-cat/rsqosSdIfPol"},"children":[]}},{"infraRsCdpIfPol":{"attributes":{"rn":"rscdpIfPol","tnCdpIfPolName":"CDP_ON","dn":"uni/infra/funcprof/accbundle-cat/rscdpIfPol"},"children":[]}}]}}"
-
-            while True:
-                useifselector = custom_raw_input("Use Selected VPC's current leaf interface selector? [y=default|n]: ") or 'y'
-                if useifselector.lower().strip().lstrip() == 'y':
-                    leafifselector = currentleafifselector.split('/')[2]
-                    break
-                elif useifselector.lower().strip().lstrip() == 'n':
-                    continue
-                else:
-                    print('\n Invalid Option, try again...\n')
-                    continue
-            vpcname = custom_raw_input("Name for new VPC: ")
-            result[0]['infraAccBndlGrp']['attributes'].update(lagT="node",name="LP_" + str(vpcname),status="created,modified")
-            vpcpolicy = "uni/infra/funcprof/accbundle-LP_" + vpcname
-            vpclocation = custom_raw_input("Interface(s) for new VPC? [format=x/x or x/xx]: ")
-            fromCard = vpclocation.split('/')[0].replace('eth', '')
-            toCard = vpclocation.split('/')[0].replace('eth', '')
-            toPort = vpclocation.split('/')[1]
-            fromPort = vpclocation.split('/')[1]
-            blockname = 'block-' + str(random.randrange(0, 9999))
-            #method: POST
-#url: https://192.168.255.2/api/node/mo/uni/infra/funcprof/accbundle-deleteme.json
-#payload{"infraAccBndlGrp":{"attributes":{"dn":"uni/infra/funcprof/accbundle-deleteme","lagT":"node","name":"deleteme","rn":"accbundle-deleteme","status":"created"},"children":[{"infraRsCdpIfPol":{"attributes":{"tnCdpIfPolName":"CDP_ON","status":"created,modified"},"children":[]}}]}}
-            ##https://192.168.255.2/api/node/mo/uni/infra/funcprof/accbundle-Host8.json?rsp-subtree=full
-            url = """https://{apic}/api/node/mo/uni/infra/funcprof/accbundle-{vpc}.json""".format(apic=apic,vpc="LP_" + str(vpcname))
-            data = json.dumps(result[0])
-            result = PostandGetResponseData(url, data, cookie)
-            #import pdb; pdb.set_trace()
-            #apply vpc to interface
-            #url = """https://{apic}/api/node/mo/uni/infra/accportprof-Switch101-102_Profile_ifselector/hports-int-test2-typ-range.json""".format(apic=apic,leafifselector=leafifselector,aps=apsname)
-            url = """https://{apic}/api/node/mo/uni/infra/{leafifselector}/hports-APS_{vpcname}-typ-range.json""".format(apic=apic,leafifselector=leafifselector,vpcname=vpcname)
-            #data = """{"infraHPortS":{"attributes":{"name":"int-test","status":"created,modified"},"children":[{"infraPortBlk":{"attributes":{"fromPort":"40","toPort":"40","name":"block2","status":"created,modified"},"children":[]}},{"infraRsAccBaseGrp":{"attributes":{"tDn":"uni/infra/funcprof/accbundle-TEST_VPC","status":"created,modified"},"children":[]}}]}}""" % {toPort:toPort, fromPort:fromPort, blockname:blockname, vpcpolicy=vpcpolicy}
-            data = """'{{"infraHPortS":{{"attributes":{{"name":"APS_{vpcname}","status":"created,modified"}},"children":[{{"infraPortBlk":{{"attributes":{{"fromPort":"{fromPort}",\
-                "toPort":"{toPort}","fromCard":"{fromCard}","toCard":"{toCard}",name":"{blockname}","status":"created,modified"}},"children":[]}}}},{{"infraRsAccBaseGrp":{{"attributes":{{"tDn":"{vpcpolicy}",\
-                "status":"created,modified"}},"children":[]}}}}]}}}}'""".format(toPort=toPort, fromPort=fromPort, fromCard=fromCard, toCard=toCard, blockname=blockname, vpcname=vpcname, vpcpolicy=vpcpolicy)
-            result = PostandGetResponseData(url, data, cookie)
-            url = """https://{apic}/api/node/class/fabricPathEp.json?query-target-filter=and(not(wcard(fabricPathEp.dn,%22__ui_%22)),and(eq(fabricPathEp.lagT,"node"),wcard(fabricPathEp.dn,"^topology/pod-[\d]*/protpaths-"),eq(fabricPathEp.name,"{vpc}")))""".format(apic=apic,vpc="LP_" + vpcname)
-            time.sleep(1)
-            result = GetResponseData(url,cookie)
-            returnedlist = []
-            #import pdb; pdb.set_trace()
-            logger.debug(result)
-            returnedlist.append(result[0]['fabricPathEp']['attributes']['dn'])
-            #import pdb; pdb.set_trace()
+            leafselectorresult, currentleafifselector = retrieve_clone_portchannel_master(apic, cookie, returnedlist)
+            returnedlist = portchannel_clone_and_deploy(apic, cookie, currentleafifselector, leafselectorresult, pctype='vpc')
             chosenepgs, choseninterfaceobjectlist = display_and_select_epgs(returnedlist, allepglist)
             interface_type_and_deployement(chosenepgs, choseninterfaceobjectlist, apic, type="vPort-Channel")
             print('\r')
