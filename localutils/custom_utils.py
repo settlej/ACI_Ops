@@ -427,7 +427,27 @@ def physical_interface_selection(apic, cookie, chosenleafs, provideleaf=False):
             choseninterfaceobjectlist = filter(lambda x: x.number in intsinglelist, finalsortedinterfacelist)
             return choseninterfaceobjectlist, chosenleafs
 
-
+def port_channel_location(pcname, apic, cookie):
+    url = """https://{apic}/api/class/pcAggrIf.json?query-target-filter=eq(pcAggrIf.name,"{pcname}")&rsp-subtree=full&rsp-subtree-class=pcRsMbrIfs""".format(apic=apic,pcname=pcname)
+    result = GetResponseData(url, cookie)
+    for pcaggrif in result:
+        pcdn = pcaggrif['pcAggrIf']['attributes']['dn']
+        pcsplit = pcdn.split('/')
+        pcdn_pod = pcsplit[1]
+        pcdn_node = pcsplit[2]
+        #pcdn_pcnum = pcsplit[4]
+        nodelocation = '{}, {}'.format(pcdn_pod,pcdn_node)
+        #print('pcnum {}'.format(pcdn_pcnum))
+        if pcaggrif['pcAggrIf']['children']:
+            interfacelist = []
+            for child in pcaggrif['pcAggrIf']['children']:
+                childtdn = child['pcRsMbrIfs']['attributes']['tDn']
+                pcaggrif_begin = childtdn.find('[')
+                pcaggrif_end = childtdn.find(']')
+                pcinterface = childtdn[pcaggrif_begin+1:pcaggrif_end]
+                interfacelist.append(pcinterface)
+        interfacelist.sort()
+    return nodelocation, interfacelist
 
 class pcObject():
     def __init__(self, name=None, dn=None, number=None):

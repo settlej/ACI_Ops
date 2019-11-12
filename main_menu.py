@@ -23,6 +23,8 @@ import interfaces.interfacecounters as showinterface
 import interfaces.switch_port_view as switch_port_view
 import interfaces.switchpreviewutil as switchpreviewutil
 import interfaces.clonevpcanddeploy as clonevpcanddeploy
+import interfaces.portchannel_to_phy_interfaces as portchannel_to_phy_interfaces
+import information.switchandapicinfo as switchandapicinfo
 import faults_and_logs.new_important_faults as fault_summary
 import faults_and_logs.most_recent_port_down as recent_port_down
 import faults_and_logs.most_recent_fault_changes as most_recent_fault_changes
@@ -373,6 +375,23 @@ def main():
                     print('\nExit to Main menu\n')
                     keyinterrupt = True
                     continue
+            elif chosen == '68':
+                try:
+                    switchandapicinfo.main(apic,cookie)
+                    keyinterrupt = False
+                except KeyboardInterrupt as k:
+                    print('\nExit to Main menu\n')
+                    keyinterrupt = True
+                    continue
+            elif chosen == '69':
+                try:
+                    portchannel_to_phy_interfaces.main(apic,cookie)
+                    keyinterrupt = False
+                except KeyboardInterrupt as k:
+                    print('\nExit to Main menu\n')
+                    keyinterrupt = True
+                    continue
+
             elif chosen == '6':
                 try:
                     switch_port_view.main(apic,cookie)
