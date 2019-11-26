@@ -78,22 +78,16 @@ def main(import_apic,import_cookie):
         selection = interface_menu()
         if selection == '1':
             interfacelist = port_channel_selection(allpclist)
-            url = """https://{apic}/api/class/pcAggrIf.json?query-target-filter=eq(pcAggrIf.name,"{pcname}")&rsp-subtree=full&rsp-subtree-class=pcRsMbrIfs""".format(apic=apic,pcname=interfacelist[0].name)
-            result = GetResponseData(url, cookie)
-            for pcaggrif in result:
-                print(pcaggrif['pcAggrIf']['attributes']['dn'])
-                if pcaggrif['pcAggrIf']['children']:
-                    for child in pcaggrif['pcAggrIf']['children']:
-                        print('\t' + child['pcRsMbrIfs']['attributes']['tDn'])
+            all_locations= port_channel_location(interfacelist[0].name,apic,cookie)
+            print(all_locations)
             custom_raw_input('Press enter...')
         elif selection == '2':
             interfacelist = port_channel_selection(allvpclist)
-               #     remove_per_interface(interfacelist, apic, cookie)
-            #url = """https://{apic}/api/class/pcAggrIf.json?query-target-filter=eq(pcAggrIf.name,"{pcname}")&rsp-subtree=full&rsp-subtree-class=pcRsMbrIfs""".format(apic=apic,pcname=interfacelist[0].name)
-            #result = GetResponseData(url, cookie)
-            nodelocation, interfacelist = port_channel_location(interfacelist[0].name,apic,cookie)
-            print(nodelocation, interfacelist)
-            import pdb; pdb.set_trace()
+            all_locations = port_channel_location(interfacelist[0].name,apic,cookie)
+            print(all_locations)
+            custom_raw_input('Press enter...')
+
+            #import pdb; pdb.set_trace()
 
 
 

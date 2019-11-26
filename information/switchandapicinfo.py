@@ -67,28 +67,40 @@ def main(import_apic,import_cookie):
         global cookie
         cookie = import_cookie
         apic = import_apic
-        cnodelist = []
+        #cnodelist = []
         nodethreadlist = []
         urllist = []
+        cnodedict = {}
         q = Queue.Queue()
         url = """https://{apic}/api/class/fabricNode.json""".format(apic=apic)
         result = GetResponseData(url, cookie)
         for node in sorted(result, key=lambda a: int(a['fabricNode']['attributes']['id']) ):
             print(node['fabricNode']['attributes']['id'])
-            cnodelist.append(customFabricNode(node['fabricNode']['attributes']))
+            cnodedict[node['fabricNode']['attributes']['id']] = customFabricNode(node['fabricNode']['attributes'])
        #url = """https://{apic}/api/node/class/topSystem.json""".format(apic=apic)
-        for u in cnodelist:
-            if u.fabricSt == 'active' or u.role == 'controller':
-                urllist.append("""https://{apic}/api/class/topSystem.json?query-target-filter=eq(topSystem.id,"{nodeid}")""".format(apic=apic,nodeid=u.id))
+        for uu in cnodedict.values():
+            #import pdb; pdb.set_trace()
+            if uu.fabricSt == 'active' or uu.role == 'controller':
+                urllist.append("""https://{apic}/api/class/topSystem.json?query-target-filter=eq(topSystem.id,"{nodeid}")""".format(apic=apic,nodeid=uu.id))
         for url in urllist:
             t = threading.Thread(target=requestnodeinfo, args=[url,cookie,q])
             t.start()
             nodethreadlist.append(t)
         for x in nodethreadlist:
             x.join()
-            nodeid = q.get()
-            print(nodeid)
-        
+            nodetopsystem = q.get()
+            #import pdb; pdb.set_trace()
+            #print(nodetopsystem[0]['topSystem']['attributes']['id'])
+            #import pdb; pdb.set_trace()
+            try:
+                cnodedict[nodetopsystem[0]['topSystem']['attributes']['id']].__dict__.update(**nodetopsystem[0]['topSystem']['attributes'])
+            except:
+                import pdb; pdb.set_trace()
+                #import pdb; pdb.set_trace()
+        for x,y in cnodedict.items():
+            print(x,y)
+            print(y.__dict__)
+            print('\n\n')
 
 
      #   result = GetResponseData(url, cookie)

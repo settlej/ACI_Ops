@@ -427,9 +427,14 @@ def physical_interface_selection(apic, cookie, chosenleafs, provideleaf=False):
             choseninterfaceobjectlist = filter(lambda x: x.number in intsinglelist, finalsortedinterfacelist)
             return choseninterfaceobjectlist, chosenleafs
 
-def port_channel_location(pcname, apic, cookie):
-    url = """https://{apic}/api/class/pcAggrIf.json?query-target-filter=eq(pcAggrIf.name,"{pcname}")&rsp-subtree=full&rsp-subtree-class=pcRsMbrIfs""".format(apic=apic,pcname=pcname)
-    result = GetResponseData(url, cookie)
+def port_channel_location(pcname, apic, cookie, pctype='vpc'):
+    if pctype == 'vpc':
+        url = """https://{apic}/api/class/pcAggrIf.json?query-target-filter=eq(pcAggrIf.name,"{pcname}")&rsp-subtree=full&rsp-subtree-class=pcRsMbrIfs""".format(apic=apic,pcname=pcname)
+        result = GetResponseData(url, cookie)
+    else:
+        url = """https://{apic}/api/class/pcAggrIf.json?query-target-filter=eq(pcAggrIf.name,"{pcname}")&rsp-subtree=full&rsp-subtree-class=pcRsMbrIfs""".format(apic=apic,pcname=pcname)
+        result = GetResponseData(url, cookie)
+    all_locationlist = []
     for pcaggrif in result:
         pcdn = pcaggrif['pcAggrIf']['attributes']['dn']
         pcsplit = pcdn.split('/')
@@ -447,7 +452,9 @@ def port_channel_location(pcname, apic, cookie):
                 pcinterface = childtdn[pcaggrif_begin+1:pcaggrif_end]
                 interfacelist.append(pcinterface)
         interfacelist.sort()
-    return nodelocation, interfacelist
+        all_locationlist.append((nodelocation, interfacelist))
+    #import pdb; pdb.set_trace()
+    return all_locationlist
 
 class pcObject():
     def __init__(self, name=None, dn=None, number=None):

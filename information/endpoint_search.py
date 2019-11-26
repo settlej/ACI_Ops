@@ -352,7 +352,7 @@ def display_vm_information(endpointobject, compVm):
 
 def find_and_display_current_location_info(macEP, totalcount, compVm=None):
     dnpath = macEP.fvRsCEpToPathEp.tDn
-    print(dnpath)
+    #print(dnpath)
     interfacename = dnpath[dnpath.find('[')+1:dnpath.find(']')]
     dnpath = readable_dnpath(dnpath)
     print('\n')
@@ -363,22 +363,29 @@ def find_and_display_current_location_info(macEP, totalcount, compVm=None):
         print("{:26}\t{:15}\t{:18}\t{:20}\t{}".format("Date", "encap-vlan", "Ip Address", "Mac Address", "Path"))
         print('-'*115)
         print("{:26}\t{:15}\t{:18}\t{:20}\t{}".format("Current", macEP.encap, macEP.ip, macEP.mac, dnpath))
-        if 'pc-' in dnpath:
-            nodelocation, interfacelist = port_channel_location(interfacename,apic=apic, cookie=cookie)
-            print("{:26}\t{:15}\t{:18}\t{:20}\tInterfaces = {}".format('','','','',', '.join(interfacelist)))
         #import pdb; pdb.set_trace()
         display_vm_information(macEP, compVm)
+        if 'pc-' in dnpath:
+            all_locations = port_channel_location(interfacename,apic=apic, cookie=cookie)
+            print("{:96}{}".format('','Port-Channel Locaiton:'))
+            print('{:96}{}'.format('','-'*20))
+            for locations in sorted(all_locations):
+                print("{:26}\t{:15}\t\t{:38}\t{} {}".format('','','',', '.join(locations[:1]), ', '.join(locations[1])))
     else:
         for ipadd in macEP.fvIplist:
             print("{:^115}".format('EPG = \x1b[1;33;40m ' + macEP.epg + ' \x1b[0m\n'))
             print("{:26}\t{:15}\t{:18}\t{:20}\t{}".format("Date", "encap-vlan", "Ip Address", "Mac Address", "Path"))
             print('-'*115)
             print("{:26}\t{:15}\t{:18}\t{:20}\t{}".format("Current", macEP.encap, ipadd.addr, macEP.mac, dnpath))
-            if 'pc-' in dnpath:
-                nodelocation, interfacelist = port_channel_location(interfacename,apic=apic, cookie=cookie)
-                print("{:26}\t{:15}\t{:18}\t{:20}\tInterfaces = {}".format('','','','',', '.join(interfacelist)))
-            #import pdb; pdb.set_trace()
             display_vm_information(macEP, compVm)
+            if 'pc-' in dnpath:
+                all_locations = port_channel_location(interfacename,apic=apic, cookie=cookie)
+                #import pdb; pdb.set_trace()
+                print("{:96}{}".format('','Port-Channel Locaiton:'))
+                print('{:96}{}'.format('','-'*20))
+                for locations in sorted(all_locations):
+                    print("{:26}\t{:15}\t\t{:38}\t{} [{}]".format('','','',', '.join(locations[:1]), ', '.join(locations[1])))
+                            #import pdb; pdb.set_trace()
 
 
 
