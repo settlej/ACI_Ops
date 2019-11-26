@@ -497,7 +497,8 @@ def mac_path_function(mac, compVM=None):
 
 def ip_path_function(ipaddr):
     totalcount2 = 1
-    url = """https://{apic}/api/node/class/fvCEp.json?rsp-subtree=full&rsp-subtree-include=required&rsp-subtree-filter=eq(fvIp.addr,"{}")""".format(ipaddr,apic=apic)
+    url = """https://{apic}/api/node/class/fvIp.json?query-target-filter=eq(fvIp.addr,"{ipaddr}")""".format(ipaddr=ipaddr,apic=apic)
+#    url = """https://{apic}/api/node/class/fvCEp.json?rsp-subtree=full&rsp-subtree-include=required&rsp-subtree-filter=eq(fvIp.addr,"{}")""".format(ipaddr,apic=apic)
     logger.info(url)
     result, totalcount = GetResponseData(url, cookie, return_count=True)
     if totalcount == '0':
@@ -511,6 +512,11 @@ def ip_path_function(ipaddr):
         print('\x1b[41;1mNo "LIVE Endpoint" IP found...check event history\x1b[0m\n')
         print('\n')
     else:
+        #print(result)
+        #print(result[0]['fvIp']['attributes']['dn'].split('/')[4].replace('cep-',''))
+        #import pdb; pdb.set_trace()
+        url = """https://{apic}/api/node/class/fvCEp.json?query-target-filter=eq(fvCEp.mac,"{macaddr}")&rsp-subtree=full&rsp-subtree-include=required""".format(apic=apic,macaddr=result[0]['fvIp']['attributes']['dn'].split('/')[4].replace('cep-',''))
+        result, totalcount = GetResponseData(url, cookie, return_count=True) 
         fvCEplist = gather_fvCEp_fullinfo(result)
         for fvCEp in fvCEplist:
             url = """https://{apic}/api/node/mo/{}.json?rsp-subtree=full&target-subtree-class=fvCEp,fvRsCEpToPathEp,fvRsHyper,fvRsToNic,fvRsToVm""".format(fvCEp.dn,apic=apic)
