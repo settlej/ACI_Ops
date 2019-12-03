@@ -24,6 +24,7 @@ import interfaces.switch_port_view as switch_port_view
 import interfaces.switchpreviewutil as switchpreviewutil
 import interfaces.clonevpcanddeploy as clonevpcanddeploy
 import interfaces.portchannel_to_phy_interfaces as portchannel_to_phy_interfaces
+import interfaces.show_epgs_to_all_interfaces as show_epgs_to_all_interfaces
 import information.switchandapicinfo as switchandapicinfo
 import faults_and_logs.new_important_faults as fault_summary
 import faults_and_logs.most_recent_port_down as recent_port_down
@@ -346,6 +347,14 @@ def main():
             elif chosen == '5':
                 try:
                     showinterface.main(apic,cookie)
+                    keyinterrupt = False
+                except KeyboardInterrupt as k:
+                    print('\nExit to Main menu\n')
+                    keyinterrupt = True
+                    continue
+            elif chosen == '51':
+                try:
+                    show_epgs_to_all_interfaces.main(apic,cookie)
                     keyinterrupt = False
                 except KeyboardInterrupt as k:
                     print('\nExit to Main menu\n')
