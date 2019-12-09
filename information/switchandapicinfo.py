@@ -75,7 +75,7 @@ def main(import_apic,import_cookie):
         url = """https://{apic}/api/class/fabricNode.json""".format(apic=apic)
         result = GetResponseData(url, cookie)
         for node in sorted(result, key=lambda a: int(a['fabricNode']['attributes']['id']) ):
-            print(node['fabricNode']['attributes']['id'])
+            #print(node['fabricNode']['attributes']['id'])
             cnodedict[node['fabricNode']['attributes']['id']] = customFabricNode(node['fabricNode']['attributes'])
        #url = """https://{apic}/api/node/class/topSystem.json""".format(apic=apic)
         for uu in cnodedict.values():
@@ -97,16 +97,17 @@ def main(import_apic,import_cookie):
             except:
                 import pdb; pdb.set_trace()
                 #import pdb; pdb.set_trace()
-        for x,y in cnodedict.items():
-            print(x,y)
-            print(y.__dict__)
-            print('\n\n')
+            xlocation = 6
+            ylocation = 3
+            
+        clear_screen()
+        for x,y in sorted(cnodedict.items(), key=lambda x: (int(x[1].id))):
+            #print(x,y)
+            #print(y.__dict__)
+            #print('\n\n\n\n\n\n')
 
 
      #   result = GetResponseData(url, cookie)
-     #   xlocation = 6
-     #   ylocation = 3
-     #   clear_screen()
      #   cnodelist = []
      #   for node in sorted(result, key=lambda a: int(a['topSystem']['attributes']['id']) ):
      #       #if location == 4:
@@ -118,20 +119,26 @@ def main(import_apic,import_cookie):
   #
 #
      #      # print('*' * 133)
-     #      # a = ('{}'.format('\x1b[' + str(ylocation) + ';' + str(xlocation) + 'H' + node['topSystem']['attributes']['podId'] + '\x1b[0m'))
-           # print(a)
-           # print('{}'.format('\x1b[' + str(ylocation+1) + ';' + str(xlocation) + 'H' + node['topSystem']['attributes']['id'] + '\x1b[0m'))
-           # print('{}'.format('\x1b[' + str(ylocation+2) + ';' + str(xlocation) + 'H' + node['topSystem']['attributes']['systemUpTime'] + '\x1b[0m'))
-           # print('{}'.format('\x1b[' + str(ylocation+3) + ';' + str(xlocation) + 'H' + node['topSystem']['attributes']['currentTime'] + '\x1b[0m'))
-           # print('{}'.format('\x1b[' + str(ylocation+4) + ';' + str(xlocation) + 'H' + node['topSystem']['attributes']['inbMgmtAddr'] + '\x1b[0m'))
-           # print('{}'.format('\x1b[' + str(ylocation+5) + ';' + str(xlocation) + 'H' + node['topSystem']['attributes']['oobMgmtAddr'] + '\x1b[0m'))
-           # print('{}'.format('\x1b[' + str(ylocation+6) + ';' + str(xlocation) + 'H' + node['topSystem']['attributes']['role'] + '\x1b[0m'))
-           # print('{}'.format('\x1b[' + str(ylocation+7) + ';' + str(xlocation) + 'H' + node['topSystem']['attributes']['serial'] + '\x1b[0m'))
-           # print('{}'.format('\x1b[' + str(ylocation+8) + ';' + str(xlocation) + 'H' + node['topSystem']['attributes']['version'] + '\x1b[0m'))
-           # print('{}'.format('\x1b[' + str(ylocation+9) + ';' + str(xlocation) + 'H' + node['topSystem']['attributes']['status'] + '\x1b[0m'))
-           # xlocation += 33
-           # if xlocation >= 133:
-           #     ylocation += 12
-           #     xlocation = 6
+            if y.fabricSt == 'active' or y.role == 'controller':
+                print('{}'.format('\x1b[' + str(ylocation+1) + ';' + str(xlocation) + 'H' + y.name + '\x1b[0m'))
+                print('{}'.format('\x1b[' + str(ylocation+2) + ';' + str(xlocation) + 'H' + y.fabricSt + '\x1b[0m'))
+               # print(a)
+                print('{}'.format('\x1b[' + str(ylocation+3) + ';' + str(xlocation) + 'H' + y.inbMgmtAddr + '\x1b[0m'))
+                print('{}'.format('\x1b[' + str(ylocation+4) + ';' + str(xlocation) + 'H' + y.oobMgmtAddr + '\x1b[0m'))
+                print('{}'.format('\x1b[' + str(ylocation+5) + ';' + str(xlocation) + 'H' + y.role + '\x1b[0m'))
+                print('{}'.format('\x1b[' + str(ylocation+6) + ';' + str(xlocation) + 'H' + y.serial + '\x1b[0m'))
+                print('{}'.format('\x1b[' + str(ylocation+7) + ';' + str(xlocation) + 'H' + y.version + '\x1b[0m'))
+                print('{}'.format('\x1b[' + str(ylocation+8) + ';' + str(xlocation) + 'H' + y.systemUpTime + '\x1b[0m'))
+                print('{}'.format('\x1b[' + str(ylocation+9) + ';' + str(xlocation) + 'H' + y.currentTime + '\x1b[0m'))
+            else:
+                print('{}'.format('\x1b[' + str(ylocation+1) + ';' + str(xlocation) + 'H' + y.name + '\x1b[0m'))
+                print('{}'.format('\x1b[' + str(ylocation+2) + ';' + str(xlocation) + 'H' + y.fabricSt + '\x1b[0m'))
+                print('{}'.format('\x1b[' + str(ylocation+3) + ';' + str(xlocation) + 'H' + y.serial + '\x1b[0m'))
+                print('{}'.format('\x1b[' + str(ylocation+4) + ';' + str(xlocation) + 'H' + y.role + '\x1b[0m'))
+
+            xlocation += 33
+            if xlocation >= 133:
+                ylocation += 12
+                xlocation = 6
         break
     custom_raw_input('\nPress enter to continue...')

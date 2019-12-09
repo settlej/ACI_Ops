@@ -138,7 +138,7 @@ def interface_epg_pull(import_apic,import_cookie, selectedleaf, interfacelist):
         #print(result[0]['l1PhysIf']['attributes']['id'])
         types, epgs = displayepgs(result)
         interfacedictwithegps[result[0]['l1PhysIf']['attributes']['id']] = (types, epgs)
-    for interface in sorted(interfacedictwithegps, key=lambda x: int(x.split('/')[1])):
+    for interface in sorted(interfacedictwithegps, key=lambda x: (x.split('/')[0],int(x.split('/')[-1]))):
         print(interface)
         #import pdb; pdb.set_trace()
        # if interfacedictwithegps[interface][1]
@@ -147,7 +147,7 @@ def interface_epg_pull(import_apic,import_cookie, selectedleaf, interfacelist):
             print('\t{} {}'.format(x,y))
         else:
             print('\t{}'.format(x))
-            for yy in y:
+            for yy in sorted(y):
                 print('\t\t{} | {} | {}'.format(yy[0],yy[1],yy[2]))
                     #print('\t{}'.format(y[0], y))
     
