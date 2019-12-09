@@ -46,13 +46,29 @@ logger.addHandler(c_handler)
 logger.addHandler(f_handler)
 
 
+class interfaceProperties():
+    def __init__(self, name, etype, epgs):
+        self.name = name
+        self.etype = etype
+        self.epgs = epgs
+    def __repr__(self):
+        return self.name
+
+class epgobj():
+    def __init__(self, epg):
+        self.epg = epg
+        self.encapvlans = []
+        self.internalvlans = []
+    def __repr__(self):
+        return self.epg
+
 def main(import_apic,import_cookie):
     global apic
     global cookie
     cookie = import_cookie
     apic = import_apic
     clear_screen()
-    location_banner('Show interface counters and EPGs')
+    location_banner('Show EPGs to interface')
     while True:
 
         all_leaflist = get_All_leafs(apic,cookie)
@@ -74,8 +90,53 @@ def main(import_apic,import_cookie):
         result = GetResponseData(url, cookie)
         interfacelist = [x['l1PhysIf']['attributes']['id'] for x in result]
         #import pdb; pdb.set_trace()
-        interface_epg_pull(apic, cookie, leaf, interfacelist)
+        interfacelist = interface_epg_pull(apic, cookie, leaf, interfacelist)
+        #import pdb; pdb.set_trace()
+        vlanlist = pull_vlan_info_for_leaf(apic, cookie, leaf)
+        #mport pdb; pdb.set_trace()
+        for interface in interfacelist:
+            for vlan in vlanlist:
+                #import pdb; pdb.set_trace()
+                if interface.epgs != []:
+                    for epg in interface.epgs:
+                        if epg.epg == vlan.epgDn:
+                            #import pdb; pdb.set_trace()
+                            epg.encapvlans.append(vlan.encap)
+                            epg.internalvlans.append(vlan.fabEncap)
+        import pdb; pdb.set_trace()
+             #  x,y = interfacelist
+             #  if y != None:
+             #  #import pdb; pdb.set_trace()
+             #      if y == vlan.epgDn:
+             #          pass
+                    #for z in y:
+                    #   if z == vlan.epgDn:
+                    #        print('yes')
 
+        for interface in sorted(interfacedictwithegps, key=lambda x: (x.split('/')[0],int(x.split('/')[-1]))):
+            print(interface)
+            #import pdb; pdb.set_trace()
+           # if interfacedictwithegps[interface][1]
+            x,y = interfacedictwithegps[interface]
+            if y == None:
+                print('\t{} {}'.format(x,y))
+            else:
+                #print('\t{}'.format(x))
+                for yy in sorted(y):
+                    pass
+                    #print('\t\t{} | {} | {}'.format(yy[0],yy[1],yy[2]))
+    
+
+
+class vlanCktEp():
+    def __init__(self, **kwargs):
+        self.__dict__.update(kwargs)
+
+def pull_vlan_info_for_leaf(apic, cookie, leaf):
+    url = """https://{apic}/api/node/class/topology/pod-1/node-{leaf}/vlanCktEp.json""".format(apic=apic, leaf=leaf[0])
+    result = GetResponseData(url, cookie)
+    vlanlist = [vlanCktEp(**x['vlanCktEp']['attributes']) for x in result]
+    return vlanlist
 
 def pull_each_interface(leaf, interface, apic, q):
     #url = """https://{apic}/api/node-{leaf}/class/l1PhysIf.json""".format(leaf=leaf,apic=apic)
@@ -86,7 +147,7 @@ def pull_each_interface(leaf, interface, apic, q):
     #print(interface)
     epgresult = GetResponseData(epgurl, cookie)
     #print(epgresult)
-    logger.info(epgresult)
+    logger.debug(epgresult)
     #result = GetResponseData(url, cookie)
     logger.info('complete')
     q.put(epgresult)
@@ -104,13 +165,15 @@ def displayepgs(result):
                     return 'redirect', None
                     #print(epgs['pconsResourceCtx']['attributes']['ctxDn'])
                 else:
-                    epgpath = epgs['pconsResourceCtx']['attributes']['ctxDn'].split('/')
+                    epgpath = epgs['pconsResourceCtx']['attributes']['ctxDn']#.split('/')
                 #print(epgpath)
-                    tenant = epgpath[1][3:]
-                    app = epgpath[2][3:]
-                    epg = epgpath[3][4:]
-                    interfaceepglist.append((tenant,app,epg))
-            return 'L2', (interfaceepglist)
+                   # tenant = epgpath[1][3:]
+                   # app = epgpath[2][3:]
+                   # epg = epgpath[3][4:]
+                interfaceepglist.append(epgpath)
+            #import pdb; pdb.set_trace()
+            #return 'L2', (interfaceepglist)
+            return 'L2', interfaceepglist
                     #print('\t{:10}{:15}{}'.format(tenant,app,epg))
     else:
         return 'L2', None
@@ -123,7 +186,7 @@ def interface_epg_pull(import_apic,import_cookie, selectedleaf, interfacelist):
     q = Queue.Queue()
     #leafs = leaf_selection(get_All_leafs(apic, cookie))
     threadlist = []
-    leafdictwithresults = []
+    leafinterfacelist = []
     interfacedictwithegps = {}
     for interface in interfacelist:
         t = threading.Thread(target=pull_each_interface, args=[leaf[0], interface, apic, q])
@@ -137,18 +200,18 @@ def interface_epg_pull(import_apic,import_cookie, selectedleaf, interfacelist):
         #print('\n')
         #print(result[0]['l1PhysIf']['attributes']['id'])
         types, epgs = displayepgs(result)
-        interfacedictwithegps[result[0]['l1PhysIf']['attributes']['id']] = (types, epgs)
-    for interface in sorted(interfacedictwithegps, key=lambda x: (x.split('/')[0],int(x.split('/')[-1]))):
-        print(interface)
-        #import pdb; pdb.set_trace()
-       # if interfacedictwithegps[interface][1]
-        x,y = interfacedictwithegps[interface]
-        if y == None:
-            print('\t{} {}'.format(x,y))
+        #print(epgs)
+        if epgs == None:
+            ee = interfaceProperties(name=result[0]['l1PhysIf']['attributes']['id'], etype=types, epgs=[])
         else:
-            print('\t{}'.format(x))
-            for yy in sorted(y):
-                print('\t\t{} | {} | {}'.format(yy[0],yy[1],yy[2]))
+            epgslist = [epgobj(x) for x in epgs]
+            ee = interfaceProperties(name=result[0]['l1PhysIf']['attributes']['id'], etype=types, epgs=epgslist)
+        leafinterfacelist.append(ee)
+        #print(ee.__dict__)
+        #interfacedictwithegps[result[0]['l1PhysIf']['attributes']['id']] = (types, epgs)
+
+    return leafinterfacelist
+
                     #print('\t{}'.format(y[0], y))
     
        # print('\t{}'.format(interfacedictwithegps[interface]))
