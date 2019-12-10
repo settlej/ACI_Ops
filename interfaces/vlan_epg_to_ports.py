@@ -128,6 +128,11 @@ def main(import_apic,import_cookie):
 class vlanCktEp():
     def __init__(self, **kwargs):
         self.__dict__.update(kwargs)
+    def __repr__(self):
+        if self.name != '':
+            return self.name
+        else:
+            return self.epgDn
 
 def pull_vlan_info_for_leaf(apic, cookie, leaf):
     url = """https://{apic}/api/node/class/topology/pod-1/node-{leaf}/vlanCktEp.json""".format(apic=apic, leaf=leaf[0])
@@ -180,6 +185,10 @@ def pull_each_vlan(apic, leaf, vlan, q):
     result = GetResponseData(url, cookie)
     q.put((vlan,result))
 
+class interfacetoEpg():
+    def __init__(self, interface):
+        self.vlan = []
+        self.interface = interface
 
 def interface_epg_pull(import_apic,import_cookie, epgvlanlist, selectedleaf):
     leaf = selectedleaf
@@ -198,11 +207,43 @@ def interface_epg_pull(import_apic,import_cookie, epgvlanlist, selectedleaf):
     for thread in threadlist:
         thread.join()
         resultlist.append(q.get())
+    allinterfacesfound = set()
+    interfaces_per_vlan = []
+    vlanwith_allinterfacesfound = []
     for result in resultlist:
-        print(result[0].epgDn)
         for x in result[1]:
             if x.get('l2RsPathDomAtt'):
-                print(x['l2RsPathDomAtt']['attributes']['tDn'])
+                allinterfacesfound.add(x['l2RsPathDomAtt']['attributes']['tDn'])
+                interfaces_per_vlan.append(x['l2RsPathDomAtt']['attributes']['tDn'])
+        vlanwith_allinterfacesfound.append((result[0], interfaces_per_vlan))
+        interfaces_per_vlan = []
+    interfacewith_allvlans = []
+    addvlans = []
+    for z in allinterfacesfound:
+        for x in vlanwith_allinterfacesfound:
+            #print(z,x)
+           # print('\n\n')
+            if z in x[1]:
+                addvlans.append(x[0])
+        interfacewith_allvlans.append((z, addvlans))
+        addvlans = []
+    for k in interfacewith_allvlans:
+        print(k[0])
+        for m in k[1]:
+            print(m, m.fabEncap, m.pcTag, m.encap)
+        print('\n\n')
+    #allinterfacesfound = list(allinterfacesfound)
+    import pdb; pdb.set_trace()
+   # for x in allinterfacesfound:
+   #     print(x, resultlist)
+       # for v in resultlist:
+       #     #print(x, v[1])
+       #     if x in v[1].dn:
+       #         print(x, v[0])
+    #print(result[0].epgDn)
+       # for x in result[1]:
+       #     if x.get('l2RsPathDomAtt'):
+       #         print(x['l2RsPathDomAtt']['attributes']['tDn'])
         #print('\n')
         #print(result[0]['l1PhysIf']['attributes']['id'])
      #   types, epgs = displayepgs(result)
