@@ -99,8 +99,8 @@ def main(import_apic,import_cookie):
                 #import pdb; pdb.set_trace()
                 if interface.epgs != []:
                     for epg in interface.epgs:
-                        if epg.epg == vlan.epgDn:
-                            #import pdb; pdb.set_trace()
+                        if epg.name == vlan.epgDn:
+                            import pdb; pdb.set_trace()
                             epg.encapvlans.append(vlan.encap)
                             epg.internalvlans.append(vlan.fabEncap)
         import pdb; pdb.set_trace()

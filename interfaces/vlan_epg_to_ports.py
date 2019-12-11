@@ -122,7 +122,7 @@ def main(import_apic,import_cookie):
      #           for yy in sorted(y):
      #               pass
      #               #print('\t\t{} | {} | {}'.format(yy[0],yy[1],yy[2]))
-    
+        custom_raw_input('Continue...')
 
 
 class vlanCktEp():
@@ -227,13 +227,32 @@ def interface_epg_pull(apic,cookie, epgvlanlist, selectedleaf):
                 addvlans.append(x[0])
         interfacewith_allvlans.append((z, addvlans))
         addvlans = []
-    for k in sorted(interfacewith_allvlans, key=lambda x: x[0]):
-        print(k[0])
+    #import pdb; pdb.set_trace()
+    eth_interfaces = [x for x in interfacewith_allvlans if x[0].count('/') != 7 and 'eth' in x[0]]
+    fex_interfaces = [x for x in interfacewith_allvlans if x[0].count('/') == 7 and 'eth' in x[0]]
+    po_interfaces = [x for x in interfacewith_allvlans if not 'eth' in x[0]]
+    for k in sorted(eth_interfaces, key=lambda x: int(x[0].split('/')[-1][:-1])):
+        leftlocation = k[0].find('[')
+        print(k[0][leftlocation:])
         for m in k[1]:
-            print(m, m.fabEncap, m.pcTag, m.encap)
-        print('\n\n')
+            print('\t\t{:10}  | {}'.format(m.encap, m))
+        print('\r')
+    for k in sorted(fex_interfaces, key=lambda x: int(x[0].split('/')[-1][:-1])):
+        leftlocation = k[0].find('[')
+        print(k[0][leftlocation:])
+        for m in k[1]:
+            print('\t\t{:10}  | {}'.format(m.encap, m))
+        print('\r')
+
+
+    for k in sorted(po_interfaces, key=lambda x: int(x[0].split('[po')[-1][:-1])):
+        leftlocation = k[0].find('[')
+        print(k[0][leftlocation:])
+        for m in k[1]:
+            print('\t{:10}  | {}'.format( m.encap, m))
+        print('\r')
     #allinterfacesfound = list(allinterfacesfound)
-    import pdb; pdb.set_trace()
+   # import pdb; pdb.set_trace()
    # for x in allinterfacesfound:
    #     print(x, resultlist)
        # for v in resultlist:

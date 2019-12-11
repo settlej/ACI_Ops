@@ -188,7 +188,7 @@ def main(import_apic,import_cookie):
             if shortdn in x.epgs:
                # print('yes')
                 ce.bd = x
-    for ce in sorted(ce_list, key=lambda x: (x.bd, int(x.ip.split('.')[0]),int(x.ip.split('.')[1]),int(x.ip.split('.')[2]),int(x.ip.split('.')[3]) )):
+    for ce in sorted(ce_list, key=lambda x: (x.bd, int(x.ip.split('.')[0]),int(x.ip.split('.')[1]),int(x.ip.split('.')[2]),int(x.ip.split('.')[3]), x.dn )):
         if ce.bd == bdlist[int(desiredbd)-1]:
             print('{} | {}, {} | {} | {}'.format(ce, ce.ip, ce.fvIPlist, ce.encap, ce.bd))
     
