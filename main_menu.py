@@ -26,6 +26,7 @@ import interfaces.clonevpcanddeploy as clonevpcanddeploy
 import interfaces.portchannel_to_phy_interfaces as portchannel_to_phy_interfaces
 import interfaces.vlan_epg_to_ports as vlan_epg_to_ports
 import information.switchandapicinfo as switchandapicinfo
+import information.endpoint_per_leaf as endpoint_per_leaf
 import faults_and_logs.new_important_faults as fault_summary
 import faults_and_logs.most_recent_port_down as recent_port_down
 import faults_and_logs.most_recent_fault_changes as most_recent_fault_changes
@@ -355,6 +356,14 @@ def main():
             elif chosen == '51':
                 try:
                     vlan_epg_to_ports.main(apic,cookie)
+                    keyinterrupt = False
+                except KeyboardInterrupt as k:
+                    print('\nExit to Main menu\n')
+                    keyinterrupt = True
+                    continue
+            elif chosen == '52':
+                try:
+                    endpoint_per_leaf.main(apic,cookie)
                     keyinterrupt = False
                 except KeyboardInterrupt as k:
                     print('\nExit to Main menu\n')

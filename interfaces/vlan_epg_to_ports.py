@@ -190,7 +190,7 @@ class interfacetoEpg():
         self.vlan = []
         self.interface = interface
 
-def interface_epg_pull(import_apic,import_cookie, epgvlanlist, selectedleaf):
+def interface_epg_pull(apic,cookie, epgvlanlist, selectedleaf):
     leaf = selectedleaf
     #str(chosendestinterfaceobject[0]).replace('paths','nodes')
     #clear_screen()
@@ -227,7 +227,7 @@ def interface_epg_pull(import_apic,import_cookie, epgvlanlist, selectedleaf):
                 addvlans.append(x[0])
         interfacewith_allvlans.append((z, addvlans))
         addvlans = []
-    for k in interfacewith_allvlans:
+    for k in sorted(interfacewith_allvlans, key=lambda x: x[0]):
         print(k[0])
         for m in k[1]:
             print(m, m.fabEncap, m.pcTag, m.encap)
