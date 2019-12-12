@@ -24,7 +24,7 @@ import interfaces.switch_port_view as switch_port_view
 import interfaces.switchpreviewutil as switchpreviewutil
 import interfaces.clonevpcanddeploy as clonevpcanddeploy
 import interfaces.portchannel_to_phy_interfaces as portchannel_to_phy_interfaces
-import interfaces.vlan_epg_to_ports as vlan_epg_to_ports
+import interfaces.short_vlan_epg_to_ports as short_vlan_epg_to_ports
 import information.switchandapicinfo as switchandapicinfo
 import information.endpoint_per_leaf as endpoint_per_leaf
 import faults_and_logs.new_important_faults as fault_summary
@@ -355,7 +355,7 @@ def main():
                     continue
             elif chosen == '51':
                 try:
-                    vlan_epg_to_ports.main(apic,cookie)
+                    short_vlan_epg_to_ports.main(apic,cookie)
                     keyinterrupt = False
                 except KeyboardInterrupt as k:
                     print('\nExit to Main menu\n')
