@@ -112,7 +112,7 @@ def refreshToken(apic,icookie):
 #############################################################################################################################################
 
 
-def GetRequest(url, icookie):
+def GetRequest(url, icookie, timeout=4):
     # Function to Perform HTTP Get REST calls and return server recieved data in an http object
     method = "GET"
     # icookie comes from the GetResponseData fuction that references 'cookie' which is a global variable from reading /.aci/.sessions/.token
@@ -124,12 +124,15 @@ def GetRequest(url, icookie):
     request.add_header("cookie", cookies)
     request.add_header("Content-Type", "application/json")
     request.add_header('Accept', 'application/json')
-    return urllib2.urlopen(request, context=ssl._create_unverified_context())
+    return urllib2.urlopen(request, context=ssl._create_unverified_context(), timeout=int(timeout))
 
-def GetResponseData(url, cookie, return_count=False):
+def GetResponseData(url, cookie, timeout=0, return_count=False):
     # Fuction to take JSON and load it into Python Dictionary format and present all JSON inside the 'imdata' level
     # Perform a GetRequest function to perform a GET REST call to server and provide response data
-    response = GetRequest(url, cookie) # here for this
+    if timeout > 0:
+        response = GetRequest(url, cookie, timeout=int(timeout)) # here for this
+    else:
+        response = GetRequest(url, cookie) # here for this
     # the 'response' is an urllib2 object that needs to be read for JSON data, this loads the JSON to Python Dictionary format
     result = json.loads(response.read()) # here for this
     # return only infomation inside the dictionary under 'imdata'

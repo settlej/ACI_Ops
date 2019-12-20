@@ -58,8 +58,12 @@ class customFabricNode():
         return self.dn
 
 def requestnodeinfo(url, cookie, q):
-    result = GetResponseData(url, cookie)
-    q.put(result)
+    try:
+        result = GetResponseData(url, cookie)
+        q.put(result)
+    except:
+        pass
+        q.put({'error': 'timeout'})
     
 class geolocation():
     def __init__(self,kwargs):
@@ -117,83 +121,110 @@ def main(import_apic,import_cookie):
             t = threading.Thread(target=requestnodeinfo, args=[url,cookie,q])
             t.start()
             nodethreadlist.append(t)
+        api_pull_error = False
+        finalresultlist = []
         for x in nodethreadlist:
             x.join()
             nodetopsystem = q.get()
-            try:
-                cnodedict[nodetopsystem[0]['topSystem']['attributes']['dn'].replace('/sys', '')].__dict__.update(**nodetopsystem[0]['topSystem']['attributes'])
-            except Exception as e:
-                print(e)
+            finalresultlist.append(nodetopsystem)
+        for x in finalresultlist:
             xlocation = 6
             ylocation = 3
+            try:
+                if type(x) == dict and x.get('error') or x == []:
+                    continue
+
+                else:
+                    cnodedict[x[0]['topSystem']['attributes']['dn'].replace('/sys', '')].__dict__.update(**x[0]['topSystem']['attributes'])
+            except Exception as e:
+                print(e)
+                api_pull_error = True
+                import pdb; pdb.set_trace()
         for k,v in cnodedict.items():
             for x in geolist:
-                cnodedict[k].health == 'fully-fit'
+                cnodedict[k].health = 'fully-fit'
                 if x.tDn in v.dn:
                     cnodedict[k].location = x.name
                     break
         unfitlist = []
         for xgroup in finalinfralist:
             for xchild in xgroup:
-                if xchild.health == 'fully-fit':
+                if xchild.health != 'fully-fit':
                     unfitlist.append(xchild)
         unfitlist = list(set(unfitlist))
+        #import pdb; pdb.set_trace()
         if len(unfitlist) > 0:
             for x in cnodedict.values():
                 for fl in unfitlist:
                     #import pdb; pdb.set_trace()
                     #print(x.id, fl.id)
                     if x.id == fl.id:
-                        x.health = 'unfit'
+                        x.health = '\x1b[1;31;40munfit\x1b[0m'
                         break
-
-
-        import pdb; pdb.set_trace()
+        #for x in cnod
+        #import pdb; pdb.set_trace()
         clear_screen()
-        
+        if api_pull_error:
+            print("\n")
+            print("\x1b[0m")
+            print("\x1b[1;31;40m APIC API Rest call didn't respond in an timely matter (usually Leaf going down),\n please wait a 1-15 seconds and try again. (This is a APIC resource problem)\x1b[0m")
+            custom_raw_input('\n Press enter to retry...')
+            import pdb; pdb.set_trace()
+            continue
         for x,y in sorted(cnodedict.items(), key=lambda x: int((re.search(r'node.*\d{1,3}', x[0])).group()[5:])):
             if y.fabricSt == 'active' or y.role == 'controller':
                 try:
                     print('{}'.format('\x1b[' + str(ylocation+1) + ';' + str(xlocation) + 'H' + y.name + '\x1b[0m'))
                     if y.role == 'controller':
-                        print(y.health)
+                        #print(y.health)
                         print('{}'.format('\x1b[' + str(ylocation+2) + ';' + str(xlocation) + 'H' + y.health + '\x1b[0m'))
                         #if hasattr(y, 'location'):
                         #    print('{}'.format('\x1b[' + str(ylocation+3) + ';' + str(xlocation) + 'H' + 'location: ' + str(y.location) + '\x1b[0m'))
                         #else:
                         #    print('{}'.format('\x1b[' + str(ylocation+3) + ';' + str(xlocation) + 'H' + 'location: unknown\x1b[0m'))
-                        print('{}'.format('\x1b[' + str(ylocation+3) + ';' + str(xlocation) + 'Hinb: ' + y.inbMgmtAddr + '\x1b[0m'))
-                        print('{}'.format('\x1b[' + str(ylocation+4) + ';' + str(xlocation) + 'Hoob: ' + y.oobMgmtAddr + '\x1b[0m'))
+                        if hasattr(y, 'inbMgmtAddr'):
+                            print('{}'.format('\x1b[' + str(ylocation+3) + ';' + str(xlocation) + 'Hinb: ' + y.inbMgmtAddr + '\x1b[0m'))
+                        if hasattr(y, 'oobMgmtAddr'):
+                            print('{}'.format('\x1b[' + str(ylocation+4) + ';' + str(xlocation) + 'Hoob: ' + y.oobMgmtAddr + '\x1b[0m'))
                         print('{}'.format('\x1b[' + str(ylocation+5) + ';' + str(xlocation) + 'Htype: ' + y.role + '\x1b[0m'))
                         print('{}'.format('\x1b[' + str(ylocation+6) + ';' + str(xlocation) + 'Hserial: ' + y.serial + '\x1b[0m'))
-                        print('{}'.format('\x1b[' + str(ylocation+7) + ';' + str(xlocation) + 'Hversion: ' + y.version + '\x1b[0m'))
-                        print('{}'.format('\x1b[' + str(ylocation+8) + ';' + str(xlocation) + 'Huptime: ' + y.systemUpTime[:-4] + '\x1b[0m'))
-                        print('{}'.format('\x1b[' + str(ylocation+9) + ';' + str(xlocation) + 'Hdate: ' + y.currentTime[:-6] + '\x1b[0m'))
-                except:
-                    print(y.__dict__)
-                    raw_input('')
-                else:
-                    print('{}'.format('\x1b[' + str(ylocation+2) + ';' + str(xlocation) + 'H' + y.fabricSt + '\x1b[0m'))
-                    if hasattr(y, 'location'):
-                        print('{}'.format('\x1b[' + str(ylocation+3) + ';' + str(xlocation) + 'H' + 'location: ' + str(y.location) + '\x1b[0m'))
+                        if y.version != 'A0':
+                            print('{}'.format('\x1b[' + str(ylocation+7) + ';' + str(xlocation) + 'Hversion: ' + y.version + '\x1b[0m'))
+                        if hasattr(y, 'systemUpTime'):
+                            print('{}'.format('\x1b[' + str(ylocation+8) + ';' + str(xlocation) + 'Huptime: ' + y.systemUpTime[:-4] + '\x1b[0m'))
+                        if hasattr(y, 'currentTime'):
+                            print('{}'.format('\x1b[' + str(ylocation+9) + ';' + str(xlocation) + 'Hdate: ' + y.currentTime[:-10] + '\x1b[0m'))
                     else:
-                        print('{}'.format('\x1b[' + str(ylocation+3) + ';' + str(xlocation) + 'H' + 'location: unknown\x1b[0m'))
-                    print('{}'.format('\x1b[' + str(ylocation+4) + ';' + str(xlocation) + 'Hinb: ' + y.inbMgmtAddr + '\x1b[0m'))
-                    print('{}'.format('\x1b[' + str(ylocation+5) + ';' + str(xlocation) + 'Hoob: ' + y.oobMgmtAddr + '\x1b[0m'))
-                    print('{}'.format('\x1b[' + str(ylocation+6) + ';' + str(xlocation) + 'Htype: ' + y.role + '\x1b[0m'))
-                    print('{}'.format('\x1b[' + str(ylocation+7) + ';' + str(xlocation) + 'Hserial: ' + y.serial + '\x1b[0m'))
-                    print('{}'.format('\x1b[' + str(ylocation+8) + ';' + str(xlocation) + 'Hverison: ' + y.version + '\x1b[0m'))
-                    print('{}'.format('\x1b[' + str(ylocation+9) + ';' + str(xlocation) + 'Huptime: ' + y.systemUpTime[:-4] + '\x1b[0m'))
-                    print('{}'.format('\x1b[' + str(ylocation+10) + ';' + str(xlocation) + 'Hdate: ' + y.currentTime[:-6] + '\x1b[0m'))
+                        print('{}'.format('\x1b[' + str(ylocation+2) + ';' + str(xlocation) + 'H' + y.fabricSt + '\x1b[0m'))
+                        if hasattr(y, 'location'):
+                            print('{}'.format('\x1b[' + str(ylocation+3) + ';' + str(xlocation) + 'H' + 'location: ' + str(y.location) + '\x1b[0m'))
+                        else:
+                            print('{}'.format('\x1b[' + str(ylocation+3) + ';' + str(xlocation) + 'H' + 'location: unknown\x1b[0m'))
+                        if hasattr(y, 'inbMgmtAddr'):
+                            print('{}'.format('\x1b[' + str(ylocation+4) + ';' + str(xlocation) + 'Hinb: ' + y.inbMgmtAddr + '\x1b[0m'))
+                        if hasattr(y, 'oobMgmtAddr'):
+                            print('{}'.format('\x1b[' + str(ylocation+5) + ';' + str(xlocation) + 'Hoob: ' + y.oobMgmtAddr + '\x1b[0m'))
+                        print('{}'.format('\x1b[' + str(ylocation+6) + ';' + str(xlocation) + 'Htype: ' + y.role + '\x1b[0m'))
+                        print('{}'.format('\x1b[' + str(ylocation+7) + ';' + str(xlocation) + 'Hserial: ' + y.serial + '\x1b[0m'))
+                        print('{}'.format('\x1b[' + str(ylocation+8) + ';' + str(xlocation) + 'Hverison: ' + y.version + '\x1b[0m'))
+                        if hasattr(y, 'systemUpTime'):
+                            print('{}'.format('\x1b[' + str(ylocation+9) + ';' + str(xlocation) + 'Huptime: ' + y.systemUpTime[:-4] + '\x1b[0m'))
+                        if hasattr(y, 'currentTime'):
+                            print('{}'.format('\x1b[' + str(ylocation+10) + ';' + str(xlocation) + 'Hdate: ' + y.currentTime[:-10] + '\x1b[0m'))
+                except Exception, err:
+                    print Exception, err
+                    print(y.__dict__)
+                    import pdb; pdb.set_trace()
+                    
             else:
                 print('{}'.format('\x1b[' + str(ylocation+1) + ';' + str(xlocation) + 'H' + y.name + '\x1b[0m'))
-                print('{}'.format('\x1b[' + str(ylocation+2) + ';' + str(xlocation) + 'H' + y.fabricSt + '\x1b[0m'))
+                print('{}'.format('\x1b[' + str(ylocation+2) + ';' + str(xlocation) + 'H' + '\x1b[1;31;40m' + y.fabricSt + '\x1b[0m'))
                 if hasattr(y, 'location'):
                     print('{}'.format('\x1b[' + str(ylocation+3) + ';' + str(xlocation) + 'H' + 'location: ' + str(y.location) + '\x1b[0m'))
                 else:
                     print('{}'.format('\x1b[' + str(ylocation+3) + ';' + str(xlocation) + 'H' + 'location: unknown\x1b[0m'))
-                print('{}'.format('\x1b[' + str(ylocation+4) + ';' + str(xlocation) + 'H' + y.serial + '\x1b[0m'))
-                print('{}'.format('\x1b[' + str(ylocation+5) + ';' + str(xlocation) + 'H' + y.role + '\x1b[0m'))
+                print('{}'.format('\x1b[' + str(ylocation+4) + ';' + str(xlocation) + 'Hserial: ' + y.serial + '\x1b[0m'))
+                print('{}'.format('\x1b[' + str(ylocation+5) + ';' + str(xlocation) + 'Htype: ' + y.role + '\x1b[0m'))
 
             xlocation += 33
             if xlocation >= 133:
