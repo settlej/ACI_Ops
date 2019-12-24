@@ -137,9 +137,9 @@ def main(import_apic,import_cookie):
                 else:
                     cnodedict[x[0]['topSystem']['attributes']['dn'].replace('/sys', '')].__dict__.update(**x[0]['topSystem']['attributes'])
             except Exception as e:
-                print(e)
+                #print(e)
                 api_pull_error = True
-                import pdb; pdb.set_trace()
+                #import pdb; pdb.set_trace()
         for k,v in cnodedict.items():
             for x in geolist:
                 cnodedict[k].health = 'fully-fit'

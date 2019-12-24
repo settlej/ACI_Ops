@@ -78,14 +78,21 @@ def main(import_apic,import_cookie):
         selection = interface_menu()
         if selection == '1':
             interfacelist = port_channel_selection(allpclist)
-            all_locations= port_channel_location(interfacelist[0].name,apic,cookie)
-            print(all_locations)
-            custom_raw_input('Press enter...')
+            all_locations = port_channel_location(interfacelist[0].name,apic,cookie)
+            print("{}".format('\nPort-Channel Locaiton:'))
+            print('{}'.format('-'*22))
+            for locations in sorted(all_locations):
+                print("{} : {}".format(', '.join(locations[:1]), ', '.join(locations[1])))
+
+            custom_raw_input('\nPress Enter to Coninue...')
         elif selection == '2':
             interfacelist = port_channel_selection(allvpclist)
             all_locations = port_channel_location(interfacelist[0].name,apic,cookie)
-            print(all_locations)
-            custom_raw_input('Press enter...')
+            print("{}".format('\nPort-Channel Locaiton:'))
+            print('{}'.format('-'*22))
+            for locations in sorted(all_locations):
+                print("{} : {}".format(', '.join(locations[:1]), ', '.join(locations[1])))
+            custom_raw_input('\nPress Enter to Coninue...')
 
             #import pdb; pdb.set_trace()
 

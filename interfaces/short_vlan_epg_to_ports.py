@@ -85,8 +85,18 @@ def main(import_apic,import_cookie):
         switchpreviewutil.main(apic,cookie,chosenleafs, purpose='port_switching')
         #chosendestinterfaceobject = physical_interface_selection(apic, cookie, chosenleafs, provideleaf=False)
         leaf = chosenleafs
-        pull_interface_with_vlaninfo(apic, cookie, leaf)
+        bdlist = pull_bd_info_for_leaf(apic, cookie, leaf)
         vlanlist = pull_vlan_info_for_leaf(apic, cookie, leaf)
+        bdandvlanlist = bdlist + vlanlist
+        finalbdandvlanlistforsorting = []
+        for x in sorted(bdandvlanlist, key=lambda x : int(x.id)):
+            if hasattr(x, 'encap'):
+                finalbdandvlanlistforsorting.append(('EPG  ', x.id, x.encap, x.epgDn))
+            else:
+                finalbdandvlanlistforsorting.append(('BD   ', x.id, x.name))
+        for x in sorted(finalbdandvlanlistforsorting, key=lambda x: (x[0], int(x[1]))):
+            print(x)
+        pull_interface_with_vlaninfo(apic, cookie, leaf)
         epgvlanlist = [x.dn for x in vlanlist]
         interface_epg_pull(apic, leaf, vlanlist, leaf)
      #   interfacelist = [x['l1PhysIf']['attributes']['id'] for x in result]
@@ -134,6 +144,14 @@ class vlanCktEp():
             return self.name
         else:
             return self.epgDn
+class l2BD():
+    def __init__(self, **kwargs):
+        self.__dict__.update(kwargs)
+    def __repr__(self):
+        if self.name != '':
+            return self.name
+        else:
+            return self.dn
 #class l1PhysIf():
 #    def __init__(self, **kwargs):
 #        self.__dict__.update(kwargs)
@@ -165,6 +183,11 @@ def pull_vlan_info_for_leaf(apic, cookie, leaf):
     vlanlist = [vlanCktEp(**x['vlanCktEp']['attributes']) for x in result]
     return vlanlist
 
+def pull_bd_info_for_leaf(apic, cookie, leaf):
+    url = """https://{apic}/api/node/class/topology/pod-1/node-{leaf}/l2BD.json""".format(apic=apic, leaf=leaf[0])
+    result = GetResponseData(url, cookie)
+    bdlist = [l2BD(**x['l2BD']['attributes']) for x in result]
+    return bdlist
 #def pull_each_interface(leaf, interface, apic, q):
 #    #url = """https://{apic}/api/node-{leaf}/class/l1PhysIf.json""".format(leaf=leaf,apic=apic)
 #    epgurl = """https://{apic}/api/node-{leaf}/mo/sys/phys-[{interface}].json?rsp-subtree-include=full-deployment&target-node=all&target-path=l1EthIfToEPg""".format(interface=str(interface),leaf=str(leaf),apic=apic)
