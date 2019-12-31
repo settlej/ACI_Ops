@@ -23,6 +23,7 @@ import interfaces.interfacecounters as showinterface
 import interfaces.switch_port_view as switch_port_view
 import interfaces.switchpreviewutil as switchpreviewutil
 import interfaces.clonevpcanddeploy as clonevpcanddeploy
+import interfaces.autodeploy as autodeploy
 import interfaces.portchannel_to_phy_interfaces as portchannel_to_phy_interfaces
 import interfaces.short_vlan_epg_to_ports as short_vlan_epg_to_ports
 import information.switchandapicinfo as switchandapicinfo
@@ -336,6 +337,14 @@ def main():
                     print('\nExit to Main menu\n')
                     keyinterrupt = True
                     continue		
+            if chosen == '12':
+                try:
+                    autodeploy.main(apic,cookie)
+                    keyinterrupt = False
+                except KeyboardInterrupt as k:
+                    print('\nExit to Main menu\n')
+                    keyinterrupt = True
+                    continue	
             elif chosen == '2':
                 try:
                     assign_epg_interfaces.main(apic,cookie)
