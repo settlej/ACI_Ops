@@ -27,6 +27,7 @@ import interfaces.portchannel_to_phy_interfaces as portchannel_to_phy_interfaces
 import interfaces.short_vlan_epg_to_ports as short_vlan_epg_to_ports
 import information.switchandapicinfo as switchandapicinfo
 import information.endpoint_per_leaf as endpoint_per_leaf
+import information.top_interface_problems as top_interface_problems
 import faults_and_logs.new_important_faults as fault_summary
 import faults_and_logs.most_recent_port_down as recent_port_down
 import faults_and_logs.most_recent_fault_changes as most_recent_fault_changes
@@ -322,6 +323,14 @@ def main():
             if chosen == '1':
                 try:
                     shut_noshut_interfaces.main(apic,cookie)
+                    keyinterrupt = False
+                except KeyboardInterrupt as k:
+                    print('\nExit to Main menu\n')
+                    keyinterrupt = True
+                    continue		
+            if chosen == '11':
+                try:
+                    top_interface_problems.main(apic,cookie)
                     keyinterrupt = False
                 except KeyboardInterrupt as k:
                     print('\nExit to Main menu\n')
