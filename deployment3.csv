@@ -1,6 +1,0 @@
-103,eth1/1,test1,trunk,"1,2,3",epgs1,epgs2,epgs3
-103,eth1/2,test2,access,3,epgs3,,
-103,eth1/3,test3,access,5,epgs5,,
-103,eth1/4,test4,trunk,"1,3",epgs1,epgs3,
-103,eth1/5,test5,trunk,"1,2,3",epgs1,epgs2,epgs3
-103,eth1/6,test6,trunk,2,epgs2,,

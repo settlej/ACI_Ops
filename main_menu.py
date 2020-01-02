@@ -329,7 +329,7 @@ def main():
                     print('\nExit to Main menu\n')
                     keyinterrupt = True
                     continue		
-            if chosen == '11':
+            if chosen == '111':
                 try:
                     top_interface_problems.main(apic,cookie)
                     keyinterrupt = False

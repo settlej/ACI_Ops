@@ -180,11 +180,11 @@ def main(import_apic,import_cookie):
             print(' Configured internal vlans: {} Working internal vlans: {}'.format(interfaceObject.ethpmPhysIf['allowedVlans'],interfaceObject.ethpmPhysIf['operVlans']))
             print('')
             if interfaceObject.eqptEgrTotal5min == None:
-                print(' [5 min] Input packet rate 0, Input Byte rate: 0')
-                print(' [5 min] Output packet rate 0, Output Byte rate: 0')
+                print(' [5 min] Input Byte rate: 0, Input packet rate 0')
+                print(' [5 min] Output Byte rate: 0, Output packet rate 0')
             else:
-                print(' [5 min] Input packet rate {}, Input Byte rate: {}'.format(round(float(interfaceObject.eqptIngrTotal5min['pktsRate']),2),round(float(interfaceObject.eqptIngrTotal5min['bytesRate']),2)))
-                print(' [5 min] Output packet rate {}, Output Byte rate: {}'.format(round(float(interfaceObject.eqptEgrTotal5min['pktsRate']),2),round(float(interfaceObject.eqptEgrTotal5min['bytesRate']),2)))
+                print(' [5 min] Input Byte rate: {}, Input packet rate {}'.format(round(float(interfaceObject.eqptIngrTotal5min['bytesRate']),2),round(float(interfaceObject.eqptIngrTotal5min['pktsRate']),2)))
+                print(' [5 min] Output Byte rate: {}, Output packet rate {}'.format(round(float(interfaceObject.eqptEgrTotal5min['bytesRate']),2),round(float(interfaceObject.eqptEgrTotal5min['pktsRate']),2)))
             print(' RX')
             print('     input packets {}, bytes {}, broadcasts {}, mutlicasts {}'.format(interfaceObject.rmonEtherStats['tXNoErrors'],interfaceObject.rmonIfIn['octets'],interfaceObject.rmonIfIn['broadcastPkts'],interfaceObject.rmonIfIn['multicastPkts']))
             print('     input errors {}, giants {}, crc {}, fragments {}, oversize {}'.format(interfaceObject.rmonIfIn['errors'],interfaceObject.rmonEtherStats['rxGiantPkts'],interfaceObject.rmonEtherStats['cRCAlignErrors'],interfaceObject.rmonEtherStats['fragments'],interfaceObject.rmonEtherStats['rxOversizePkts']))
@@ -314,11 +314,11 @@ def single_interface_pull(import_apic,import_cookie, selectedleaf, interfacepull
             print(' Configured internal vlans: {} Working internal vlans: {}'.format(interfaceObject.ethpmPhysIf['allowedVlans'],interfaceObject.ethpmPhysIf['operVlans']))
             print('')
             if interfaceObject.eqptEgrTotal5min == None:
-                print(' [5 min] Input packet rate 0, Input Byte rate: 0')
-                print(' [5 min] Output packet rate 0, Output Byte rate: 0')
+                print(' [5 min] Input Byte rate: 0, Input packet rate 0')
+                print(' [5 min] Output Byte rate: 0, Output packet rate 0')
             else:
-                print(' [5 min] Input packet rate {}, Input Byte rate: {}'.format(round(float(interfaceObject.eqptIngrTotal5min['pktsRate']),2),round(float(interfaceObject.eqptIngrTotal5min['bytesRate']),2)))
-                print(' [5 min] Output packet rate {}, Output Byte rate: {}'.format(round(float(interfaceObject.eqptEgrTotal5min['pktsRate']),2),round(float(interfaceObject.eqptEgrTotal5min['bytesRate']),2)))
+                print(' [5 min] Input Byte rate: {}, Input packet rate {}'.format(round(float(interfaceObject.eqptIngrTotal5min['bytesRate']),2),round(float(interfaceObject.eqptIngrTotal5min['pktsRate']),2)))
+                print(' [5 min] Output Byte rate: {}, Output packet rate {}'.format(round(float(interfaceObject.eqptEgrTotal5min['bytesRate']),2),round(float(interfaceObject.eqptEgrTotal5min['pktsRate']),2)))
             print(' RX')
             print('     input packets {}, bytes {}, broadcasts {}, mutlicasts {}'.format(interfaceObject.rmonEtherStats['tXNoErrors'],interfaceObject.rmonIfIn['octets'],interfaceObject.rmonIfIn['broadcastPkts'],interfaceObject.rmonIfIn['multicastPkts']))
             print('     input errors {}, giants {}, crc {}, fragments {}, oversize {}'.format(interfaceObject.rmonIfIn['errors'],interfaceObject.rmonEtherStats['rxGiantPkts'],interfaceObject.rmonEtherStats['cRCAlignErrors'],interfaceObject.rmonEtherStats['fragments'],interfaceObject.rmonEtherStats['rxOversizePkts']))

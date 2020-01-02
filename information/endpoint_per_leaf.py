@@ -15,7 +15,7 @@ import time
 import itertools
 import threading
 import Queue
-import ipaddress
+#import ipaddress
 import interfaces.switchpreviewutil as switchpreviewutil
 from localutils.custom_utils import *
 import logging
