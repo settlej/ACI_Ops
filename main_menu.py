@@ -393,14 +393,14 @@ def main():
                     print('\nExit to Main menu\n')
                     keyinterrupt = True
                     continue
-            elif chosen == '24':
-                try:
-                    create_vpc.main(apic,cookie)
-                    keyinterrupt = False
-                except KeyboardInterrupt as k:
-                    print('\nExit to Main menu\n')
-                    keyinterrupt = True
-                    continue
+          #  elif chosen == '24':
+          #      try:
+          #          create_vpc.main(apic,cookie)
+          #          keyinterrupt = False
+          #      except KeyboardInterrupt as k:
+          #          print('\nExit to Main menu\n')
+          #          keyinterrupt = True
+          #          continue
             elif chosen == '21':
                 try:
                     display_switch_to_leaf_structure.main(apic,cookie)
