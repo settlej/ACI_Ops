@@ -72,6 +72,16 @@ class eqpt():
     def __repr__(self):
         return self.dn
 
+
+class l1PhysIf():
+    def __init__(self, kwargs, interface = None, incounter = None , outcounter = None):
+        self.interface = interface
+        self.incounter = incounter
+        self.outcounter = outcounter
+        self.__dict__.update(**kwargs)
+    def __repr__(self):
+        return self.interface
+
 def main(import_apic,import_cookie):
     global apic
     global cookie
@@ -82,49 +92,109 @@ def main(import_apic,import_cookie):
     while True:
         clear_screen()
         location_banner('Top Interface Counters')
-        url = """https://{apic}/api/class/rmonIfIn.json?order-by=rmonIfIn.errors|desc&page=0&page-size=30&query-target-filter=and(wcard(rmonIfIn.dn,"phys-"),lt(rmonIfIn.errors,"1"))""".format(apic=apic)
+        url = """https://{apic}/api/class/rmonIfIn.json?order-by=rmonIfIn.errors|desc&page=0&page-size=30&query-target-filter=and(wcard(rmonIfIn.dn,"phys-"),gt(rmonIfIn.errors,"1"))""".format(apic=apic)
         result = GetResponseData(url, cookie)
         rmoifinlist = [rmonIf(x['rmonIfIn']['attributes']) for x in result]
         print('*' * 20)
         print("Top 30 Input Errors")
         print('*' * 20)
-        for x in rmoifinlist:
-            print("{} {} {}: {}".format( x.pod, x.leaf, x.name, x.errors))
+        if rmoifinlist:
+            for x in rmoifinlist:
+                print("{} {} {}: {}".format( x.pod, x.leaf, x.name, x.errors))
+        else:
+            print("No Input errors found")
             #print(x.pod, x.leaf, x.name, x.errors)
         #for x in result:
         #    print(x['rmonIfIn']['attributes']['dn'],x['rmonIfIn']['attributes']['errors'])
-        url = """https://{apic}/api/class/rmonIfOut.json?order-by=rmonIfOut.errors|desc&page=0&page-size=30&query-target-filter=and(wcard(rmonIfOut.dn,"phys-"),lt(rmonIfOut.errors,"1"))""".format(apic=apic)
+        url = """https://{apic}/api/class/rmonIfOut.json?order-by=rmonIfOut.errors|desc&page=0&page-size=30&query-target-filter=and(wcard(rmonIfOut.dn,"phys-"),gt(rmonIfOut.errors,"1"))""".format(apic=apic)
         result = GetResponseData(url, cookie)
         rmoifoutlist = [rmonIf(x['rmonIfOut']['attributes']) for x in result]
         counter = 0
         print('\x1b[7;32H{}'.format('*' * 20))
         print("\x1b[8;32HTop 30 Output Errors")
         print('\x1b[9;32H{}'.format('*' * 20))
-        for x in rmoifoutlist:
-            print("\x1b[{};32H{} {} {}: {}".format(10 + counter, x.pod, x.leaf, x.name, x.errors))
-            counter += 1
-        url = """https://192.168.255.2/api/class/eqptEgrTotal5min.json?order-by=eqptEgrTotal5min.bytesRate|desc&page=0&page-size=30query-target-filter=not(wcard(eqptEgrTotal5min.dn,"po")))"""
+        if rmoifoutlist:
+            for x in rmoifoutlist:
+                print("\x1b[{};32H{} {} {}: {}".format(10 + counter, x.pod, x.leaf, x.name, x.errors))
+                counter += 1
+        else:
+            print("\x1b[10;32HNo Output errors found")
+        url = """https://{apic}/api/node/class/fabricNode.json?query-target-filter=and(eq(fabricNode.role,"spine"))""".format(apic=apic)
+        result = GetResponseData(url, cookie)
+        spinelist = [x['fabricNode']['attributes']['dn'] for x in result]
+        url = """https://{apic}/api/class/eqptEgrTotal5min.json?query-target-filter=not(wcard(eqptEgrTotal5min.dn,"po"))&order-by=eqptEgrTotal5min.bytesRate|desc&page=0&page-size=75""".format(apic=apic)
         result = GetResponseData(url, cookie)
         eqptoutlist = [eqpt(x['eqptEgrTotal5min']['attributes']) for x in result]
         counter = 0
         print('\x1b[7;65H{}'.format('*' * 28))
         print("\x1b[8;65HTop 30 Output (bps) Rate")
         print('\x1b[9;65H{}'.format('*' * 28))
+        upto30counter = 1
         for x in eqptoutlist:
-            print("\x1b[{};65H{} {} {}: {}".format(10 + counter, x.pod, x.leaf, x.name, round(float(x.bytesRate),2) * 8))
-            counter += 1
-        url = """https://192.168.255.2/api/class/eqptIngrTotal5min.json?order-by=eqptIngrTotal5min.bytesRate|desc&page=0&page-size=30"""
+            if 'topology/{}/{}'.format(x.pod,x.leaf) not in spinelist and not re.findall(r'\/4[9]|\/5[0-9]', x.name):
+                print("\x1b[{};65H{} {} {}: {}".format(10 + counter, x.pod, x.leaf, x.name, int(round(float(x.bytesRate))) * 8))
+                if upto30counter == 30:
+                    
+                    break
+                else:
+                    upto30counter += 1
+                    counter += 1
+                #counter += 1
+        url = """https://{apic}/api/class/eqptIngrTotal5min.json?order-by=eqptIngrTotal5min.bytesRate|desc&page=0&page-size=75""".format(apic=apic)
         result = GetResponseData(url, cookie)
         eqptinlist = [eqpt(x['eqptIngrTotal5min']['attributes']) for x in result]
         counter = 0
         print('\x1b[7;105H{}'.format('*' * 28))
         print("\x1b[8;105HTop 30 Input (bps) Rate")
         print('\x1b[9;105H{}'.format('*' * 28))
+        upto30counter = 1
         for x in eqptinlist:
             #import pdb; pdb.set_trace()
-            print("\x1b[{};105H{} {} {}: {}".format(10 + counter, x.pod, x.leaf, x.name, (round(float(x.bytesRate),2) * 8) ))
-            counter += 1
-    #    url = """https://192.168.255.2/api/node/class/eventRecord.json?order-by=eventRecord.created|desc&page=0&page-size=60&query-target-filter=or(eq(eventRecord.code,"E4205125"),eq(eventRecord.code,"E4215671"))""".format(apic=apic)
+            if 'topology/{}/{}'.format(x.pod,x.leaf) not in spinelist and not re.findall(r'\/4[9]|\/5[0-9]', x.name):
+                print("\x1b[{};105H{} {} {}: {}".format(10 + counter, x.pod, x.leaf, x.name, int(round(float(x.bytesRate))) * 8))
+                if upto30counter == 30:
+                    break
+                else:
+                    upto30counter += 1
+                    counter += 1
+        url = """https://{apic}/api/class/l1PhysIf.json?rsp-subtree-class=l1PhysIf,eqptIngrTotal5min,eqptEgrTotal5min&rsp-subtree=full&rsp-subtree-include=stats""".format(apic=apic)
+        result = GetResponseData(url, cookie)
+        ratelist = [l1PhysIf([['l1PhysIf']['attributes'] for x in result if 'epg' in x['l1PhysIf']['attributes']['usage'] 
+                     or 'fex-fabric' in x['l1PhysIf']['attributes']['mode']], 
+                    interface=x['l1PhysIf']['attributes']['dn'],
+                    incounter=x['l1PhysIf']['children'][0]['eqptIngrTotal5min']['attributes']['bytesRate'],
+                    outcounter=x['l1PhysIf']['children'][1]['eqptEgrTotal5min']['attributes']['bytesRate']) for x in result]
+        import pdb; pdb.set_trace()
+        ingresslist = []
+        for x in result:
+            if x['l1PhysIf'].get('children'):
+                if 'epg' in x['l1PhysIf']['attributes']['usage'] or 'fex-fabric' in x['l1PhysIf']['attributes']['mode']:
+                    ingresslist.append((x['l1PhysIf']['attributes']['dn'], (x['l1PhysIf']['children'][0]['eqptIngrTotal5min']['attributes']['bytesRate'])))
+        for x in sorted(ingresslist, key=lambda x: float(x[1]), reverse=True):
+            if int(round(float(x[1]))) * 8 != 0:
+                pass
+                print('{} {}'.format(x[0], int(round(float(x[1]))) * 8))
+        egresslist = []
+        for x in result:
+            if x['l1PhysIf'].get('children'):
+                if 'epg' in x['l1PhysIf']['attributes']['usage'] or 'fex-fabric' in x['l1PhysIf']['attributes']['mode']:
+                    egresslist.append((x['l1PhysIf']['attributes']['dn'], (x['l1PhysIf']['children'][1]['eqptEgrTotal5min']['attributes']['bytesRate'])))
+
+        upto30counter = 1
+        for x in sorted(egresslist, key=lambda x: float(x[1]), reverse=True):
+            if int(round(float(x[1]))) * 8 != 0:
+                print('{} {}'.format(x[0], int(round(float(x[1]))) * 8))
+        for x in eqptinlist:
+            #import pdb; pdb.set_trace()
+            if 'topology/{}/{}'.format(x.pod,x.leaf) not in spinelist and not re.findall(r'\/4[9]|\/5[0-9]', x.name):
+                print("\x1b[{};105H{} {} {}: {}".format(10 + counter, x.pod, x.leaf, x.name, int(round(float(x.bytesRate))) * 8))
+                if upto30counter == 30:
+                    break
+                else:
+                    upto30counter += 1
+                    counter += 1
+
+    #    url = """https://{apic}/api/node/class/eventRecord.json?order-by=eventRecord.created|desc&page=0&page-size=60&query-target-filter=or(eq(eventRecord.code,"E4205125"),eq(eventRecord.code,"E4215671"))""".format(apic=apic)
     #    result = GetResponseData(url, cookie)
     # #   for x in result:
     #    interfacelist = [interface(x['eventRecord']['attributes']) for x in result]
