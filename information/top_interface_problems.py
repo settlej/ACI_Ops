@@ -98,7 +98,9 @@ def main(import_apic,import_cookie):
         url = """https://{apic}/api/class/rmonIfIn.json?order-by=rmonIfIn.errors|desc&page=0&page-size=30&query-target-filter=and(wcard(rmonIfIn.dn,"phys-"),gt(rmonIfIn.errors,"1"))""".format(apic=apic)
      #   result = GetResponseData(url, cookie)
      #   rmoifinlist = [rmonIf(x['rmonIfIn']['attributes']) for x in result]
-        print('*' * 20)
+        print('\x1b[2;40H*** Warning, (bps) rate is based on 5 min interval that resets every 300 sec to 0 \n' +
+              '\x1b[3;40H  if all output rate displays 0 then wait between 1-10 sec to refresh ***\n')
+        print('\x1b[7;1H' + ('*' * 20))
         print("Top 30 Input Errors")
         print('*' * 20)
    #     if rmoifinlist:
