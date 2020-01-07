@@ -251,6 +251,44 @@ def searchfexes(fexp,fexbndlgp,fexes):
                     if child.rn == fexbndlgp:
                         return f
 
+def return_physical_programmed_ports_perleaf(leaf, apic, cookie):
+    nodeprofilelist, nodedict = gather_infraNodeP(apic,cookie)
+    fexes = gather_infraFexP(apic,cookie)
+    apps = gather_infraAccPortP(apic,cookie, fexes)
+    for x in apps:
+        for y in x.infraRtAccPortPlist:
+            nodedict[y.tDn].leafprofiles.append(x)
+    leafspfound = []
+    for switchp in sorted(nodedict.values(), key=lambda x: x.name):
+        if int(leaf) in switchp.allleafs:
+            leafspfound.append(switchp)
+    return leafspfound, fexes
+    #import pdb; pdb.set_trace()
+       # print('{}  {}'.format(switchp.name, switchp.allleafs))
+       ## import pdb; pdb.set_trace()
+    #for leafp in leafspfound:
+
+       # for leafp in switchp.leafprofiles:
+       #     print('\t' + leafp.name)
+       #     #import pdb; pdb.set_trace()
+       #     for portlist in leafp.infraHPortSlist:
+       #         print('\t\t' + portlist.name)
+       #         #print(portlist.__dict__)
+       #         print('\t\t\t' + portlist.infraRsAccBaseGrp.tDn)
+       #         if portlist.infraRsAccBaseGrp.tCl == 'infraAccPortGrp':
+       #             print('\t\t\t' + 'individual')
+       #         elif portlist.infraRsAccBaseGrp.tCl == 'infraAccBndlGrp':
+       #             print('\t\t\t' + 'Port-channel')                    
+       #         elif portlist.infraRsAccBaseGrp.tCl == 'infraFexBndlGrp':
+       #             print('\t\t\t' + 'Fex-uplinks')
+       #         if portlist.infraFexPlist:
+       #             print('\t\t\t' + portlist.infraRsAccBaseGrp.fexId)
+       #         
+       #         #print('\t\t\t' + portlist.infraRsAccBaseGrp.tCl)
+       #         for z in portlist.infraPortsBlklist:
+       #             print('\t\t\t ' + z.fromPort + ' - ' + z.toPort)
+
+
 def main(import_apic,import_cookie):
         global apic
         global cookie
@@ -265,10 +303,11 @@ def main(import_apic,import_cookie):
             for y in x.infraRtAccPortPlist:
                 nodedict[y.tDn].leafprofiles.append(x)
         for switchp in sorted(nodedict.values(), key=lambda x: x.name):
-            print(switchp.name)
+            print('{}  {}'.format(switchp.name, switchp.allleafs))
            # import pdb; pdb.set_trace()
             for leafp in switchp.leafprofiles:
                 print('\t' + leafp.name)
+                #import pdb; pdb.set_trace()
                 for portlist in leafp.infraHPortSlist:
                     print('\t\t' + portlist.name)
                     #print(portlist.__dict__)
@@ -291,7 +330,7 @@ def main(import_apic,import_cookie):
                #     print('\t\t {}'.format(fex))
                #     print('\t\t  {}'.format(fex.allports))
      
-
+        import pdb; pdb.set_trace()
 
 
  #       for x in apps:

@@ -21,6 +21,7 @@ from collections import namedtuple
 import interfaces.switchpreviewutil as switchpreviewutil
 from localutils.custom_utils import *
 import logging
+import fabric_access
 
 # Create a custom logger
 # Allows logging to state detailed info such as module where code is running and 
@@ -386,10 +387,14 @@ def portchannel_clone_and_deploy(apic, cookie, currentleafifselector, leafselect
         logger.info(url)
         time.sleep(1)
         searchvpcresult = GetResponseData(url,cookie)
-        if searchvpcresult[0] == 'invalid':
-            print("\n\x1b[1;37;41mFailure -- " + str(searchvpcresult[1]) + '\x1b[0m\n')
-            del(searchvpcresult)
-            continue
+        logger.debug(searchvpcresult)
+        try:
+            if searchvpcresult[0] == 'invalid':
+                print("\n\x1b[1;37;41mFailure -- " + str(searchvpcresult[1]) + '\x1b[0m\n')
+                del(searchvpcresult)
+                continue
+        except:
+            import pdb; pdb.set_trace()
         returnedlist = []
         #import pdb; pdb.set_trace()
         logger.debug(searchvpcresult)
@@ -410,6 +415,7 @@ def main(import_apic,import_cookie):
         allepglist = get_All_EGPs(apic,cookie)
         allpclist = get_All_PCs(apic,cookie)
         allvpclist = get_All_vPCs(apic,cookie)
+        all_leaflist = get_All_leafs(apic,cookie)
         clear_screen()
         location_banner('Clone Interface and Deploy')
         selection = interface_menu()
@@ -417,10 +423,83 @@ def main(import_apic,import_cookie):
         if selection == '1':
             chosenleafs = physical_leaf_selection(all_leaflist, apic, cookie)
             switchpreviewutil.main(apic,cookie,chosenleafs, purpose='port_switching')
+            switchpfound, fexes = fabric_access.display_switch_to_leaf_structure.return_physical_programmed_ports_perleaf(chosenleafs[0], apic, cookie)
+            interfaces_with_APS_defined = []
+            fexfound = []
+            for switchp in switchpfound:
+               # for leafp in switchp.leafprofiles:
+                print(switchp.name)
+              #  import pdb; pdb.set_trace()
+                for leafp in switchp.leafprofiles:
+                    print('\t' + leafp.name)
+                    interfaces_with_APS_defined.append((switchp.allleafs,leafp.allports))
+                    #import pdb; pdb.set_trace()
+                    for portlist in leafp.infraHPortSlist:
+                        print('\t\t' + portlist.name)
+                        #print(portlist.__dict__)
+                        #print('\t\t\t' + portlist.infraRsAccBaseGrp.tDn)
+                        #print('\t\t\t' + portlist.infraRsAccBaseGrp.tDn)
+                        #if portlist.infraRsAccBaseGrp.tDn in fexes:
+                        for x in fexes:
+                            if portlist.infraRsAccBaseGrp.tDn != '' and  x.dn in portlist.infraRsAccBaseGrp.tDn:
+                              #  import pdb; pdb.set_trace()
+                                if portlist.infraFexPlist:
+                       #     print('\t\t\t' + portlist.infraRsAccBaseGrp.fexId)
+                                    fexfound.append((x,portlist.infraRsAccBaseGrp.fexId))
+                       # if portlist.infraRsAccBaseGrp.tCl == 'infraAccPortGrp':
+                       #     print('\t\t\t' + 'individual')
+                       # elif portlist.infraRsAccBaseGrp.tCl == 'infraAccBndlGrp':
+                       #     print('\t\t\t' + 'Port-channel')                    
+                       # elif portlist.infraRsAccBaseGrp.tCl == 'infraFexBndlGrp':
+                       #     print('\t\t\t' + 'Fex-uplinks')
+                       # if portlist.infraFexPlist:
+                       #     print('\t\t\t' + portlist.infraRsAccBaseGrp.fexId)
+                            
+                            
+                        
+                           # for z in portlist.infraPortsBlklist:
+                           #     print('\t\t\t ' + z.fromPort + ' - ' + z.toPort)
+                           #     for x in range(int(z.fromPort),int(z.toPort)+1):
+                           #         interfaces_with_APS_defined.append((fexes,x))
+                                                    #print('\t\t\t' + portlist.infraRsAccBaseGrp.tCl)
+                    #    for z in portlist.infraPortsBlklist:
+                    #        print('\t\t\t ' + z.fromPort + ' - ' + z.toPort)
+                    #   # if len(list(range(int(z.fromPort),int(z.toPort)+1))) > 1:
+                    #   #     for x in range(range(int(z.fromPort),int(z.toPort)+1)):
+                    #    
+                    #            
+                    #        for x in range(int(z.fromPort),int(z.toPort)+1):
+                    #            interfaces_with_APS_defined.append((switchp.allleafs,x))
+
+            for fex in fexfound:
+                interfaces_with_APS_defined.append((fex[1],fex[0].allports))
+            compiledports = []
+            for interface in interfaces_with_APS_defined:
+                if type(interface[0]) != unicode:
+                   # import pdb; pdb.set_trace()
+                    for leaf in interface[0]:
+                        for modulenum, ports in interface[1].items():
+                            for port in ports:  
+                                compiledports.append(('eth' + str(modulenum) + '/' + str(port)))
+                        #import pdb; pdb.set_trace()
+                else:
+                    for modulenum, ports in interface[1].items():
+                        for port in ports:
+                            compiledports.append(('eth' + str(interface[0]) + '/' + str(modulenum) + '/' + str(port)))
+            compiledports = list(set(compiledports))
+            #import custom_utils
+            newlist = []
+            for x in compiledports:
+                newlist.append(l1PhysIf(id = x, shortnum = x.split('/')[-1][0]))
+           # import pdb; pdb.set_trace()
+            switchpreviewutil.main(apic,cookie,chosenleafs, interfacelist=compiledports, purpose='custom')
+            print(compiledports)
+            import pdb; pdb.set_trace()
             returnedlist = physical_interface_selection(apic, cookie, chosenleafs, provideleaf=False)
 
             #returnedlist = physical_selection(all_leaflist, apic, cookie)
             #import pdb; pdb.set_trace()
+            
             chosenepgs, choseninterfaceobjectlist = display_and_select_epgs(returnedlist, allepglist)
             #import pdb; pdb.set_trace()
             interface_type_and_deployement(chosenepgs, choseninterfaceobjectlist, apic)

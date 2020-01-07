@@ -99,7 +99,7 @@ def main(import_apic,import_cookie):
      #   result = GetResponseData(url, cookie)
      #   rmoifinlist = [rmonIf(x['rmonIfIn']['attributes']) for x in result]
         print('\x1b[2;40H*** Warning, (bps) rate is based on 5 min interval that resets every 300 sec to 0 \n' +
-              '\x1b[3;40H  if all output rate displays 0 then wait between 1-10 sec to refresh ***\n')
+              '\x1b[3;40H    if all output rate displays 0 then wait between 1-10 sec to refresh ***\n')
         print('\x1b[7;1H' + ('*' * 20))
         print("Top 30 Input Errors")
         print('*' * 20)

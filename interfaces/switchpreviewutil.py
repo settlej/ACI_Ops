@@ -155,6 +155,44 @@ def display_port_status(nodeinterfacegrouping):
     print('='*80)
     print('')
 
+def display_port_custom(nodeinterfacegrouping, interfacelist): 
+    print('='*80)
+    print('Green:Configured, Black:Not Configured\n')
+    for node in nodeinterfacegrouping:
+        #print(node)
+        #print('\n\n\n')
+        groups = []
+        uniquekeys = []
+        data = node
+        for k, g in itertools.groupby(data, lambda x:x.nodeid):
+            groups.append(list(g))      # Store group iterator as a list
+            uniquekeys.append(k)
+        evenlist = []
+        oddlist = []
+        for group in groups:
+            #if group[0].fex:
+            print('{:^80}'.format(group[0].nodeid))
+            for num,inters in enumerate(group):
+                if num % 2:
+                    evenlist.append(inters)
+                else:
+                    oddlist.append(inters)
+            oddstring = ''
+            for odd in oddlist:
+               # import pdb; pdb.set_trace()
+                oddstring += odd.custom_matched_port_color(interfacelist) + ' '
+                #print odd.port_status_color(),
+            print('{:^85}'.format(oddstring))
+            evenstring = ''
+            for even in evenlist:
+                evenstring += even.custom_matched_port_color(interfacelist) + ' '
+            print('{:^85}'.format(evenstring))
+            print('\n')
+            oddlist = []
+            evenlist = []
+        groups = []
+    print('='*80)
+    print('')
 
 def pull_leaf_state_interfaces(leaf, apic, q):
     url = """https://{apic}/api/node-{leaf}/class/l1PhysIf.json""".format(leaf=leaf,apic=apic)
@@ -163,7 +201,7 @@ def pull_leaf_state_interfaces(leaf, apic, q):
     logger.info('complete')
     q.put((leaf, result))
 
-def main(import_apic,import_cookie, leafs, purpose='port_status'):
+def main(import_apic,import_cookie, leafs, interfacelist=None, purpose='port_status'):
     #while True:
         global apic
         global cookie
@@ -193,6 +231,8 @@ def main(import_apic,import_cookie, leafs, purpose='port_status'):
             display_port_status(nodeinterfacegrouping)
         elif purpose == 'port_switching':
             display_port_switchingSt(nodeinterfacegrouping)
+        elif purpose == 'custom':
+            display_port_custom(nodeinterfacegrouping, interfacelist)
         #raw_input('')
         #Pre-pull for refresh
 #        threadlist = []

@@ -300,7 +300,11 @@ class l1PhysIf():
             return '\x1b[2;30;47m{:2}\x1b[0m'.format(self.shortnum)          
         else:
             return '\x1b[1;37;42m{:2}\x1b[0m'.format(self.shortnum)
-
+    def custom_matched_port_color(self, interfacelist):
+        if self.id in interfacelist:
+            return '\x1b[1;37;42m{:2}\x1b[0m'.format(self.shortnum)
+        else:
+            return '{:2}'.format(self.shortnum)
 
 def grouper(iterable, n, fillvalue=''):
     "Collect data into fixed-length chunks or blocks"
