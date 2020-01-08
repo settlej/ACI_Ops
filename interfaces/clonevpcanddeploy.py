@@ -422,20 +422,20 @@ def main(import_apic,import_cookie):
 #select vpcs
         if selection == '1':
             chosenleafs = physical_leaf_selection(all_leaflist, apic, cookie)
-            switchpreviewutil.main(apic,cookie,chosenleafs, purpose='port_switching')
+           # switchpreviewutil.main(apic,cookie,chosenleafs, purpose='port_switching')
             switchpfound, fexes = fabric_access.display_switch_to_leaf_structure.return_physical_programmed_ports_perleaf(chosenleafs[0], apic, cookie)
             interfaces_with_APS_defined = []
             fexfound = []
             for switchp in switchpfound:
                # for leafp in switchp.leafprofiles:
-                print(switchp.name)
+               # print(switchp.name)
               #  import pdb; pdb.set_trace()
                 for leafp in switchp.leafprofiles:
-                    print('\t' + leafp.name)
+               #     print('\t' + leafp.name)
                     interfaces_with_APS_defined.append((switchp.allleafs,leafp.allports))
                     #import pdb; pdb.set_trace()
                     for portlist in leafp.infraHPortSlist:
-                        print('\t\t' + portlist.name)
+               #         print('\t\t' + portlist.name)
                         #print(portlist.__dict__)
                         #print('\t\t\t' + portlist.infraRsAccBaseGrp.tDn)
                         #print('\t\t\t' + portlist.infraRsAccBaseGrp.tDn)
@@ -493,7 +493,7 @@ def main(import_apic,import_cookie):
                 newlist.append(l1PhysIf(id = x, shortnum = x.split('/')[-1][0]))
            # import pdb; pdb.set_trace()
             switchpreviewutil.main(apic,cookie,chosenleafs, interfacelist=compiledports, purpose='custom')
-            print(compiledports)
+            #print(compiledports)
             import pdb; pdb.set_trace()
             returnedlist = physical_interface_selection(apic, cookie, chosenleafs, provideleaf=False)
 
