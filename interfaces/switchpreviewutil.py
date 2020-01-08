@@ -182,11 +182,22 @@ def display_port_custom(nodeinterfacegrouping, interfacelist):
                # import pdb; pdb.set_trace()
                 oddstring += odd.custom_matched_port_color(interfacelist) + ' '
                 #print odd.port_status_color(),
-            print('{:^85}'.format(oddstring))
+            #import pdb; pdb.set_trace()
+            if len(oddlist) >= 27:
+                print('{:^85}'.format(oddstring))
+            elif len(oddlist) <= 12:
+                print('{:31}{}'.format('',oddstring))
+            else:
+                print('{:5}{:^85}'.format('',oddstring))
             evenstring = ''
             for even in evenlist:
                 evenstring += even.custom_matched_port_color(interfacelist) + ' '
-            print('{:^85}'.format(evenstring))
+            if len(evenlist) >= 27:
+                print('{:^85}'.format(evenstring))
+            elif len(evenlist) <= 12:
+                print('{:31}{}'.format('',evenstring))
+            else:
+                print('{:5}{:^85}'.format('',evenstring))
             print('\n')
             oddlist = []
             evenlist = []
