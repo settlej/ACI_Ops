@@ -222,35 +222,39 @@ def parseandreturnsingelist2(liststring, collectionlist):
         return 'invalid'
 
 
-def create_span_dest_url(source_int, name, leaf):
-    destport = source_int.dn
-    spandestgrpname = name + '_leaf' + leaf + '_' + source_int.name.replace('/','_')
-    spandestname = name + '_leaf' + leaf + '_' + source_int.name.replace('/','_')
-    desturl = """https://{apic}/api/node/mo/uni/infra/destgrp-{}.json""".format(spandestname,apic=apic)
-    destdata = """{"spanDestGrp":{"attributes":{"name":"%s","status":"created"},"children":[{"spanDest":{"attributes":{"name":"%s","status":"created"},"children":[{"spanRsDestPathEp":{"attributes":{"tDn":"%s","status":"created"},"children":[]}}]}}]}}""" % (spandestgrpname, spandestname, destport)
-    logger.info(desturl)
-    logger.info(destdata)
-    result = PostandGetResponseData(desturl, destdata, cookie)
-    logger.info(result)
-    if result[0] == []:
-        print("Successfully added Destination Port")
+#def create_span_dest_url(source_int, name, leaf):
+#    destport = source_int.dn
+#    spandestgrpname = name + '_leaf' + leaf + '_' + source_int.name.replace('/','_')
+#    spandestname = name + '_leaf' + leaf + '_' + source_int.name.replace('/','_')
+#    desturl = """https://{apic}/api/node/mo/uni/infra/destgrp-{}.json""".format(spandestname,apic=apic)
+#    destdata = """{"spanDestGrp":{"attributes":{"name":"%s","status":"created"},"children":[{"spanDest":{"attributes":{"name":"%s","status":"created"},"children":[{"spanRsDestPathEp":{"attributes":{"tDn":"%s","status":"created"},"children":[]}}]}}]}}""" % (spandestgrpname, spandestname, destport)
+#    logger.info(desturl)
+#    logger.info(destdata)
+#    result, error = PostandGetResponseData(desturl, destdata, cookie)
+#    if error:
+#        print('Failure -- ' + error)
+#        print('\nPress enter to continue...')
+#        
+#    logger.info(result)
+#    if result[0] == []:
+#        print("Successfully added Destination Port")
 
-def create_source_session_and_port(source_int, dest_int, name, leaf):
-    spansourcename = name + '_leaf' + leaf + '_' + source_int.name.replace('/','_')
-    spandestname = name + '_leaf'  + leaf + '_'+ dest_int.name.replace('/','_')
-    spansessionname = name  + '_leaf' + leaf + '_' + 'SPAN_SESSION' #+ datetime.datetime.now().strftime('%Y:%m:%dT%H:%M:%S')
-    sourceport = source_int.dn
-    sourceurl = """https://{apic}/api/node/mo/uni/infra/srcgrp-{}.json""".format(spansessionname,apic=apic)
-    sourcedata = """{"spanSrcGrp":{"attributes":{"name":"%s","status":"created"},"children":[{"spanSpanLbl":{"attributes":{"name":"%s","status:"created"},"children":[]}},{"spanSrc":{"attributes":{"name":"%s","status":"created"},"children":[{"spanRsSrcToPathEp":{"attributes":{"tDn":"%s","status":"created"},"children":[]}}]}}]}}""" % (spansessionname, spandestname, spansourcename, sourceport)
-    logger.info(sourceurl)
-    logger.info(sourcedata)
-    result = PostandGetResponseData(sourceurl, sourcedata, cookie)
-    logger.info(result)
-    #print(result)
-    if result[0] == []:
-        print("Successfully added Source Session and Source Port")
-    else:
-        print(result)
+#def create_source_session_and_port(source_int, dest_int, name, leaf):
+#    spansourcename = name + '_leaf' + leaf + '_' + source_int.name.replace('/','_')
+#    spandestname = name + '_leaf'  + leaf + '_'+ dest_int.name.replace('/','_')
+#    spansessionname = name  + '_leaf' + leaf + '_' + 'SPAN_SESSION' #+ datetime.datetime.now().strftime('%Y:%m:%dT%H:%M:%S')
+#    sourceport = source_int.dn
+#    sourceurl = """https://{apic}/api/node/mo/uni/infra/srcgrp-{}.json""".format(spansessionname,apic=apic)
+#    sourcedata = """{"spanSrcGrp":{"attributes":{"name":"%s","status":"created"},"children":[{"spanSpanLbl":{"attributes":{"name":"%s","status:"created"},"children":[]}},{"spanSrc":{"attributes":{"name":"%s","status":"created"},"children":[{"spanRsSrcToPathEp":{"attributes":{"tDn":"%s","status":"created"},"children":[]}}]}}]}}""" % (spansessionname, spandestname, spansourcename, sourceport)
+#    logger.info(sourceurl)
+#    logger.info(sourcedata)
+#    result = PostandGetResponseData(sourceurl, sourcedata, cookie)
+#    logger.info(result)
+#    #print(result)
+#    if result[0] == []:
+#        print("Successfully added Source Session and Source Port")
+#    else:
+#        print(result)
 
 def display_and_select_epgs(allepglist):
     numepgdict = {}
@@ -329,9 +333,22 @@ def main(import_apic,import_cookie, current_user):
             #direction= 'Source'
             #chosensourceinterfacobject, leaf = physical_selection(all_leaflist,direction)
             filterpath = create_filter(apic, cookie, current_time, current_user)
+            if isinstance(filterpath, tuple): # verify filter creating didn't return error
+                print('\n\x1b[1;37;41mFailure\x1b[0m -- ' + filterpath[1])
+                custom_raw_input('\n#Press enter to continue...')
+                break
             spandestname, serverip = create_span_server(apic, cookie, current_time, current_user, allepglist)
+            if isinstance(spandestname, tuple): # verify filter creating didn't return error
+                print('\n\x1b[1;37;41mFailure\x1b[0m -- ' + spandestname[1])
+                custom_raw_input('\n#Press enter to continue...')
+                break
             create_span_source(apic, cookie, current_time, spandestname, sourceinterfacepath=choseninterfaceobjectlist[0], filterpath=filterpath)
             #create_source_session_and_port(chosensourceinterfacobject[0],chosendestinterfaceobject[0], name, leaf)
+            if isinstance(spandestname, tuple): # verify filter creating didn't return error
+                print('\n\x1b[1;37;41mFailure\x1b[0m -- ' + spandestname[1])
+                custom_raw_input('\n#Press enter to continue...')
+                cookie = refreshToken(apic, cookie)
+                break
             cookie = refreshToken(apic, cookie)
             custom_raw_input('\n#Press enter to continue...')
             break
@@ -513,7 +530,7 @@ def create_filter(apic, cookie, current_time, current_user, protocol='unspecifie
     if result[0] == []:
         print("Successfully created filter")
     else:
-        print(result)
+        return result
     return filterpath
 
 
@@ -534,7 +551,7 @@ def create_span_server(apic, cookie, current_time,current_user, allepglist, prot
     if result[0] == []:
         print("Successfully created server as ERSPAN collector")
     else:
-        print(result)
+        return result, ('failure', 'logs')
     #return filterpath
     return spandestname, serverip
 
@@ -553,7 +570,7 @@ def create_span_source(apic, cookie, current_time, spandestname, sourceinterface
     if result[0] == []:
         print("Successfully added span session")
     else:
-        print(result)
+        return result
     #return filterpath
 
 #url: https://192.168.255.2/api/node/mo/uni/infra/srcgrp-NEW_SESSION.json

@@ -62,83 +62,12 @@ class epgobj():
     def __repr__(self):
         return self.epg
 
-def main(import_apic,import_cookie):
-    global apic
-    global cookie
-    cookie = import_cookie
-    apic = import_apic
-    clear_screen()
-    location_banner('Show EPGs to interface')
-    while True:
-
-        all_leaflist = get_All_leafs(apic,cookie)
-        if all_leaflist == []:
-            print('\x1b[1;31;40mFailed to retrieve active leafs, make leafs are operational...\x1b[0m')
-            custom_raw_input('\n#Press enter to continue...')
-            return
-        print('\nSelect leaf(s): ')
-        print('\r')
-#        desiredleaf = custom_custom_raw_input("\nWhat is the desired \x1b[1;33;40m'Source and Destination'\x1b[0m leaf for span session?\r")
-       
-        #print("\nWhat is the desired \x1b[1;33;40m'Destination'\x1b[0m leaf for span session?\r")
-        chosenleafs = physical_leaf_selection(all_leaflist, apic, cookie)
-        switchpreviewutil.main(apic,cookie,chosenleafs, purpose='port_switching')
-        #chosendestinterfaceobject = physical_interface_selection(apic, cookie, chosenleafs, provideleaf=False)
-        leaf = chosenleafs
-        bdlist = pull_bd_info_for_leaf(apic, cookie, leaf)
-        vlanlist = pull_vlan_info_for_leaf(apic, cookie, leaf)
-        bdandvlanlist = bdlist + vlanlist
-        finalbdandvlanlistforsorting = []
-        for x in sorted(bdandvlanlist, key=lambda x : int(x.id)):
-            if hasattr(x, 'encap'):
-                finalbdandvlanlistforsorting.append(('EPG  ', x.id, x.encap, x.epgDn))
-            else:
-                finalbdandvlanlistforsorting.append(('BD   ', x.id, x.name))
-        for x in sorted(finalbdandvlanlistforsorting, key=lambda x: (x[0], int(x[1]))):
-            print(x)
-        pull_interface_with_vlaninfo(apic, cookie, leaf)
-        epgvlanlist = [x.dn for x in vlanlist]
-        interface_epg_pull(apic, leaf, vlanlist, leaf)
-     #   interfacelist = [x['l1PhysIf']['attributes']['id'] for x in result]
-     #   interfacelist = interface_vlan_to_epg(apic, cookie, leaf, interfacelist)
-     #   #mport pdb; pdb.set_trace()
-     #   for interface in interfacelist:
-     #       for vlan in vlanlist:
-     #           #import pdb; pdb.set_trace()
-     #           if interface.epgs != []:
-     #               for epg in interface.epgs:
-     #                   if epg.epg == vlan.epgDn:
-     #                       #import pdb; pdb.set_trace()
-     #                       epg.encapvlans.append(vlan.encap)
-     #                       epg.internalvlans.append(vlan.fabEncap)
-     #   import pdb; pdb.set_trace()
-             #  x,y = interfacelist
-             #  if y != None:
-             #  #import pdb; pdb.set_trace()
-             #      if y == vlan.epgDn:
-             #          pass
-                    #for z in y:
-                    #   if z == vlan.epgDn:
-                    #        print('yes')
-
-     #   for interface in sorted(interfacedictwithegps, key=lambda x: (x.split('/')[0],int(x.split('/')[-1]))):
-     #       print(interface)
-     #       #import pdb; pdb.set_trace()
-     #      # if interfacedictwithegps[interface][1]
-     #       x,y = interfacedictwithegps[interface]
-     #       if y == None:
-     #           print('\t{} {}'.format(x,y))
-     #       else:
-     #           #print('\t{}'.format(x))
-     #           for yy in sorted(y):
-     #               pass
-     #               #print('\t\t{} | {} | {}'.format(yy[0],yy[1],yy[2]))
-        custom_raw_input('Continue...')
-
-
 class vlanCktEp():
     def __init__(self, **kwargs):
         self.__dict__.update(kwargs)
+        self.tenant = self.epgDn.split('/')[1].replace('tn-','')
+        self.app = lambda x : '/'.join(self.epgDn.split('/')[2:]) if 'LDevInst' in self.epgDn.split('/')[2] else self.epgDn.split('/')[2].replace('ap-','')
+        self.epg = '/'.join(self.epgDn.split('/')[3:]).replace('epg-','')
     def __repr__(self):
         if self.name != '':
             return self.name
@@ -175,8 +104,39 @@ def pull_interface_with_vlaninfo(apic, cookie, leaf):
             for y in x['l1PhysIf']['children']:
                 l1PhysIfobj.children.append(ethpmPhysIf(**y['ethpmPhysIf']['attributes']))
         l1PhysIflist.append(l1PhysIfobj)
+    print('\n')
+    print('{:12} {:32}   \x1b[1;33;40m{}\x1b[0m'.format('Interface', 'Working Vlans', 'Configured Vlans'))
+    print('-' * 90)
     for x in l1PhysIflist:
-        print(x.id, x.children[0].allowedVlans, x.children[0].operVlans)
+        #import pdb; pdb.set_trace()
+        operVlans = None
+        if len(x.children[0].allowedVlans.split(',')) > 8:
+          #  for num in range(10):
+          for num in range((len(x.children[0].operVlans.split(',')) // 8) + 1):
+            if operVlans:
+               # import pdb; pdb.set_trace() 
+                operVlans = operVlans[8:]
+                allowedVlans = allowedVlans[8:]
+                if len(operVlans) > 9:
+                    print('{:12} {:32}   \x1b[1;33;40m{}\x1b[0m'.format('', ','.join(operVlans[:8]) + ',', ','.join(allowedVlans[:8]) + ','))
+                else:
+                    print('{:12} {:32}   \x1b[1;33;40m{}\x1b[0m'.format('', ','.join(operVlans[:8]), ','.join(allowedVlans[:8])))
+
+            else:
+                operVlans =  x.children[0].operVlans.split(',')
+                allowedVlans = x.children[0].allowedVlans.split(',')
+                if len(operVlans) > 8:
+                    print('{:12} {:32}   \x1b[1;33;40m{}\x1b[0m'.format(x.id, ','.join(operVlans[:8]) + ',', ','.join(allowedVlans[:8]) + ','))
+                else:
+                    print('{:12} {:32}   \x1b[1;33;40m{}\x1b[0m'.format(x.id, ','.join(operVlans[:8]), ','.join(allowedVlans[:8])))
+
+        else:
+            if x.layer == 'Layer3':
+                print('{:12} \x1b[1;32;40m{:32}\x1b[0m'.format(x.id, 'Layer3'))
+            else:
+                print('{:12} {:32}   \x1b[1;33;40m{}\x1b[0m'.format(x.id, x.children[0].operVlans, x.children[0].allowedVlans))
+
+            
 def pull_vlan_info_for_leaf(apic, cookie, leaf):
     url = """https://{apic}/api/node/class/topology/pod-1/node-{leaf}/vlanCktEp.json""".format(apic=apic, leaf=leaf[0])
     result = GetResponseData(url, cookie)
@@ -188,45 +148,7 @@ def pull_bd_info_for_leaf(apic, cookie, leaf):
     result = GetResponseData(url, cookie)
     bdlist = [l2BD(**x['l2BD']['attributes']) for x in result]
     return bdlist
-#def pull_each_interface(leaf, interface, apic, q):
-#    #url = """https://{apic}/api/node-{leaf}/class/l1PhysIf.json""".format(leaf=leaf,apic=apic)
-#    epgurl = """https://{apic}/api/node-{leaf}/mo/sys/phys-[{interface}].json?rsp-subtree-include=full-deployment&target-node=all&target-path=l1EthIfToEPg""".format(interface=str(interface),leaf=str(leaf),apic=apic)
-##url = """https://{apic}/api/node/mo/{path}.json?rsp-subtree-include=full-deployment&target-node=all&target-path=l1EthIfToEPg""".format(apic=apic,path=str(chosendestinterfaceobject[0]))
-#    #import pdb; pdb.set_trace()
-#    logger.info(epgurl)
-#    #print(interface)
-#    epgresult = GetResponseData(epgurl, cookie)
-#    #print(epgresult)
-#    logger.debug(epgresult)
-#    #result = GetResponseData(url, cookie)
-#    logger.info('complete')
-#    q.put(epgresult)
 
-#def displayepgs(result):
-#
-#    if result[0]['l1PhysIf']['attributes']['layer'] == 'Layer3':
-#        #print(' L3 Interface\n')
-#        return 'L3', None
-#    if result[0]['l1PhysIf'].get('children'):
-#        for int in result[0]['l1PhysIf']['children']:
-#            interfaceepglist = []
-#            for epgs in int['pconsCtrlrDeployCtx']['children']:
-#                if 'LDevInst' in epgs['pconsResourceCtx']['attributes']['ctxDn']:
-#                    return 'redirect', None
-#                    #print(epgs['pconsResourceCtx']['attributes']['ctxDn'])
-#                else:
-#                    epgpath = epgs['pconsResourceCtx']['attributes']['ctxDn']#.split('/')
-#                #print(epgpath)
-#                   # tenant = epgpath[1][3:]
-#                   # app = epgpath[2][3:]
-#                   # epg = epgpath[3][4:]
-#                interfaceepglist.append(epgpath)
-#            #import pdb; pdb.set_trace()
-#            #return 'L2', (interfaceepglist)
-#            return 'L2', interfaceepglist
-#                    #print('\t{:10}{:15}{}'.format(tenant,app,epg))
-#    else:
-#        return 'L2', None
 
 def pull_each_vlan(apic, leaf, vlan, q):
     url = """https://{apic}/api/mo/{vlan}.json?query-target=children&target-subtree-class=l2RsPathDomAtt""".format(apic=apic, vlan=vlan.dn)
@@ -299,6 +221,133 @@ def interface_epg_pull(apic,cookie, epgvlanlist, selectedleaf):
         for m in k[1]:
             print('\t{:10}  | {}'.format( m.encap, m))
         print('\r')
+
+
+def main(import_apic,import_cookie):
+    global apic
+    global cookie
+    cookie = import_cookie
+    apic = import_apic
+    clear_screen()
+    location_banner('Show EPGs to interface')
+    while True:
+
+        all_leaflist = get_All_leafs(apic,cookie)
+        if all_leaflist == []:
+            print('\x1b[1;31;40mFailed to retrieve active leafs, make leafs are operational...\x1b[0m')
+            custom_raw_input('\n#Press enter to continue...')
+            return
+        print('\nSelect leaf(s): ')
+        print('\r')
+#        desiredleaf = custom_custom_raw_input("\nWhat is the desired \x1b[1;33;40m'Source and Destination'\x1b[0m leaf for span session?\r")
+       
+        #print("\nWhat is the desired \x1b[1;33;40m'Destination'\x1b[0m leaf for span session?\r")
+        chosenleafs = physical_leaf_selection(all_leaflist, apic, cookie)
+        switchpreviewutil.main(apic,cookie,chosenleafs, purpose='port_switching')
+        #chosendestinterfaceobject = physical_interface_selection(apic, cookie, chosenleafs, provideleaf=False)
+        leaf = chosenleafs
+        bdlist = pull_bd_info_for_leaf(apic, cookie, leaf)
+        vlanlist = pull_vlan_info_for_leaf(apic, cookie, leaf)
+        bdandvlanlist = bdlist + vlanlist
+        finalbdandvlanlistforsorting = []
+        for x in sorted(bdandvlanlist, key=lambda x : int(x.id)):
+            if hasattr(x, 'encap'):
+                finalbdandvlanlistforsorting.append(('EPG', x.id, x.encap, x))
+            else:
+                finalbdandvlanlistforsorting.append(('BD', x.id, x.name))
+        print("{:5} | {:10} | {:10}  | {}".format('Type', "Internal #", "Encap", "Name"))
+        print('-' * 80)
+        for x in sorted(finalbdandvlanlistforsorting, key=lambda x: (x[0], int(x[1]))):
+            if len(x) > 3 and 'LDevInst' in x[3].app(x):
+                #import pdb; pdb.set_trace()
+                print("{:5} | {:^10} | {:11} | {}:{}".format(x[0], x[1], x[2], x[3].tenant, x[3].app(x[3])))
+            elif len(x) > 3:
+                print("{:5} | {:^10} | {:11} | {}:{}:{}".format(x[0], x[1], x[2], x[3].tenant, x[3].app(x[3]), x[3].epg))
+            else:
+                print("{:5} | {:^10} | {:11} | {}".format(x[0], x[1], '', x[2]))
+            
+        pull_interface_with_vlaninfo(apic, cookie, leaf)
+
+        print('\n\n')
+ ######works need to move to new script       epgvlanlist = [x.dn for x in vlanlist]
+ ######works need to move to new script       interface_epg_pull(apic, leaf, vlanlist, leaf)
+     #   interfacelist = [x['l1PhysIf']['attributes']['id'] for x in result]
+     #   interfacelist = interface_vlan_to_epg(apic, cookie, leaf, interfacelist)
+     #   #mport pdb; pdb.set_trace()
+     #   for interface in interfacelist:
+     #       for vlan in vlanlist:
+     #           #import pdb; pdb.set_trace()
+     #           if interface.epgs != []:
+     #               for epg in interface.epgs:
+     #                   if epg.epg == vlan.epgDn:
+     #                       #import pdb; pdb.set_trace()
+     #                       epg.encapvlans.append(vlan.encap)
+     #                       epg.internalvlans.append(vlan.fabEncap)
+     #   import pdb; pdb.set_trace()
+             #  x,y = interfacelist
+             #  if y != None:
+             #  #import pdb; pdb.set_trace()
+             #      if y == vlan.epgDn:
+             #          pass
+                    #for z in y:
+                    #   if z == vlan.epgDn:
+                    #        print('yes')
+
+     #   for interface in sorted(interfacedictwithegps, key=lambda x: (x.split('/')[0],int(x.split('/')[-1]))):
+     #       print(interface)
+     #       #import pdb; pdb.set_trace()
+     #      # if interfacedictwithegps[interface][1]
+     #       x,y = interfacedictwithegps[interface]
+     #       if y == None:
+     #           print('\t{} {}'.format(x,y))
+     #       else:
+     #           #print('\t{}'.format(x))
+     #           for yy in sorted(y):
+     #               pass
+     #               #print('\t\t{} | {} | {}'.format(yy[0],yy[1],yy[2]))
+        custom_raw_input('Continue...')
+
+
+#def pull_each_interface(leaf, interface, apic, q):
+#    #url = """https://{apic}/api/node-{leaf}/class/l1PhysIf.json""".format(leaf=leaf,apic=apic)
+#    epgurl = """https://{apic}/api/node-{leaf}/mo/sys/phys-[{interface}].json?rsp-subtree-include=full-deployment&target-node=all&target-path=l1EthIfToEPg""".format(interface=str(interface),leaf=str(leaf),apic=apic)
+##url = """https://{apic}/api/node/mo/{path}.json?rsp-subtree-include=full-deployment&target-node=all&target-path=l1EthIfToEPg""".format(apic=apic,path=str(chosendestinterfaceobject[0]))
+#    #import pdb; pdb.set_trace()
+#    logger.info(epgurl)
+#    #print(interface)
+#    epgresult = GetResponseData(epgurl, cookie)
+#    #print(epgresult)
+#    logger.debug(epgresult)
+#    #result = GetResponseData(url, cookie)
+#    logger.info('complete')
+#    q.put(epgresult)
+
+#def displayepgs(result):
+#
+#    if result[0]['l1PhysIf']['attributes']['layer'] == 'Layer3':
+#        #print(' L3 Interface\n')
+#        return 'L3', None
+#    if result[0]['l1PhysIf'].get('children'):
+#        for int in result[0]['l1PhysIf']['children']:
+#            interfaceepglist = []
+#            for epgs in int['pconsCtrlrDeployCtx']['children']:
+#                if 'LDevInst' in epgs['pconsResourceCtx']['attributes']['ctxDn']:
+#                    return 'redirect', None
+#                    #print(epgs['pconsResourceCtx']['attributes']['ctxDn'])
+#                else:
+#                    epgpath = epgs['pconsResourceCtx']['attributes']['ctxDn']#.split('/')
+#                #print(epgpath)
+#                   # tenant = epgpath[1][3:]
+#                   # app = epgpath[2][3:]
+#                   # epg = epgpath[3][4:]
+#                interfaceepglist.append(epgpath)
+#            #import pdb; pdb.set_trace()
+#            #return 'L2', (interfaceepglist)
+#            return 'L2', interfaceepglist
+#                    #print('\t{:10}{:15}{}'.format(tenant,app,epg))
+#    else:
+#        return 'L2', None
+
     #allinterfacesfound = list(allinterfacesfound)
    # import pdb; pdb.set_trace()
    # for x in allinterfacesfound:

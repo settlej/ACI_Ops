@@ -83,6 +83,7 @@ def removeepgs(interfaces):
     queue = Queue.Queue()
     interfacelist = []
     queueresultlist = []
+    anyfailures = False
     #interfacelist2 =[]
     #import pdb; pdb.set_trace()
     for interface in interfaces:
@@ -95,7 +96,13 @@ def removeepgs(interfaces):
             for epg in xrange(queue.qsize()):
                 queueresultlist.append(queue.get())
     for interfaceresult in sorted(queueresultlist):
+        if 'Failure' in interfaceresult:
+            anyfailures = True
         print(interfaceresult)
+    if anyfailures:
+        return True
+    else:
+        return False
 
 def postremove(interface_epg,queue):
     #import pdb; pdb.set_trace()
@@ -125,9 +132,12 @@ def remove_all_epgs_every_interface(interfacelist, apic, cookie):
         else:
             for epg in result:
                 interface.epgfvRsPathAttlist.append(epg['fvRsPathAtt']['attributes']['dn'])
-            removeepgs(interface.epgfvRsPathAttlist)
+            failures = removeepgs(interface.epgfvRsPathAttlist)
             interface.epgfvRsPathAttlist = []
-            print('Removal of static epgs on interface: {} [Complete]'.format(str(interface)))
+            if failures:
+                print('Unable to remove some epgs on interface: {}'.format(str(interface)))
+            else:
+                print('Removal of static epgs on interface: {} [Complete]'.format(str(interface)))
     custom_raw_input('\n\n#Press enter to continue...')
 
 def remove_selection_from_all_interfaces(interfacelist, apic, cookie):
@@ -200,7 +210,11 @@ def remove_selection_from_all_interfaces(interfacelist, apic, cookie):
             print("\n\x1b[1;37;41mInvalid option...Try again\x1b[0m\n")
             continue    
     print('\n')
-    removeepgs(currentremovalegplist)
+    failures = removeepgs(currentremovalegplist)
+    if failures:
+        print('Unable to remove some epgs on interface: {}'.format(str(interface)))
+    else:
+        print('Removal of static epgs on interface: {} [Complete]'.format(str(interface)))
     raw_input("\n\n#Press enter to continue...")
 
 def remove_per_interface(interfacelist, apic, cookie):
@@ -210,7 +224,7 @@ def remove_per_interface(interfacelist, apic, cookie):
 #              interface.getepgsurl = url
 #          for interface in interfacelist:
 #              t = 
-        result = GetResponseData(url,cookie)
+        result, error = GetResponseData(url,cookie)
         logger.debug(result)
        # import pdb; pdb.set_trace()
         if result == []:
@@ -222,7 +236,10 @@ def remove_per_interface(interfacelist, apic, cookie):
             #mport pdb; pdb.set_trace()
             removeepgs(interfacelist)
             interface.epgfvRsPathAttlist = []
-            print('Removal of static epgs on interface: {} [Complete]'.format(str(interface)))
+            if error:
+                print('Not unable to remove all selected egps on interface: {}'.format(str(interface)))
+            else:
+                print('Removal of static epgs on interface: {} [Complete]'.format(str(interface)))
     custom_raw_input('\n\n#Press enter to continue...')
 
 def main(import_apic,import_cookie):

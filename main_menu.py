@@ -189,6 +189,7 @@ def localOrRemote(error=False):
                         break
             except urllib2.HTTPError as e:
                 unauthenticated = True
+                print('hit')
                 print('\n\x1b[1;31;40mAuthentication failed\x1b[0m\n')
                 exit()
             except urllib2.URLError as e:
@@ -254,29 +255,45 @@ class AuthenticationFailure(Exception):
     """Authentication Failure"""
     pass
 
-def checkwritepermissions(permissionlist):
-    for permission in permissionlist:
-        #print(permission)
-        if permission.get('all'):
-            #print(permission)
-            for usertype,role in permission['all'].items():
-                if usertype == 'admin' and role == 'writePriv':
-                    return True
-            #    import pdb; pdb.set_trace()
-            #    print(role)
-            #    for x in role:
-            #        if x['admin'] == 'writePriv':
-#           # if permission['all'] == 'writePriv':
-    return False
+
+#def associate_permissions_to_role(rolerightsdict, userdomainlist):
+#   # import pdb; pdb.set_trace()
+#    for domain,rights in userdomainlist.items():
+#        for x in rolerightsdict:
+#            for num,right in enumerate(rights):
+#                if right.get(x):
+#                   # import pdb; pdb.set_trace()
+#                    print(domain, rights[num])
+#
+#def checkwritepermissions(permissionlist):
+#  #  for permission in permissionlist:
+#  #      #print(permission)
+#  #      if permission.get('all'):
+#  #          #print(permission)
+#  #          for usertype,role in permission['all'].items():
+#  #              if usertype == 'admin' and role == 'writePriv':
+#  #                  return True
+#  #          #    import pdb; pdb.set_trace()
+#  #          #    print(role)
+#  #          #    for x in role:
+#  #          #        if x['admin'] == 'writePriv':
+## #          # if permission['all'] == 'writePriv':
+#  #  return False
+#    return True
 
 
 def main():
     apic, current_user, cookie = localOrRemote()
     unauthenticated = False
     keyinterrupt = False
-    url = """https://{}/api/node/mo/uni/userext/user-{}.json?rsp-subtree=full""".format(apic,current_user)
-    result = GetResponseData(url, cookie)
-    userdomainlist = []
+   # url = """https://{}/api/node/mo/uni/userext/user-{}.json?rsp-subtree=full""".format(apic,current_user)
+   # user_rights = GetResponseData(url, cookie)
+   # url = """https://{}/api/node/class/aaaRole.json""".format(apic,current_user)
+   # role_rights = GetResponseData(url, cookie)
+   # print(role_rights)
+   # rolerightsdict = {x['aaaRole']['attributes']['dn'][12:]:x['aaaRole']['attributes'] for x in role_rights}
+   # import pdb; pdb.set_trace()
+    userdomainlist = {}
     while True:
         try:
             clear_screen()
@@ -286,12 +303,15 @@ def main():
             unauthenticated = False
             clear_screen()
             #import pdb; pdb.set_trace()
-            for domain in result[0]['aaaUser']['children']:
-                if domain.get('aaaUserDomain') and domain['aaaUserDomain'].get('children'):
-                    for role in domain['aaaUserDomain']['children']:
-                        userdomainlist.append(
-                            {domain['aaaUserDomain']['attributes']['name']:
-                            {role['aaaUserRole']['attributes']['name']:role['aaaUserRole']['attributes']['privType']}}) 
+            #for domain in user_rights[0]['aaaUser']['children']:
+            #    if domain.get('aaaUserDomain') and domain['aaaUserDomain'].get('children'):
+            #        for role in domain['aaaUserDomain']['children']:
+            #            if userdomainlist.get(domain['aaaUserDomain']['attributes']['name']):
+            #                userdomainlist[domain['aaaUserDomain']['attributes']['name']].append({role['aaaUserRole']['attributes']['rn']:role['aaaUserRole']['attributes']['privType']})
+            #            else:
+            #                userdomainlist[domain['aaaUserDomain']['attributes']['name']] = [
+            #                {role['aaaUserRole']['attributes']['rn']:role['aaaUserRole']['attributes']['privType']}]
+            #associate_permissions_to_role(rolerightsdict, userdomainlist)
             if keyinterrupt:
                 pass #cookie = refreshToken(apic, cookie)
             print('\n What would you like to do?:\n\n' +
@@ -345,15 +365,14 @@ def main():
             print('\x1b[8')
             cookie = refreshToken(apic, cookie)
 
-            writepermissiondict = ['1','2','3','22','23','24']
+            writepermissionlist = ['1','2','3','22','23','24']
 
             while True:
                 chosen = custom_raw_input('\x1b[u\x1b[44;1H Select a number: ')
                 if chosen == '1':
-
-                    if chosen in writepermissiondict and not checkwritepermissions(userdomainlist):
-                        raw_input("\n Don't have the appropriate Permissions, try again...")
-                        break
+                #    if chosen in writepermissionlist and not checkwritepermissions(userdomainlist):
+                #        raw_input("\n User does not have the appropriate Permissions. Please try again...")
+                #        break
                     try:
                         shut_noshut_interfaces.main(apic,cookie)
                         keyinterrupt = False
@@ -362,8 +381,8 @@ def main():
                         keyinterrupt = True
                         break		
                 if chosen == '111':
-                    if chosen in writepermissiondict and not checkwritepermissions(userdomainlist):
-                        raw_input("\n Don't have the appropriate Permissions, try again...")
+                    if chosen in writepermissionlist and not checkwritepermissions(userdomainlist):
+                        raw_input("\n User does not have the appropriate Permissions. Please try again...")
                         break
                     try:
                         top_interface_problems.main(apic,cookie)
@@ -371,10 +390,10 @@ def main():
                     except KeyboardInterrupt as k:
                         print('\nExit to Main menu\n')
                         keyinterrupt = True
-                        continue		
+                        break		
                 if chosen == '12':
-                    if chosen in writepermissiondict and not checkwritepermissions(userdomainlist):
-                        raw_input("\n Don't have the appropriate Permissions, try again...")
+                    if chosen in writepermissionlist and not checkwritepermissions(userdomainlist):
+                        raw_input("\n User does not have the appropriate Permissions. Please try again...")
                         break
                     try:
                         autodeploy.main(apic,cookie)
@@ -382,32 +401,32 @@ def main():
                     except KeyboardInterrupt as k:
                         print('\nExit to Main menu\n')
                         keyinterrupt = True
-                        continue	
+                        break	
                 elif chosen == '2':
-                    if chosen in writepermissiondict and not checkwritepermissions(userdomainlist):
-                        raw_input("\n Don't have the appropriate Permissions, try again...")
-                        break
+               #     if chosen in writepermissionlist and not checkwritepermissions(userdomainlist):
+               #         raw_input("\n User does not have the appropriate Permissions. Please try again...")
+               #         break
                     try:
                         assign_epg_interfaces.main(apic,cookie)
                         keyinterrupt = False
                     except KeyboardInterrupt as k:
                         print('\nExit to Main menu\n')
                         keyinterrupt = True
-                        continue            
+                        break            
                 elif chosen == '3':
-                    if chosen in writepermissiondict and not checkwritepermissions(userdomainlist):
-                        raw_input("\n Don't have the appropriate Permissions, try again...")
-                        break
+               #     if chosen in writepermissionlist and not checkwritepermissions(userdomainlist):
+               #         raw_input("\n User does not have the appropriate Permissions. Please try again...")
+               #         break
                     try:
                         remove_egps.main(apic,cookie)
                         keyinterrupt = False
                     except KeyboardInterrupt as k:
                         print('\nExit to Main menu\n')
                         keyinterrupt = True
-                        continue		
+                        break		
                 elif chosen == '4':
-                    if chosen in writepermissiondict and not checkwritepermissions(userdomainlist):
-                        raw_input("\n Don't have the appropriate Permissions, try again...")
+                    if chosen in writepermissionlist and not checkwritepermissions(userdomainlist):
+                        raw_input("\n User does not have the appropriate Permissions. Please try again...")
                         break
                     try:
                         portsanddescriptions.main(apic,cookie)
@@ -415,10 +434,10 @@ def main():
                     except KeyboardInterrupt as k:
                         print('\nExit to Main menu\n')
                         keyinterrupt = True
-                        continue
+                        break
                 elif chosen == '5':
-                    if chosen in writepermissiondict and not checkwritepermissions(userdomainlist):
-                        raw_input("\n Don't have the appropriate Permissions, try again...")
+                    if chosen in writepermissionlist and not checkwritepermissions(userdomainlist):
+                        raw_input("\n User does not have the appropriate Permissions. Please try again...")
                         break
                     try:
                         showinterface.main(apic,cookie)
@@ -426,10 +445,10 @@ def main():
                     except KeyboardInterrupt as k:
                         print('\nExit to Main menu\n')
                         keyinterrupt = True
-                        continue
+                        break
                 elif chosen == '8':
-                    if chosen in writepermissiondict and not checkwritepermissions(userdomainlist):
-                        raw_input("\n Don't have the appropriate Permissions, try again...")
+                    if chosen in writepermissionlist and not checkwritepermissions(userdomainlist):
+                        raw_input("\n User does not have the appropriate Permissions. Please try again...")
                         break
                     try:
                         short_vlan_epg_to_ports.main(apic,cookie)
@@ -437,10 +456,10 @@ def main():
                     except KeyboardInterrupt as k:
                         print('\nExit to Main menu\n')
                         keyinterrupt = True
-                        continue
+                        break
                 elif chosen == '19':
-                    if chosen in writepermissiondict and not checkwritepermissions(userdomainlist):
-                        raw_input("\n Don't have the appropriate Permissions, try again...")
+                    if chosen in writepermissionlist and not checkwritepermissions(userdomainlist):
+                        raw_input("\n User does not have the appropriate Permissions. Please try again...")
                         break
                     try:
                         endpoint_per_leaf.main(apic,cookie)
@@ -448,10 +467,10 @@ def main():
                     except KeyboardInterrupt as k:
                         print('\nExit to Main menu\n')
                         keyinterrupt = True
-                        continue
+                        break
           #      elif chosen == '24':
-          #     if chosen in writepermissiondict and not checkwritepermissions(userdomainlist):
-          #     raw_input("\n Don't have the appropriate Permissions, try again...")
+          #     if chosen in writepermissionlist and not checkwritepermissions(userdomainlist):
+          #     raw_input("\n User does not have the appropriate Permissions. Please try again...")
           # break     
           #     try:
           #              create_vpc.main(apic,cookie)
@@ -461,8 +480,8 @@ def main():
           #              keyinterrupt = True
           #              continue
                 elif chosen == '21':
-                    if chosen in writepermissiondict and not checkwritepermissions(userdomainlist):
-                        raw_input("\n Don't have the appropriate Permissions, try again...")
+                    if chosen in writepermissionlist and not checkwritepermissions(userdomainlist):
+                        raw_input("\n User does not have the appropriate Permissions. Please try again...")
                         break
                     try:
                         display_switch_to_leaf_structure.main(apic,cookie)
@@ -470,10 +489,10 @@ def main():
                     except KeyboardInterrupt as k:
                         print('\nExit to Main menu\n')
                         keyinterrupt = True
-                        continue
+                        break
                 elif chosen == '24':
-                    if chosen in writepermissiondict and not checkwritepermissions(userdomainlist):
-                        raw_input("\n Don't have the appropriate Permissions, try again...")
+                    if chosen in writepermissionlist and not checkwritepermissions(userdomainlist):
+                        raw_input("\n User does not have the appropriate Permissions. Please try again...")
                         break
                     try:
                         clonevpcanddeploy.main(apic,cookie)
@@ -481,10 +500,10 @@ def main():
                     except KeyboardInterrupt as k:
                         print('\nExit to Main menu\n')
                         keyinterrupt = True
-                        continue
+                        break
                 elif chosen == '18':
-                    if chosen in writepermissiondict and not checkwritepermissions(userdomainlist):
-                        raw_input("\n Don't have the appropriate Permissions, try again...")
+                    if chosen in writepermissionlist and not checkwritepermissions(userdomainlist):
+                        raw_input("\n User does not have the appropriate Permissions. Please try again...")
                         break
                     try:
                         switchandapicinfo.main(apic,cookie)
@@ -492,10 +511,10 @@ def main():
                     except KeyboardInterrupt as k:
                         print('\nExit to Main menu\n')
                         keyinterrupt = True
-                        continue
+                        break
                 elif chosen == '20':
-                    if chosen in writepermissiondict and not checkwritepermissions(userdomainlist):
-                        raw_input("\n Don't have the appropriate Permissions, try again...")
+                    if chosen in writepermissionlist and not checkwritepermissions(userdomainlist):
+                        raw_input("\n User does not have the appropriate Permissions. Please try again...")
                         break
                     try:
                         portchannel_to_phy_interfaces.main(apic,cookie)
@@ -503,11 +522,11 @@ def main():
                     except KeyboardInterrupt as k:
                         print('\nExit to Main menu\n')
                         keyinterrupt = True
-                        continue
+                        break
     
                 elif chosen == '6':
-                    if chosen in writepermissiondict and not checkwritepermissions(userdomainlist):
-                        raw_input("\n Don't have the appropriate Permissions, try again...")
+                    if chosen in writepermissionlist and not checkwritepermissions(userdomainlist):
+                        raw_input("\n User does not have the appropriate Permissions. Please try again...")
                         break
                     try:
                         switch_port_view.main(apic,cookie)
@@ -515,10 +534,10 @@ def main():
                     except KeyboardInterrupt as k:
                         print('\nExit to Main menu\n')
                         keyinterrupt = True
-                        continue
+                        break
                 elif chosen == '7':
-                    if chosen in writepermissiondict and not checkwritepermissions(userdomainlist):
-                        raw_input("\n Don't have the appropriate Permissions, try again...")
+                    if chosen in writepermissionlist and not checkwritepermissions(userdomainlist):
+                        raw_input("\n User does not have the appropriate Permissions. Please try again...")
                         break
                     try:
                         switch_port_view.main_detail(apic,cookie)
@@ -526,22 +545,22 @@ def main():
                     except KeyboardInterrupt as k:
                         print('\nExit to Main menu\n')
                         keyinterrupt = True
-                        continue              
+                        break              
                 elif chosen == '9':
-                    if chosen in writepermissiondict and not checkwritepermissions(userdomainlist):
-                        raw_input("\n Don't have the appropriate Permissions, try again...")
+                    if chosen in writepermissionlist and not checkwritepermissions(userdomainlist):
+                        raw_input("\n User does not have the appropriate Permissions. Please try again...")
                         break
                     try:
                         show_all_endpoints_on_interface.main(apic,cookie)
                         keyinterrupt = False
-                        continue
+                        break
                     except KeyboardInterrupt as k:
                         print('\nExit to Main menu\n')
                         keyinterrupt = True
-                        continue
+                        break
                 elif chosen == '10':
-                    if chosen in writepermissiondict and not checkwritepermissions(userdomainlist):
-                        raw_input("\n Don't have the appropriate Permissions, try again...")
+                    if chosen in writepermissionlist and not checkwritepermissions(userdomainlist):
+                        raw_input("\n User does not have the appropriate Permissions. Please try again...")
                         break
                     try:
                         fault_summary.main(apic,cookie)
@@ -549,10 +568,10 @@ def main():
                     except KeyboardInterrupt as k:
                         print('\nExit to Main menu\n')
                         keyinterrupt = True
-                        continue		
+                        break		
                 elif chosen == '11':
-                    if chosen in writepermissiondict and not checkwritepermissions(userdomainlist):
-                        raw_input("\n Don't have the appropriate Permissions, try again...")
+                    if chosen in writepermissionlist and not checkwritepermissions(userdomainlist):
+                        raw_input("\n User does not have the appropriate Permissions. Please try again...")
                         break
                     try:
                         recent_port_down.main(apic,cookie)
@@ -560,10 +579,10 @@ def main():
                     except KeyboardInterrupt as k:
                         print('\nExit to Main menu\n')
                         keyinterrupt = True
-                        continue	
+                        break	
                 elif chosen == '12':
-                    if chosen in writepermissiondict and not checkwritepermissions(userdomainlist):
-                        raw_input("\n Don't have the appropriate Permissions, try again...")
+                    if chosen in writepermissionlist and not checkwritepermissions(userdomainlist):
+                        raw_input("\n User does not have the appropriate Permissions. Please try again...")
                         break
                     try:
                         most_recent_fault_changes.main(apic,cookie)
@@ -571,10 +590,10 @@ def main():
                     except KeyboardInterrupt as k:
                         print('\nExit to Main menu\n')
                         keyinterrupt = True
-                        continue
+                        break
                 elif chosen == '13':
-                    if chosen in writepermissiondict and not checkwritepermissions(userdomainlist):
-                        raw_input("\n Don't have the appropriate Permissions, try again...")
+                    if chosen in writepermissionlist and not checkwritepermissions(userdomainlist):
+                        raw_input("\n User does not have the appropriate Permissions. Please try again...")
                         break
                     try:
                         most_recent_admin_changes.main(apic,cookie)
@@ -582,10 +601,10 @@ def main():
                     except KeyboardInterrupt as k:
                         print('\nExit to Main menu\n')
                         keyinterrupt = True
-                        continue
+                        break
                 elif chosen == '14':
-                    if chosen in writepermissiondict and not checkwritepermissions(userdomainlist):
-                        raw_input("\n Don't have the appropriate Permissions, try again...")
+                    if chosen in writepermissionlist and not checkwritepermissions(userdomainlist):
+                        raw_input("\n User does not have the appropriate Permissions. Please try again...")
                         break
                     try:
                         most_recent_event_changes.main(apic,cookie)
@@ -593,10 +612,10 @@ def main():
                     except KeyboardInterrupt as k:
                         print('\nExit to Main menu\n')
                         keyinterrupt = True
-                        continue		
+                        break		
                 elif chosen == '15':
-                    if chosen in writepermissiondict and not checkwritepermissions(userdomainlist):
-                        raw_input("\n Don't have the appropriate Permissions, try again...")
+                    if chosen in writepermissionlist and not checkwritepermissions(userdomainlist):
+                        raw_input("\n User does not have the appropriate Permissions. Please try again...")
                         break
                     try:
                         alleventsbetweendates.main(apic,cookie)
@@ -604,10 +623,10 @@ def main():
                     except KeyboardInterrupt as k:
                         print('\nExit to Main menu\n')
                         keyinterrupt = True
-                        continue
+                        break
                 elif chosen == '16':
-                    if chosen in writepermissiondict and not checkwritepermissions(userdomainlist):
-                        raw_input("\n Don't have the appropriate Permissions, try again...")
+                    if chosen in writepermissionlist and not checkwritepermissions(userdomainlist):
+                        raw_input("\n User does not have the appropriate Permissions. Please try again...")
                         break
                     try:
                         alleventsbetweendates_fulldetail.main(apic,cookie)
@@ -615,10 +634,10 @@ def main():
                     except KeyboardInterrupt as k:
                         print('\nExit to Main menu\n')
                         keyinterrupt = True
-                        continue
+                        break
                 elif chosen == '17':
-                    if chosen in writepermissiondict and not checkwritepermissions(userdomainlist):
-                        raw_input("\n Don't have the appropriate Permissions, try again...")
+                    if chosen in writepermissionlist and not checkwritepermissions(userdomainlist):
+                        raw_input("\n User does not have the appropriate Permissions. Please try again...")
                         break
                     try:
                         ipendpoint_search.main(apic,cookie)
@@ -626,10 +645,10 @@ def main():
                     except KeyboardInterrupt as k:
                         print('\nExit to Main menu\n')
                         keyinterrupt = True
-                        continue		
+                        break		
                 #elif chosen == '17':
-                # if chosen in writepermissiondict and not checkwritepermissions(userdomainlist):
-                # raw_input("\n Don't have the appropriate Permissions, try again...")
+                # if chosen in writepermissionlist and not checkwritepermissions(userdomainlist):
+                # raw_input("\n User does not have the appropriate Permissions. Please try again...")
                 # break   
                 # try:
                 #        epg_troubleshooting.main(apic,cookie)
@@ -639,8 +658,8 @@ def main():
                 #        keyinterrupt = True
                 #        continue
                 #elif chosen == '18':
-                # if chosen in writepermissiondict and not checkwritepermissions(userdomainlist):
-                # raw_input("\n Don't have the appropriate Permissions, try again...")
+                # if chosen in writepermissionlist and not checkwritepermissions(userdomainlist):
+                # raw_input("\n User does not have the appropriate Permissions. Please try again...")
                 # break   
                 # try:
                 #        routetranslation.main(apic,cookie)
@@ -651,8 +670,8 @@ def main():
                 #        keyinterrupt = True
                 #        continue
                 #elif chosen == '18':
-                # if chosen in writepermissiondict and not checkwritepermissions(userdomainlist):
-                # raw_input("\n Don't have the appropriate Permissions, try again...")
+                # if chosen in writepermissionlist and not checkwritepermissions(userdomainlist):
+                # raw_input("\n User does not have the appropriate Permissions. Please try again...")
                 # break   
                 # try:
                 #        check_routing.main(apic,cookie)
@@ -663,8 +682,8 @@ def main():
                 #        continue      
     
                 #elif chosen == '17':
-                # if chosen in writepermissiondict and not checkwritepermissions(userdomainlist):
-                # raw_input("\n Don't have the appropriate Permissions, try again...")
+                # if chosen in writepermissionlist and not checkwritepermissions(userdomainlist):
+                # raw_input("\n User does not have the appropriate Permissions. Please try again...")
                 # break   
                 # try:
                 #        show_static_routes.main(apic,cookie)
@@ -675,8 +694,8 @@ def main():
                 #        continue
     
                 elif chosen == '22':
-                    if chosen in writepermissiondict and not checkwritepermissions(userdomainlist):
-                        raw_input("\n Don't have the appropriate Permissions, try again...")
+                    if chosen in writepermissionlist and not checkwritepermissions(userdomainlist):
+                        raw_input("\n User does not have the appropriate Permissions. Please try again...")
                         break
                     try:
                         create_local_span_session.main(apic,cookie)
@@ -684,12 +703,12 @@ def main():
                     except KeyboardInterrupt as k:
                         print('\nExit to Main menu\n')
                         keyinterrupt = True
-                        continue
+                        break
                 #elif chosen == 'exit':
                 #    raise KeyboardInterrupt
                 elif chosen == '23':
-                    if chosen in writepermissiondict and not checkwritepermissions(userdomainlist):
-                        raw_input("\n Don't have the appropriate Permissions, try again...")
+                    if chosen in writepermissionlist and not checkwritepermissions(userdomainlist):
+                        raw_input("\n User does not have the appropriate Permissions. Please try again...")
                         break
                     try:
                         span_to_server.main(apic,cookie,current_user)
@@ -697,7 +716,7 @@ def main():
                     except KeyboardInterrupt as k:
                         print('\nExit to Main menu\n')
                         keyinterrupt = True
-                        continue
+                        break
                 break
             
         except urllib2.HTTPError:

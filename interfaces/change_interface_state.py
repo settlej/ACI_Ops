@@ -64,8 +64,11 @@ def postshut(interface,queue, apic, cookie):
         data = """'{{"fabricRsOosPath":{{"attributes":{{"tDn":"{interface}","lc":"blacklist"}},"children":[]}}}}'""".format(interface=interface)
         logger.info(data)
         result, error =  PostandGetResponseData(url, data, cookie)
+        #import pdb; pdb.set_trace()
         if result == []:
             queue.put('[Complete] shut ' + interface.name)
+        else:
+            queue.put('\x1b[1;37;41mFailure\x1b[0m -- ' + error)
 
 def noshutinterfaces(interfaces, apic, cookie):
     queue = Queue.Queue()
