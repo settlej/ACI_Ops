@@ -93,6 +93,11 @@ class ethpmPhysIf():
         self.__dict__.update(kwargs)
     def __repr__(self):
         return self.allowedVlans
+class pcAggrMbrIf():
+    def __init__(self, **kwargs):
+        self.__dict__.update(kwargs)
+    def __repr__(self):
+        return self.operSt
 
 def shortenrange(lista):
     isactiverange = False
@@ -156,18 +161,21 @@ def compare_allowedvlans_and_opervlans(opervlanstringlist, allowedvlansstringlis
 
 
 def pull_interface_with_vlaninfo(apic, cookie, leaf):
-    url = """https://{apic}/api/node/class/topology/pod-1/node-{leaf}/l1PhysIf.json?rsp-subtree=children&rsp-subtree-class=ethpmPhysIf&order-by=l1PhysIf.id|asc""".format(apic=apic, leaf=leaf[0])
+    url = """https://{apic}/api/node/class/topology/pod-1/node-{leaf}/l1PhysIf.json?rsp-subtree=children&rsp-subtree-class=pcAggrMbrIf,ethpmPhysIf&order-by=l1PhysIf.id|asc""".format(apic=apic, leaf=leaf[0])
     result = GetResponseData(url, cookie)
     l1PhysIflist = []
     for x in result:
         l1PhysIfobj = l1PhysIf(**x['l1PhysIf']['attributes'])
         if x['l1PhysIf'].get('children'):
             for y in x['l1PhysIf']['children']:
-                l1PhysIfobj.children.append(ethpmPhysIf(**y['ethpmPhysIf']['attributes']))
+                if y.get('ethpmPhysIf'):
+                    l1PhysIfobj.children.append(ethpmPhysIf(**y['ethpmPhysIf']['attributes']))
+                if y.get('pcAggrMbrIf'):
+                    l1PhysIfobj.add_portchannel(pcAggrMbrIf(**y['pcAggrMbrIf']['attributes']))
         l1PhysIflist.append(l1PhysIfobj)
     print('\n')
-    print('{:12} {:32}   \x1b[1;33;40m{:32}\x1b[0m  {}'.format('Interface', 'Working Vlans', 'Configured Vlans', 'INOP Vlans'))
-    print('-' * 90)
+    print('{:12} {:12} {:32}   \x1b[1;33;40m{:32}\x1b[0m  {}'.format('Interface', 'Status', 'Configured Vlans', 'Working Vlans', 'Down Vlans'))
+    print('-' * 110)
     #shortenrangea = parseandreturnsingelist('1-3,5,7-9,11-15,17-21,23,24-28,34-35')
     #shortenrangeb = parseandreturnsingelist('1-3,5,9,12,20-21,23,25,27-28,34-35')
     #mm = set(shortenrangea) - set(shortenrangeb)
@@ -175,6 +183,14 @@ def pull_interface_with_vlaninfo(apic, cookie, leaf):
     #print(mm)
     for x in l1PhysIflist:
         #import pdb; pdb.set_trace()
+        if x.adminSt == 'up' and (x.children[0].operStQual == 'sfp-missing' or x.children[0].operStQual == 'link-failure'):
+            status = 'down/down'
+        elif x.adminSt == 'down':
+            status = 'admin-down'
+        elif x.children[0].operStQual == 'suspended-due-to-no-lacp-pdus':
+            status = 'down/down'
+        else:
+            status = 'up/up'
         operVlans = None
         #import pdb; pdb.set_trace()
         if x.children[0].operVlans != '' and x.children[0].allowedVlans != '':
@@ -183,35 +199,38 @@ def pull_interface_with_vlaninfo(apic, cookie, leaf):
             missingvlans = x.children[0].allowedVlans
         else:
             missingvlans = ''
-        
         if len(x.children[0].allowedVlans.split(',')) > 8:
           #  for num in range(10):
-          for num in range((len(x.children[0].operVlans.split(',')) // 8) + 1):
-            if operVlans:
-               # import pdb; pdb.set_trace() 
-                operVlans = operVlans[8:]
-                allowedVlans = allowedVlans[8:]
-          #      import pdb; pdb.set_trace()
-                if len(operVlans) > 9:
-                    print('{:12} {:32}   \x1b[1;33;40m{:32}\x1b[0m  \x1b[1;31;40m{:32}\x1b[0m'.format('', ','.join(operVlans[:8]) + ',', ','.join(allowedVlans[:8]) + ',', missingvlans))
+            for num in range((len(x.children[0].operVlans.split(',')) // 8) + 1):
+                if operVlans:
+                   # import pdb; pdb.set_trace() 
+                    operVlans = operVlans[8:]
+                    allowedVlans = allowedVlans[8:]
+          #          import pdb; pdb.set_trace()
+                    if len(operVlans) > 9:
+                        print('{:12} {:12} {:32}   \x1b[1;33;40m{:<32}\x1b[0m  \x1b[1;31;40m{:32}\x1b[0m'.format('', '', ','.join(allowedVlans[:8]) + ',',','.join(operVlans[:8]) + ',', missingvlans))
+                    else:
+                        print('{:12} {:12} {:32}   \x1b[1;33;40m{:<32}\x1b[0m  \x1b[1;31;40m{:32}\x1b[0m'.format('', '', ','.join(allowedVlans[:8]),','.join(operVlans[:8]),  missingvlans))
+    
                 else:
-                    print('{:12} {:32}   \x1b[1;33;40m{:32}\x1b[0m  \x1b[1;31;40m{:32}\x1b[0m'.format('', ','.join(operVlans[:8]), ','.join(allowedVlans[:8]), missingvlans))
-
-            else:
-                operVlans =  x.children[0].operVlans.split(',')
-                allowedVlans = x.children[0].allowedVlans.split(',')
-                if len(operVlans) > 8:
-                    print('{:12} {:32}   \x1b[1;33;40m{:32}\x1b[0m  \x1b[1;31;40m{:32}\x1b[0m  {}'.format(x.id, ','.join(operVlans[:8]) + ',', ','.join(allowedVlans[:8]) + ',', missingvlans, x.id))
-                else:
-                    import pdb; pdb.set_trace()
-                    print('{:12} {:32}   \x1b[1;33;40m{:32}\x1b[0m  \x1b[1;31;40m{:32}\x1b[0m  {}'.format(x.id, ','.join(operVlans[:8]), ','.join(allowedVlans[:8]), missingvlans, x.id))
+                    operVlans =  x.children[0].operVlans.split(',')
+                    allowedVlans = x.children[0].allowedVlans.split(',')
+                    if len(operVlans) > 8:
+                        print('{:12} {:12} {:32}   \x1b[1;33;40m{:32}\x1b[0m  \x1b[1;31;40m{:32}\x1b[0m'.format(x.id, status, ','.join(allowedVlans[:8]) + ',',','.join(operVlans[:8]) + ',', missingvlans))
+                    else:
+                       # import pdb; pdb.set_trace()
+                        print('{:12} {:12} {:32}   \x1b[1;33;40m{:32}\x1b[0m  \x1b[1;31;40m{:32}\x1b[0m'.format(x.id, status, ','.join(allowedVlans[:8]),','.join(operVlans[:8]), missingvlans))
 
         else:
             if x.layer == 'Layer3':
-                print('{:12} {:32}   \x1b[1;32;40m{:32}\x1b[0m  \x1b[1;31;40m{:32}\x1b[0m  {}'.format(x.id, '', 'Layer3', '', x.id))
+                print('{:12} {:12} {:^32}   \x1b[1;32;40m{:32}\x1b[0m  \x1b[1;31;40m{:32}\x1b[0m'.format(x.id, status, '','',  ''))
+            elif x.children[0].operVlans == '' and x.children[0].allowedVlans == '':
+                        #elif x.children[0].operVlans == '' and x.children[0].allowedVlans == '':
+                    print('{:12} {:12} {:^32}   \x1b[1;33;40m{:<32}\x1b[0m  \x1b[1;31;40m{:32}\x1b[0m'.format(x.id, status, '',x.children[0].operVlans, ''))
+            #missingvlans = ''
             else:
                # import pdb; pdb.set_trace()
-                print('{:12} {:32}   \x1b[1;33;40m{:32}\x1b[0m  \x1b[1;31;40m{:32}\x1b[0m  {}'.format(x.id, x.children[0].operVlans, x.children[0].allowedVlans, missingvlans, x.id))
+                print('{:12} {:12} {:32}   \x1b[1;33;40m{:<32}\x1b[0m  \x1b[1;31;40m{:32}\x1b[0m'.format(x.id, status, x.children[0].allowedVlans,x.children[0].operVlans, missingvlans))
 
 
 
@@ -347,7 +366,14 @@ def main(import_apic,import_cookie):
             
         pull_interface_with_vlaninfo(apic, cookie, leaf)
 
-        print('\n\n')
+        print('\n')
+        ask = custom_raw_input("Continue? [y]: ") or 'y'
+        if ask != '' and ask[0].lower() == 'y':
+            clear_screen()
+            location_banner('Show EPGs to interface')
+            continue
+        else:
+            break
  ######works need to move to new script       epgvlanlist = [x.dn for x in vlanlist]
  ######works need to move to new script       interface_epg_pull(apic, leaf, vlanlist, leaf)
      #   interfacelist = [x['l1PhysIf']['attributes']['id'] for x in result]

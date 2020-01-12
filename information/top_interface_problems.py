@@ -233,7 +233,12 @@ def main(import_apic,import_cookie):
             else:
                 upto30counter += 1
                 counter += 1
-        import pdb; pdb.set_trace()
+        ask = custom_raw_input("\nRefresh [y]: ") or 'y'
+        if ask != '' and ask[0].lower() == 'y':
+            continue
+        else:
+            break
+
      #   import pdb; pdb.set_trace()
      #   ingresslist = []
      #   for x in result:
