@@ -59,7 +59,7 @@ def gatheranddisplayrecentevents():
         print("\nEvents loading...\n")
         url = """https://{apic}/api/node/class/eventRecord.json?query-target-filter=or(eq(eventRecord.cause,"port-up"),eq(eventRecord.cause,"port-down"),eq(eventRecord.cause,"port-pfc-congested"),eq(eventRecord.cause,"port-security-config-not-supported"),eq(eventRecord.cause,"update-remote-port-to-dbgrelem-failed"),eq(eventRecord.cause,"addor-del-uplink-port-group-failed"),eq(eventRecord.cause,"addor-del-vtep-port-group-failed"),eq(eventRecord.cause,"port-state-change"),eq(eventRecord.cause,"port-pfc-congested"))&order-by=eventRecord.created|desc&page=0&page-size=100""".format(apic=apic)
         logger.info(url)
-        result = GetResponseData(url,cookie)
+        result = GetResponseData(url,cookie,timeout=12)
         clear_screen()
         print("Current time = " + current_time)
         print('\n{:>5}   {:26}{:20}{:24}{}'.format('#','Time','Time Difference', 'Port','Event Summary'))

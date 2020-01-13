@@ -344,6 +344,7 @@ def main():
                             '\t| 19.) Show all IPs in a Bridge Domain\n' +
                             '\t| 20.) Show port-channel location\n' +
                             '\t| 21.) Show Leaf Profile tree structure\n' +
+                            '\t| 22.) Show Top 50 counters\n' +
                             #'\t| 16.) Show Leaf/Spine/APIC info (Not Available)\n' +
                             #'\t| 17.) EPG to EPG troubleshooting (alpha)\n' +
                             #'\t| 18.) Route lookup to endpoint (alpha)\n' +
@@ -351,9 +352,9 @@ def main():
                             '\t ---------------------------------------------------\n\n' +
                             '\t  [CONFIGURATION]\n'
                             '\t ---------------------------------------------------\n' +
-                            '\t| 22.) Configure Local Span\n' + 
-                            '\t| 23.) Capture server traffic ERSPAN to server (Beta)\n' + 
-                            '\t| 24.) Clone VPC/PC and deploy\n' + 
+                            '\t| 23.) Configure Local Span\n' + 
+                            '\t| 24.) Capture server traffic ERSPAN to server (Beta)\n' + 
+                            '\t| 25.) Clone VPC/PC and deploy\n' + 
                             #'\t| 20.) Create EPGs (Not Available)\n' +
                             '\t ---------------------------------------------------\x1b[0m')
             print('\x1b[7')
@@ -368,11 +369,8 @@ def main():
             writepermissionlist = ['1','2','3','22','23','24']
 
             while True:
-                chosen = custom_raw_input('\x1b[u\x1b[44;1H Select a number: ')
+                chosen = custom_raw_input('\x1b[u\x1b[45;1H Select a number: ')
                 if chosen == '1':
-                #    if chosen in writepermissionlist and not checkwritepermissions(userdomainlist):
-                #        raw_input("\n User does not have the appropriate Permissions. Please try again...")
-                #        break
                     try:
                         shut_noshut_interfaces.main(apic,cookie)
                         keyinterrupt = False
@@ -380,10 +378,7 @@ def main():
                         print('\nExit to Main menu\n')
                         keyinterrupt = True
                         break		
-                if chosen == '111':
-                    if chosen in writepermissionlist and not checkwritepermissions(userdomainlist):
-                        raw_input("\n User does not have the appropriate Permissions. Please try again...")
-                        break
+                if chosen == '22':
                     try:
                         top_interface_problems.main(apic,cookie)
                         keyinterrupt = False
@@ -391,10 +386,7 @@ def main():
                         print('\nExit to Main menu\n')
                         keyinterrupt = True
                         break		
-                if chosen == '12':
-                    if chosen in writepermissionlist and not checkwritepermissions(userdomainlist):
-                        raw_input("\n User does not have the appropriate Permissions. Please try again...")
-                        break
+                if chosen == '112':
                     try:
                         autodeploy.main(apic,cookie)
                         keyinterrupt = False
@@ -403,9 +395,6 @@ def main():
                         keyinterrupt = True
                         break	
                 elif chosen == '2':
-               #     if chosen in writepermissionlist and not checkwritepermissions(userdomainlist):
-               #         raw_input("\n User does not have the appropriate Permissions. Please try again...")
-               #         break
                     try:
                         assign_epg_interfaces.main(apic,cookie)
                         keyinterrupt = False
@@ -414,9 +403,6 @@ def main():
                         keyinterrupt = True
                         break            
                 elif chosen == '3':
-               #     if chosen in writepermissionlist and not checkwritepermissions(userdomainlist):
-               #         raw_input("\n User does not have the appropriate Permissions. Please try again...")
-               #         break
                     try:
                         remove_egps.main(apic,cookie)
                         keyinterrupt = False
@@ -425,9 +411,6 @@ def main():
                         keyinterrupt = True
                         break		
                 elif chosen == '4':
-                    if chosen in writepermissionlist and not checkwritepermissions(userdomainlist):
-                        raw_input("\n User does not have the appropriate Permissions. Please try again...")
-                        break
                     try:
                         portsanddescriptions.main(apic,cookie)
                         keyinterrupt = False
@@ -436,9 +419,6 @@ def main():
                         keyinterrupt = True
                         break
                 elif chosen == '5':
-                    if chosen in writepermissionlist and not checkwritepermissions(userdomainlist):
-                        raw_input("\n User does not have the appropriate Permissions. Please try again...")
-                        break
                     try:
                         showinterface.main(apic,cookie)
                         keyinterrupt = False
@@ -447,9 +427,6 @@ def main():
                         keyinterrupt = True
                         break
                 elif chosen == '8':
-                    if chosen in writepermissionlist and not checkwritepermissions(userdomainlist):
-                        raw_input("\n User does not have the appropriate Permissions. Please try again...")
-                        break
                     try:
                         short_vlan_epg_to_ports.main(apic,cookie)
                         keyinterrupt = False
@@ -458,9 +435,6 @@ def main():
                         keyinterrupt = True
                         break
                 elif chosen == '19':
-                    if chosen in writepermissionlist and not checkwritepermissions(userdomainlist):
-                        raw_input("\n User does not have the appropriate Permissions. Please try again...")
-                        break
                     try:
                         endpoint_per_leaf.main(apic,cookie)
                         keyinterrupt = False
@@ -469,9 +443,8 @@ def main():
                         keyinterrupt = True
                         break
           #      elif chosen == '24':
-          #     if chosen in writepermissionlist and not checkwritepermissions(userdomainlist):
-          #     raw_input("\n User does not have the appropriate Permissions. Please try again...")
-          # break     
+          #     
+          #               # break     
           #     try:
           #              create_vpc.main(apic,cookie)
           #              keyinterrupt = False
@@ -480,9 +453,6 @@ def main():
           #              keyinterrupt = True
           #              continue
                 elif chosen == '21':
-                    if chosen in writepermissionlist and not checkwritepermissions(userdomainlist):
-                        raw_input("\n User does not have the appropriate Permissions. Please try again...")
-                        break
                     try:
                         display_switch_to_leaf_structure.main(apic,cookie)
                         keyinterrupt = False
@@ -490,10 +460,7 @@ def main():
                         print('\nExit to Main menu\n')
                         keyinterrupt = True
                         break
-                elif chosen == '24':
-                    if chosen in writepermissionlist and not checkwritepermissions(userdomainlist):
-                        raw_input("\n User does not have the appropriate Permissions. Please try again...")
-                        break
+                elif chosen == '25':
                     try:
                         clonevpcanddeploy.main(apic,cookie)
                         keyinterrupt = False
@@ -502,9 +469,6 @@ def main():
                         keyinterrupt = True
                         break
                 elif chosen == '18':
-                    if chosen in writepermissionlist and not checkwritepermissions(userdomainlist):
-                        raw_input("\n User does not have the appropriate Permissions. Please try again...")
-                        break
                     try:
                         switchandapicinfo.main(apic,cookie)
                         keyinterrupt = False
@@ -513,9 +477,6 @@ def main():
                         keyinterrupt = True
                         break
                 elif chosen == '20':
-                    if chosen in writepermissionlist and not checkwritepermissions(userdomainlist):
-                        raw_input("\n User does not have the appropriate Permissions. Please try again...")
-                        break
                     try:
                         portchannel_to_phy_interfaces.main(apic,cookie)
                         keyinterrupt = False
@@ -523,11 +484,7 @@ def main():
                         print('\nExit to Main menu\n')
                         keyinterrupt = True
                         break
-    
                 elif chosen == '6':
-                    if chosen in writepermissionlist and not checkwritepermissions(userdomainlist):
-                        raw_input("\n User does not have the appropriate Permissions. Please try again...")
-                        break
                     try:
                         switch_port_view.main(apic,cookie)
                         keyinterrupt = False
@@ -536,9 +493,6 @@ def main():
                         keyinterrupt = True
                         break
                 elif chosen == '7':
-                    if chosen in writepermissionlist and not checkwritepermissions(userdomainlist):
-                        raw_input("\n User does not have the appropriate Permissions. Please try again...")
-                        break
                     try:
                         switch_port_view.main_detail(apic,cookie)
                         keyinterrupt = False
@@ -547,9 +501,6 @@ def main():
                         keyinterrupt = True
                         break              
                 elif chosen == '9':
-                    if chosen in writepermissionlist and not checkwritepermissions(userdomainlist):
-                        raw_input("\n User does not have the appropriate Permissions. Please try again...")
-                        break
                     try:
                         show_all_endpoints_on_interface.main(apic,cookie)
                         keyinterrupt = False
@@ -559,9 +510,6 @@ def main():
                         keyinterrupt = True
                         break
                 elif chosen == '10':
-                    if chosen in writepermissionlist and not checkwritepermissions(userdomainlist):
-                        raw_input("\n User does not have the appropriate Permissions. Please try again...")
-                        break
                     try:
                         fault_summary.main(apic,cookie)
                         keyinterrupt = False
@@ -570,9 +518,6 @@ def main():
                         keyinterrupt = True
                         break		
                 elif chosen == '11':
-                    if chosen in writepermissionlist and not checkwritepermissions(userdomainlist):
-                        raw_input("\n User does not have the appropriate Permissions. Please try again...")
-                        break
                     try:
                         recent_port_down.main(apic,cookie)
                         keyinterrupt = False
@@ -581,9 +526,6 @@ def main():
                         keyinterrupt = True
                         break	
                 elif chosen == '12':
-                    if chosen in writepermissionlist and not checkwritepermissions(userdomainlist):
-                        raw_input("\n User does not have the appropriate Permissions. Please try again...")
-                        break
                     try:
                         most_recent_fault_changes.main(apic,cookie)
                         keyinterrupt = False
@@ -592,9 +534,6 @@ def main():
                         keyinterrupt = True
                         break
                 elif chosen == '13':
-                    if chosen in writepermissionlist and not checkwritepermissions(userdomainlist):
-                        raw_input("\n User does not have the appropriate Permissions. Please try again...")
-                        break
                     try:
                         most_recent_admin_changes.main(apic,cookie)
                         keyinterrupt = False
@@ -603,9 +542,6 @@ def main():
                         keyinterrupt = True
                         break
                 elif chosen == '14':
-                    if chosen in writepermissionlist and not checkwritepermissions(userdomainlist):
-                        raw_input("\n User does not have the appropriate Permissions. Please try again...")
-                        break
                     try:
                         most_recent_event_changes.main(apic,cookie)
                         keyinterrupt = False
@@ -614,9 +550,6 @@ def main():
                         keyinterrupt = True
                         break		
                 elif chosen == '15':
-                    if chosen in writepermissionlist and not checkwritepermissions(userdomainlist):
-                        raw_input("\n User does not have the appropriate Permissions. Please try again...")
-                        break
                     try:
                         alleventsbetweendates.main(apic,cookie)
                         keyinterrupt = False
@@ -625,9 +558,6 @@ def main():
                         keyinterrupt = True
                         break
                 elif chosen == '16':
-                    if chosen in writepermissionlist and not checkwritepermissions(userdomainlist):
-                        raw_input("\n User does not have the appropriate Permissions. Please try again...")
-                        break
                     try:
                         alleventsbetweendates_fulldetail.main(apic,cookie)
                         keyinterrupt = False
@@ -636,9 +566,6 @@ def main():
                         keyinterrupt = True
                         break
                 elif chosen == '17':
-                    if chosen in writepermissionlist and not checkwritepermissions(userdomainlist):
-                        raw_input("\n User does not have the appropriate Permissions. Please try again...")
-                        break
                     try:
                         ipendpoint_search.main(apic,cookie)
                         keyinterrupt = False
@@ -647,9 +574,8 @@ def main():
                         keyinterrupt = True
                         break		
                 #elif chosen == '17':
-                # if chosen in writepermissionlist and not checkwritepermissions(userdomainlist):
-                # raw_input("\n User does not have the appropriate Permissions. Please try again...")
-                # break   
+                # 
+                #                 # break   
                 # try:
                 #        epg_troubleshooting.main(apic,cookie)
                 #        keyinterrupt = False
@@ -658,9 +584,8 @@ def main():
                 #        keyinterrupt = True
                 #        continue
                 #elif chosen == '18':
-                # if chosen in writepermissionlist and not checkwritepermissions(userdomainlist):
-                # raw_input("\n User does not have the appropriate Permissions. Please try again...")
-                # break   
+                # 
+                #                 # break   
                 # try:
                 #        routetranslation.main(apic,cookie)
                 #        keyinterrupt = False
@@ -670,9 +595,8 @@ def main():
                 #        keyinterrupt = True
                 #        continue
                 #elif chosen == '18':
-                # if chosen in writepermissionlist and not checkwritepermissions(userdomainlist):
-                # raw_input("\n User does not have the appropriate Permissions. Please try again...")
-                # break   
+                # 
+                #                 # break   
                 # try:
                 #        check_routing.main(apic,cookie)
                 #        keyinterrupt = False
@@ -682,9 +606,8 @@ def main():
                 #        continue      
     
                 #elif chosen == '17':
-                # if chosen in writepermissionlist and not checkwritepermissions(userdomainlist):
-                # raw_input("\n User does not have the appropriate Permissions. Please try again...")
-                # break   
+                # 
+                #                 # break   
                 # try:
                 #        show_static_routes.main(apic,cookie)
                 #        keyinterrupt = False
@@ -693,10 +616,7 @@ def main():
                 #        keyinterrupt = True
                 #        continue
     
-                elif chosen == '22':
-                    if chosen in writepermissionlist and not checkwritepermissions(userdomainlist):
-                        raw_input("\n User does not have the appropriate Permissions. Please try again...")
-                        break
+                elif chosen == '23':
                     try:
                         create_local_span_session.main(apic,cookie)
                         keyinterrupt = False
@@ -706,10 +626,7 @@ def main():
                         break
                 #elif chosen == 'exit':
                 #    raise KeyboardInterrupt
-                elif chosen == '23':
-                    if chosen in writepermissionlist and not checkwritepermissions(userdomainlist):
-                        raw_input("\n User does not have the appropriate Permissions. Please try again...")
-                        break
+                elif chosen == '24':
                     try:
                         span_to_server.main(apic,cookie,current_user)
                         keyinterrupt = False

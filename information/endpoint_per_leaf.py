@@ -19,6 +19,7 @@ import Queue
 import interfaces.switchpreviewutil as switchpreviewutil
 from localutils.custom_utils import *
 import logging
+from multiprocessing.dummy import Pool as ThreadPool
 
 
 class epmMacEp():
@@ -119,29 +120,30 @@ class fvRsHyper():
 def gather_fvCEp_fullinfo(result):
     fvIPlist = []
     eplist = []
-    for ep in result:
-        mac = ep['fvCEp']['attributes']['mac']
-        name = ep['fvCEp']['attributes']['name']
-        encap = ep['fvCEp']['attributes']['encap']
-        lcC = ep['fvCEp']['attributes']['lcC']
-        dn = ep['fvCEp']['attributes']['dn']
-        ip = ep['fvCEp']['attributes']['ip']
-        fvRsVmobject = None
-        fvRsCEpToPathEpobject = None
-        fvRsHyperobject = None
-        if ep['fvCEp'].get('children'):
-            for ceptopath in ep['fvCEp']['children']:
-                if ceptopath.get('fvIp'): #and ceptopath['fvIP']['attributes']['state'] == 'formed':
-                    fvIP_addr = ceptopath['fvIp']['attributes']['addr']
-                    fvIP_rn = ceptopath['fvIp']['attributes']['rn']
-                    fvIPlist.append(fvIP(addr=fvIP_addr))#, rn=fvIP_rn,#fvReportingNodes=fvReportingNodes))
-                else:
-                    fvIPlist = None
-        eplist.append(fvCEp(mac=mac, encap=encap, ip=ip, dn=dn, fvIPlist=fvIPlist))
-        fvIPlist = []
-        iplist = []
-        ipobjectlist = []
-        fvreportingNodes = []
+    for aepg in result:
+        for ep in aepg['fvAEPg']['children']:
+            mac = ep['fvCEp']['attributes']['mac']
+            name = ep['fvCEp']['attributes']['name']
+            encap = ep['fvCEp']['attributes']['encap']
+            lcC = ep['fvCEp']['attributes']['lcC']
+            dn = ep['fvCEp']['attributes']['dn']
+            ip = ep['fvCEp']['attributes']['ip']
+            fvRsVmobject = None
+            fvRsCEpToPathEpobject = None
+            fvRsHyperobject = None
+            if ep['fvCEp'].get('children'):
+                for ceptopath in ep['fvCEp']['children']:
+                    if ceptopath.get('fvIp'): #and ceptopath['fvIP']['attributes']['state'] == 'formed':
+                        fvIP_addr = ceptopath['fvIp']['attributes']['addr']
+                        fvIP_rn = ceptopath['fvIp']['attributes']['rn']
+                        fvIPlist.append(fvIP(addr=fvIP_addr))#, rn=fvIP_rn,#fvReportingNodes=fvReportingNodes))
+                    else:
+                        fvIPlist = None
+            eplist.append(fvCEp(mac=mac, encap=encap, ip=ip, dn=dn, fvIPlist=fvIPlist))
+            fvIPlist = []
+            iplist = []
+            ipobjectlist = []
+            fvreportingNodes = []
     return eplist
 
 class fvBD():
@@ -168,32 +170,106 @@ def gather_BDs_with_Subnets():
         bdlist.append(bdobject)
     return bdlist
 
+#def 
+
 def main(import_apic,import_cookie):
-    global apic
-    global cookie
-    cookie = import_cookie
-    apic = import_apic
-    clear_screen()
-    url = """https://{apic}/api/class/fvCEp.json?rsp-subtree=full&rsp-subtree-class=fvIp""".format(apic=apic)
-    result = GetResponseData(url, cookie)
-    ce_list = gather_fvCEp_fullinfo(result)
-    bdlist = gather_BDs_with_Subnets()
-    print('\n')
-    for num,bd in enumerate(bdlist, 1):
-        print('\t{}.) {:30} | {}'.format(num,bd, bd.subnets))
-    desiredbd = input('\n\tShow all IPs used in which BD?: ')
-    for ce in ce_list:
-        shortdn = '/'.join(ce.dn.split('/')[:-1])
-        for x in bdlist:
-            if shortdn in x.epgs:
-               # print('yes')
-                ce.bd = x
-    for ce in sorted(ce_list, key=lambda x: (x.bd, int(x.ip.split('.')[0]),int(x.ip.split('.')[1]),int(x.ip.split('.')[2]),int(x.ip.split('.')[3]), x.dn )):
-        if ce.bd == bdlist[int(desiredbd)-1]:
-            print('{} | {}, {} | {} | {}'.format(ce, ce.ip, ce.fvIPlist, ce.encap, ce.bd))
+    while True:
+        global apic
+        global cookie
+        cookie = import_cookie
+        apic = import_apic
+        clear_screen()
+        location_banner('Show IPs in BD')
     
-    
-    custom_raw_input('Continue..')
+        #for epg in 
+        #url = """https://{apic}/api/class/fvCEp.json?rsp-subtree=full&rsp-subtree-class=fvIp""".format(apic=apic)
+        #url = """https://192.168.255.2/api/node/mo/uni/tn-SI/ap-APP-AD/epg-EPG-VL11-AD.json?rsp-subtree=full&target-subtree-class=fvCEp"""
+        #result = GetResponseData(url, cookie)
+       # ce_list = gather_fvCEp_fullinfo(result)
+        bdlist = gather_BDs_with_Subnets()
+        resultlist = []
+     #   for bd in bdlist:
+     #       for epg in bd.epgs:
+     #           url = """https://{apic}/api/node/mo/{epg}.json?rsp-subtree=children""".format(apic=apic,epg=epg)
+     #           resultlist.append(GetResponseData(url, cookie))
+     #           
+     #   for result in resultlist:
+     #       #import pdb; pdb.set_trace()
+     #      # print(result)
+     #       print('\n\n\n')
+     #       for fvceps in result[0]['fvAEPg']['children']:
+     #           #print(fvceps)
+     #           if fvceps.get('fvCEp'):
+     #               print(fvceps['fvCEp']['attributes']['name'],fvceps['fvCEp']['attributes']['ip'] )
+     #              # for fvcep in fvceps.items():
+     #              #     import pdb; pdb.set_trace()
+     #              #     print(fvcep.__dict__)
+     #                   #if fvcep.get('fvCEp'):
+     #                   #    print(fvcep)
+     #       #print(result[0]['fvAEPg']['children'][0]['fvCEp'])
+     #       #import pdb; pdb.set_trace()
+     #       #url = """https://{apic}/api/class/fvCEp.json?rsp-subtree=full&rsp-subtree-class=fvIp""".format(apic=apic)
+     #       import pdb; pdb.set_trace()
+     #   print('\n')
+        print('  {:40}   | {}'.format('Bridge Domain','Subnet(s)'))
+        print('  ' + '-' * 60)
+        for num,bd in enumerate(bdlist, 1):
+            if bd.subnets == []:
+                print('  {:3}.) {:36} | {}'.format(num,bd, 'None'))
+            else:
+                print('  {:3}.) {:36} | {}'.format(num,bd, bd.subnets))
+        while True:
+            desiredbd = raw_input('\n  Show all IPs used in which BD?: ')
+            if desiredbd.isdigit() and int(desiredbd) > 0 and int(desiredbd) <= len(bdlist):
+                break
+            else:
+                print('\n  \x1b[1;31;40mInvalid option, please try again...\x1b[0m')
+                continue
+        print('\n')
+        epglist = []
+        eplist = []
+        #for bd in bdlist:
+        for epg in bdlist[int(desiredbd)-1].epgs:
+            epglist.append(epg)
+        pool = ThreadPool(10)
+        #for bd in bdlist:
+        #    for epg in bd.epgs:
+        url = """https://{}/api/node/mo/{}.json?rsp-subtree=children"""
+        #print(epglist)
+        results = pool.map(lambda x : GetResponseData(url.format(apic,x), cookie), epglist)
+       # for x in results:
+       #     if x[1] is not None:
+       #         print("Error", x[0], x[1])
+        pool.close()
+        pool.join()
+        #import pdb; pdb.set_trace()
+        for bd in results:
+            for endpoint in bd:
+               # import pdb; pdb.set_trace()
+                if endpoint['fvAEPg'].get('children'):
+                    for ep in endpoint['fvAEPg']['children']:
+                        if ep.get('fvCEp'):
+                            eplist.append((endpoint['fvAEPg']['attributes']['name'], ep['fvCEp']['attributes']['name'], ep['fvCEp']['attributes']['encap'], ep['fvCEp']['attributes']['ip']))
+           #         print(endpoint)
+          #          print('\n\n')
+     #   for ce in ce_list:
+     #       shortdn = '/'.join(ce.dn.split('/')[:-1])
+     #       for x in bdlist:
+     #           if shortdn in x.epgs:
+     #              # print('yes')
+     #               ce.bd = x
+        try:
+            #import pdb; pdb.set_trace()
+            for num,ce in enumerate(sorted(eplist, key=lambda x: (int(x[3].split('.')[0]),int(x[3].split('.')[1]),int(x[3].split('.')[2]),int(x[3].split('.')[3]), x[0]))):
+                print('  {:3}.) {:23} | {:20} | {:10} | {}'.format(num + 1,ce[0], ce[1], ce[2], ce[3]))
+        except:
+            import pdb; pdb.set_trace()
+        
+        ask = custom_raw_input("\n New Search [y]: ") or 'y'
+        if ask != '' and ask[0].lower() == 'y':
+            continue
+        else:
+            break
 
 
 

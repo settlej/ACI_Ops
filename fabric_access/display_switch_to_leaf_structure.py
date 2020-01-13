@@ -290,12 +290,13 @@ def return_physical_programmed_ports_perleaf(leaf, apic, cookie):
 
 
 def main(import_apic,import_cookie):
+    while True:
         global apic
         global cookie
         cookie = import_cookie
         apic = import_apic
         clear_screen()
-        location_banner('Creating VPC')
+        location_banner('Display Physical Setup')
         nodeprofilelist, nodedict = gather_infraNodeP(apic,cookie)
         fexes = gather_infraFexP(apic,cookie)
         apps = gather_infraAccPortP(apic,cookie, fexes)
@@ -307,6 +308,23 @@ def main(import_apic,import_cookie):
            # import pdb; pdb.set_trace()
             for leafp in switchp.leafprofiles:
                 print('\t' + leafp.name)
+                for fex in fexes:
+                    for portlist in leafp.infraHPortSlist:
+                        #print(fex.dn, portlist.infraRsAccBaseGrp.tDn)
+                        if fex.dn in portlist.infraRsAccBaseGrp.tDn:
+                            print('\t\t{} [fex ID: {}]'.format(fex, portlist.infraRsAccBaseGrp.fexId))
+                          #  print(portlist.infraRsAccBaseGrp.fexId)
+                        #for x in fexes:
+                            for y in fex.infraHPortSlist:
+                                #import pdb; pdb.set_trace()
+                                print('\t\t\t' + y.infraRsAccBaseGrp.tDn)
+                                #print(y.__dict__)
+                                for z in y.infraPortsBlklist:
+                                    if z.fromPort == z.toPort:
+                                        print('\t\t\t\t ' + z.fromPort)
+                                    else:   
+                                        print('\t\t\t\t ' + z.fromPort + ' - ' + z.toPort)
+
                 #import pdb; pdb.set_trace()
                 for portlist in leafp.infraHPortSlist:
                     print('\t\t' + portlist.name)
@@ -324,14 +342,22 @@ def main(import_apic,import_cookie):
 
                     #print('\t\t\t' + portlist.infraRsAccBaseGrp.tCl)
                     for z in portlist.infraPortsBlklist:
-                        print('\t\t\t ' + z.fromPort + ' - ' + z.toPort)
+                        if z.fromPort == z.toPort:
+                            print('\t\t\t\t ' + z.fromPort)
+                        else:   
+                            print('\t\t\t\t ' + z.fromPort + ' - ' + z.toPort)
             print('\n')
                # for fex in y.infraFexPlist:
                #     print('\t\t {}'.format(fex))
                #     print('\t\t  {}'.format(fex.allports))
-     
-        import pdb; pdb.set_trace()
-
+                
+                #nodedict[y.tDn].leafprofiles.append(x)
+            #import pdb; pdb.set_trace()
+        ask = custom_raw_input("\nRefresh [n]: ") or 'n'
+        if ask != '' and ask[0].lower() == 'y':
+            continue
+        else:
+            break
 
  #       for x in apps:
  #           print(x.name)

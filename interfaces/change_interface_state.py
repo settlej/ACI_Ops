@@ -93,6 +93,8 @@ def postnoshut(interface,queue, apic, cookie):
         result, error =  PostandGetResponseData(url, data, cookie)
         if result == []:
             queue.put('[Complete] no shut ' + interface.name)
+        else:
+            queue.put('\x1b[1;37;41mFailure\x1b[0m -- ' + error)
 
 
 def main(import_apic, import_cookie):
