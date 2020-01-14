@@ -518,6 +518,7 @@ def ip_path_function(ipaddr):
             macaddr = result[0]['fvIp']['attributes']['dn'].split('/')[4].replace('cep-','')
             url = """https://{apic}/api/node/class/fvCEp.json?query-target-filter=eq(fvCEp.mac,"{macaddr}")&rsp-subtree=full&rsp-subtree-include=required""".format(apic=apic,macaddr=macaddr)
             result, totalcount = GetResponseData(url, cookie, return_count=True) 
+            logger.info(url)
         fvCEplist = gather_fvCEp_fullinfo(result)
         for fvCEp in fvCEplist:
             url = """https://{apic}/api/node/mo/{}.json?rsp-subtree=full&target-subtree-class=fvCEp,fvRsCEpToPathEp,fvRsHyper,fvRsToNic,fvRsToVm""".format(fvCEp.dn,apic=apic)

@@ -23,7 +23,7 @@ import logging
 # specifiy logging levels for file vs console.  Set default level to DEBUG to allow more
 # grainular logging levels
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 # Define logging handler for file and console logging.  Console logging can be desplayed during
 # program run time, similar to print.  Program can display or write to log file if more debug 
@@ -290,70 +290,6 @@ class pcObject():
         else:
             return None
 
-def main(import_apic,import_cookie, current_user):
-    try:
-        global apic
-        global cookie
-        cookie = import_cookie
-        apic = import_apic
-        allepglist = get_All_EGPs(apic,cookie)
-        allpclist = get_All_PCs(apic,cookie)
-        allvpclist = get_All_vPCs(apic,cookie)
-        all_leaflist = get_All_leafs(apic,cookie)
-    
-        selection = interface_menu()
-        #direction = "Source"
-        
-        if selection == '1':
-            choseninterfaceobjectlist = physical_selection(all_leaflist)
-        elif selection == '2':
-            choseninterfaceobjectlist = port_channel_selection(allpclist)
-        elif selection == '3':
-            choseninterfaceobjectlist = port_channel_selection(allvpclist)
-    
-        while True:
-            current_time = get_APIC_clock(apic,cookie)
-            current_time = current_time.replace(' ', 'T')
-            all_leaflist = get_All_leafs(apic,cookie)
-            if all_leaflist == []:
-                print('\x1b[1;31;40mFailed to retrieve active leafs, make leafs are operational...\x1b[0m')
-                custom_raw_input('\n#Press enter to continue...')
-                return
-            #print("\nWhat is the desired \x1b[1;33;40m'Monitored interface'\x1b[0m leaf for span session?\r")
-#            desiredleaf = custom_custom_raw_input("\nWhat is the desired \x1b[1;33;40m'Source and Destination'\x1b[0m leaf for span session?\r")
-           
-            #print("\nWhat is the desired \x1b[1;33;40m'Destination'\x1b[0m leaf for span session?\r")
-            #userpath = os.path.expanduser("~")
-            #userpathmarker = userpath.rfind('/')
-            #user = os.path.expanduser("~")[userpathmarker+1:]
-            #name = datetime.datetime.now().strftime('%Y:%m:%dT%H:%M:%S') + '_'
-            #direction = 'Destination'
-            #chosendestinterfaceobject, leaf = physical_selection(all_leaflist,direction)
-            #create_span_dest_url(chosendestinterfaceobject[0], name, leaf)
-            #direction= 'Source'
-            #chosensourceinterfacobject, leaf = physical_selection(all_leaflist,direction)
-            filterpath = create_filter(apic, cookie, current_time, current_user)
-            if isinstance(filterpath, tuple): # verify filter creating didn't return error
-                print('\n\x1b[1;37;41mFailure\x1b[0m -- ' + filterpath[1])
-                custom_raw_input('\n#Press enter to continue...')
-                break
-            spandestname, serverip = create_span_server(apic, cookie, current_time, current_user, allepglist)
-            if isinstance(spandestname, tuple): # verify filter creating didn't return error
-                print('\n\x1b[1;37;41mFailure\x1b[0m -- ' + spandestname[1])
-                custom_raw_input('\n#Press enter to continue...')
-                break
-            create_span_source(apic, cookie, current_time, spandestname, sourceinterfacepath=choseninterfaceobjectlist[0], filterpath=filterpath)
-            #create_source_session_and_port(chosensourceinterfacobject[0],chosendestinterfaceobject[0], name, leaf)
-            if isinstance(spandestname, tuple): # verify filter creating didn't return error
-                print('\n\x1b[1;37;41mFailure\x1b[0m -- ' + spandestname[1])
-                custom_raw_input('\n#Press enter to continue...')
-                cookie = refreshToken(apic, cookie)
-                break
-            cookie = refreshToken(apic, cookie)
-            custom_raw_input('\n#Press enter to continue...')
-            break
-    except Exception as e:
-        logger.critical(str(e))
 
 def physical_selection(all_leaflist):
     nodelist = [node['fabricNode']['attributes']['id'] for node in all_leaflist]
@@ -459,7 +395,6 @@ def port_channel_selection(allpclist):
 
 
 def create_filter(apic, cookie, current_time, current_user, protocol='unspecified'):
-    #filtername = raw_input('filtername: ')
     print('ACL Filter for SPAN:')
     srcaddr = raw_input('    Source ip: ')
     dstaddr = raw_input('    Destination ip: ')
@@ -559,10 +494,16 @@ def create_span_source(apic, cookie, current_time, spandestname, sourceinterface
     sessionname = "{}-{}".format(current_time, "SPAN_SESSION_SERVER")
     spansourcename = current_time + '_source_'+ sourceinterfacepath.name.replace('/','_')
     url = """https://{apic}/api/node/mo/uni/infra/srcgrp-{sessionname}.json""".format(apic=apic,sessionname=sessionname)
-    data = ("""{"spanSrcGrp":{"attributes":{name":"%(sessionname)s","status":"created"},"children":""" % {"sessionname":sessionname}
-            + """[{"spanSpanLbl":{"attributes":{"name":"%(spandestname)s","status":"created"},""" % {"spandestname":spandestname}
-            + """"children":[]}},{"spanSrc":{"attributes":{"name":"%(spansourcename)s","status":"created"},"children":""" % {"spansourcename":spansourcename}
-            + """[{"spanRsSrcToFilterGrp":{"attributes":{"tDn":"%(filterpath)s","status":"created"}}},{"spanRsSrcToPathEp":{"attributes":{"tDn":"%(sourceinterfacepath)s","status":"created"}}}]}}]}}""") % {"filterpath":filterpath,"sourceinterfacepath":str(sourceinterfacepath)}
+    if filterpath == None:
+        data = ("""{"spanSrcGrp":{"attributes":{name":"%(sessionname)s","status":"created"},"children":""" % {"sessionname":sessionname}
+                + """[{"spanSpanLbl":{"attributes":{"name":"%(spandestname)s","status":"created"},""" % {"spandestname":spandestname}
+                + """"children":[]}},{"spanSrc":{"attributes":{"name":"%(spansourcename)s","status":"created"},"children":""" % {"spansourcename":spansourcename}
+                + """[{"spanRsSrcToPathEp":{"attributes":{"tDn":"%(sourceinterfacepath)s","status":"created"}}}]}}]}}""") % {"sourceinterfacepath":str(sourceinterfacepath)}
+    else:
+        data = ("""{"spanSrcGrp":{"attributes":{name":"%(sessionname)s","status":"created"},"children":""" % {"sessionname":sessionname}
+                + """[{"spanSpanLbl":{"attributes":{"name":"%(spandestname)s","status":"created"},""" % {"spandestname":spandestname}
+                + """"children":[]}},{"spanSrc":{"attributes":{"name":"%(spansourcename)s","status":"created"},"children":""" % {"spansourcename":spansourcename}
+                + """[{"spanRsSrcToFilterGrp":{"attributes":{"tDn":"%(filterpath)s","status":"created"}}},{"spanRsSrcToPathEp":{"attributes":{"tDn":"%(sourceinterfacepath)s","status":"created"}}}]}}]}}""") % {"filterpath":filterpath,"sourceinterfacepath":str(sourceinterfacepath)}
     logger.info(url)
     logger.info(data)
     result = PostandGetResponseData(url, data, cookie)
@@ -581,4 +522,58 @@ def create_span_source(apic, cookie, current_time, spandestname, sourceinterface
 #PAN_SROUCE","name":"SPAN_SROUCE","rn":"src-SPAN_SROUCE","status":"created"},"children":[{"spanRsSrcToFilterGrp":
 #"attributes":{"tDn":"uni/infra/filtergrp-test-filter","status":"created"},"children":[]}},{"spanRsSrcToPathEp":{"attr
 #ibutes":{"tDn":"topology/pod-1/paths-101/pathep-[eth1/26]","status":"created"},"children":[]}}]}}]}}
+def main(import_apic,import_cookie, current_user):
+    try:
+        global apic
+        global cookie
+        cookie = import_cookie
+        apic = import_apic
+        allepglist = get_All_EGPs(apic,cookie)
+        allpclist = get_All_PCs(apic,cookie)
+        allvpclist = get_All_vPCs(apic,cookie)
+        all_leaflist = get_All_leafs(apic,cookie)
+    
+        selection = interface_menu()
+        #direction = "Source"
+        
+        if selection == '1':
+            choseninterfaceobjectlist = physical_selection(all_leaflist)
+        elif selection == '2':
+            choseninterfaceobjectlist = port_channel_selection(allpclist)
+        elif selection == '3':
+            choseninterfaceobjectlist = port_channel_selection(allvpclist)
+    
+        while True:
+            current_time = get_APIC_clock(apic,cookie)
+            current_time = current_time.replace(' ', 'T')
+            all_leaflist = get_All_leafs(apic,cookie)
+            if all_leaflist == []:
+                print('\x1b[1;31;40mFailed to retrieve active leafs, make leafs are operational...\x1b[0m')
+                custom_raw_input('\n#Press enter to continue...')
+                return
+            #filterpath = create_filter(apic, cookie, current_time, current_user)
+            #if isinstance(filterpath, tuple): # verify filter creating didn't return error
+            #    print('\n\x1b[1;37;41mFailure\x1b[0m -- ' + filterpath[1])
+            #    custom_raw_input('\n#Press enter to continue...')
+            #    break
+            spandestname, serverip = create_span_server(apic, cookie, current_time, current_user, allepglist)
+            if isinstance(spandestname, tuple): # verify filter creating didn't return error
+                print('\n\x1b[1;37;41mFailure\x1b[0m -- ' + spandestname[1])
+                custom_raw_input('\n#Press enter to continue...')
+                break
+            try: 
+                create_span_source(apic, cookie, current_time, spandestname, sourceinterfacepath=choseninterfaceobjectlist[0], filterpath=None)
+                #create_source_session_and_port(chosensourceinterfacobject[0],chosendestinterfaceobject[0], name, leaf)
+                if isinstance(spandestname, tuple): # verify filter creating didn't return error
+                    print('\n\x1b[1;37;41mFailure\x1b[0m -- ' + spandestname[1])
+                    custom_raw_input('\n#Press enter to continue...')
+                    cookie = refreshToken(apic, cookie)
+                    break
+                cookie = refreshToken(apic, cookie)
+                custom_raw_input('\n#Press enter to continue...')
+                break
+            except:
+                import pdb; pdb.set_trace()
+    except Exception as e:
+        logger.critical(str(e))
 #

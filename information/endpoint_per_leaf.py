@@ -1,5 +1,6 @@
 #!/bin//python
 
+from __future__ import print_function
 import re
 try:
     import readline
@@ -217,7 +218,7 @@ def main(import_apic,import_cookie):
             if bd.subnets == []:
                 print('  {:3}.) {:36} | {}'.format(num,bd, 'None'))
             else:
-                print('  {:3}.) {:36} | {}'.format(num,bd, bd.subnets))
+                print('  {:3}.) {:36} | {}'.format(num,bd, ', '.join(bd.subnets)))
         while True:
             desiredbd = raw_input('\n  Show all IPs used in which BD?: ')
             if desiredbd.isdigit() and int(desiredbd) > 0 and int(desiredbd) <= len(bdlist):

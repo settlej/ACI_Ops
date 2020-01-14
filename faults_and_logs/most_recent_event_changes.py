@@ -76,7 +76,7 @@ def gatheranddisplayrecentevents():
                 eventtrig = event['eventRecord']['attributes']['trig']
                 eventuser = event['eventRecord']['attributes']['user']
                 eventdn = event['eventRecord']['attributes']['dn']
-                if 'eth' in eventdn and not 'extpaths' in eventdn:
+                if 'eth' in eventdn and not 'extpaths' in eventdn and not 'span' in eventdn:
                     leaf = re.search(r'(node-[0-9]{1,3})|(paths-[0-9]{1,3})', eventdn).group()
                     if leaf.startswith('paths'):
                         leaf = leaf.replace('paths', 'leaf')
