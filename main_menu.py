@@ -329,7 +329,7 @@ def main():
                             '\t ---------------------------------------------------\n\n' +
                             '\t  [FAULTS and LOGS]\n'
                             '\t ---------------------------------------------------\n' +
-                            '\t| 10.) Faults Summary\n' + 
+                            '\t| 10.) Important Faults Summary\n' + 
                             '\t| 11.) Recent Port up/down intefaces\n'
                             '\t| 12.) Recent Faults\n' +
                             '\t| 13.) Recent Admin Changes\n' + 

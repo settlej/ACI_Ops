@@ -392,32 +392,37 @@ def physical_interface_selection(apic, cookie, chosenleafs, provideleaf=False):
         if interf != '':
            interfacedict[interf] = str(num) + '.) '
            interf.number = num
-    listlen = len(finalsortedinterfacelist) / 3
+    listlen = len(finalsortedinterfacelist) / 2
+    if len(finalsortedinterfacelist) % 2 != 0:
+        listlen += 1
     firstgrouped = [x for x in grouper(finalsortedinterfacelist,listlen)]
     finalgrouped = zip(*firstgrouped)
-    for column in finalgrouped:
-        a = column[0].number
-        if len(goodspacing(column[0]) + '  ') >= 22:
-            b = goodspacing(column[0]) + '  ' + column[0].descr[:18]
+    print("{:7}{:25}{:32}{:28}{}".format('',"Interface","Description","Interface","Description"))
+    print("   {:90}".format('-'* 105))
+    for column1,column2 in finalgrouped:
+        a = column1.number
+        if len(goodspacing(column1) + '  ') >= 22:
+            b = goodspacing(column1) + '  ' + '\x1b[1;33;40m' + column1.descr[:18] + '\x1b[0m'
         else:
-            b = goodspacing(column[0]) + '  ' + column[0].descr[:25]
-        c = column[1].number
-        if len(goodspacing(column[1]) + '  ') >= 22:
-            d = goodspacing(column[1]) + '  ' + column[1].descr[:18]
+            b = goodspacing(column1) + '  ' + '\x1b[1;33;40m' + column1.descr[:25] + '\x1b[0m'
+        c = column2.number
+        if len(goodspacing(column2) + '  ') >= 22:
+            d = goodspacing(column2) + '  ' + '\x1b[1;33;40m' + column2.descr[:18] + '\x1b[0m'
         else:
-            d = goodspacing(column[1]) + '  ' + column[1].descr[:25]
-        if column[2] == '' or column[2] == None:
-            e = ''
-            f = ''
+            d = goodspacing(column2) + '  ' + '\x1b[1;33;40m' + column2.descr[:25] + '\x1b[0m'
+       # if column3 == '' or column3 == None:
+       #     e = ''
+        f = ''
+       # else:
+       #     e = column3.number
+       #     if len(goodspacing(column3) + '  ') >= 22:
+       #         f = goodspacing(column3) + '  ' + '\x1b[1;33;40m' + column3.descr[:18] + '\x1b[0m'
+       #     else:
+       #         f = goodspacing(column3) + '  ' + '\x1b[1;33;40m' + column3.descr[:25] + '\x1b[0m'
+        if f != '':
+            print('{:4}.) {:65} {}.) {:65} {}.) {}'.format(a,b,c,d,e,f))
         else:
-            #e = interfacedict[column[2]]
-            e = column[2].number
-            if len(goodspacing(column[2]) + '  ') >= 22:
-                f = goodspacing(column[2]) + '  ' + column[2].descr[:18]
-            else:
-                f = goodspacing(column[2]) + '  ' + column[2].descr[:25]
-            #f = row[2].leaf + ' ' + row[2].fex + ' ' + str(row[2].name)
-        print('{:6}.) {:45}{}.) {:45}{}.) {}'.format(a,b,c,d,e,f))
+            print('{:4}.) {:65} {}.) {:65}'.format(a,b,c,d))
     while True:
         selectedinterfaces = custom_raw_input("\nSelect interface(s) by number: ")
         print('\r')
