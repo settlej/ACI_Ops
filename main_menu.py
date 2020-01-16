@@ -40,7 +40,7 @@ import information.endpoint_search as ipendpoint_search
 #import information.routetranslation as epg_troubleshooting
 #import information.routetranslation as routetranslation
 #import information.routetrace as check_routing
-#import information.show_static_routes as show_static_routes
+import information.show_static_routes as show_static_routes
 import configuration.create_local_span_session as create_local_span_session
 import configuration.span_to_server as span_to_server
 import logging
@@ -605,16 +605,16 @@ def main():
                 #        keyinterrupt = True
                 #        continue      
     
-                #elif chosen == '17':
-                # 
-                #                 # break   
-                # try:
-                #        show_static_routes.main(apic,cookie)
-                #        keyinterrupt = False
-                #    except KeyboardInterrupt as k:
-                #        print('\nExit to Main menu\n')
-                #        keyinterrupt = True
-                #        continue
+                elif chosen == '113':
+                 
+                                 # break   
+                    try:
+                        show_static_routes.main(apic,cookie)
+                        keyinterrupt = False
+                    except KeyboardInterrupt as k:
+                        print('\nExit to Main menu\n')
+                        keyinterrupt = True
+                        continue
     
                 elif chosen == '23':
                     try:
