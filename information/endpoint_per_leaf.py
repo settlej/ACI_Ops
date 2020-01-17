@@ -156,6 +156,7 @@ class fvBD():
         return self.name
 
 
+
 def gather_BDs_with_Subnets():
     url = """https://{apic}/api/class/fvBD.json?rsp-subtree=full&rsp-subtree-class=fvSubnet,fvRtBd""".format(apic=apic)
     result = GetResponseData(url, cookie)
@@ -171,7 +172,6 @@ def gather_BDs_with_Subnets():
         bdlist.append(bdobject)
     return bdlist
 
-#def 
 
 def main(import_apic,import_cookie):
     while True:
