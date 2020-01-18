@@ -222,8 +222,10 @@ def pull_interface_with_vlaninfo(apic, cookie, leaf):
                         print('{:12} {:12} {:32}   \x1b[1;33;40m{:32}\x1b[0m  \x1b[1;31;40m{:32}\x1b[0m'.format(x.id, status, ','.join(allowedVlans[:8]),','.join(operVlans[:8]), missingvlans))
 
         else:
-            if x.layer == 'Layer3':
-                print('{:12} {:12} {:^32}   \x1b[1;32;40m{:32}\x1b[0m  \x1b[1;31;40m{:32}\x1b[0m'.format(x.id, status, '','',  ''))
+            if x.layer == 'Layer3' and status == 'up/up':
+                print('{:12} {:12} {:^32}   \x1b[1;32;40m{:32}\x1b[0m  \x1b[1;31;40m{:32}\x1b[0m'.format(x.id, status, '','Layer3',  ''))
+            elif x.layer == 'Layer3' and status != 'up/up':
+                print('{:12} {:12} {:^32}   \x1b[1;32;40m{:32}\x1b[0m  \x1b[1;31;40m{:32}\x1b[0m'.format(x.id, status, '','','Layer3'))
             elif x.children[0].operVlans == '' and x.children[0].allowedVlans == '':
                         #elif x.children[0].operVlans == '' and x.children[0].allowedVlans == '':
                     print('{:12} {:12} {:^32}   \x1b[1;33;40m{:<32}\x1b[0m  \x1b[1;31;40m{:32}\x1b[0m'.format(x.id, status, '',x.children[0].operVlans, ''))

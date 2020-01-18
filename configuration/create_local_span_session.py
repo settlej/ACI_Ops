@@ -230,7 +230,7 @@ def main(import_apic,import_cookie):
         time = get_APIC_clock(apic,cookie)
         name = time.replace(' ','T') + '_' + getpass.getuser()
         chosenleafs = physical_leaf_selection(all_leaflist, apic, cookie)
-        switchpreviewutil.main(apic,cookie,chosenleafs)
+        switchpreviewutil.main(apic,cookie,chosenleafs,purpose='port_status')
         direction= 'Source'
         print("\nSelect \x1b[1;33;40m{}\x1b[0m interface by number: \n".format(direction))
         source_returnedlist = physical_interface_selection(apic, cookie, chosenleafs, provideleaf=False)

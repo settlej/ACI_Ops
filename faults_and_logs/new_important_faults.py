@@ -211,10 +211,10 @@ def detail_access_inter_faults(listdetail, apic=None):
     #import pdb; pdb.set_trace()
     print('\r')
     print('Current Time = ' + current_time)
-    print('\n{:26}{:20}{:10}{:15}{:18}{:18}{}'.format('Time', 'Time Diff','Device','Interface','Port-Channel', 'State', 'Description'))
-    print('-'*120)
-    teststring = ''
-    for fault in listdetail:
+    print('\n{:7}{:26}{:20}{:10}{:15}{:20}{:17}{}'.format('','Time', 'Time Diff','Device','Interface','Port-Channel', 'State', 'Description'))
+    print('-'*130)
+    tablestring = ''
+    for num,fault in enumerate(listdetail,1):
         timestamp = ' '.join(fault['faultInst']['attributes']['lastTransition'].split('T'))
         diff_time = time_difference(current_time,timestamp[:-6])
         interface = re.search(r'\[.*\]', fault['faultInst']['attributes']['dn'])
@@ -222,7 +222,7 @@ def detail_access_inter_faults(listdetail, apic=None):
         if leaf == None:
             leaf = re.search(r'leaf[0-9]{3}', fault['faultInst']['attributes']['dn'])
         logger.debug('{} {} {}'.format(current_time,timestamp,interface.group()))
-        lc = fault['faultInst']['attributes']['lc']
+        lc = fault['faultInst']['attributes']['lc'][:15]
         description = ' '.join(fault['faultInst']['attributes']['descr'].split())
         #print(description_short)
         usedlocation =  description.find('used')
@@ -236,14 +236,53 @@ def detail_access_inter_faults(listdetail, apic=None):
         else:
             if leaf == None or interface == None:
                 import pdb; pdb.set_trace()
-            teststring += '{:26}{:20}{:10}{:15}{:18}{:18}{}\n'.format(timestamp[:-6],diff_time, leaf.group(), interface.group(), '', lc,  description_final)
+            tablestring += '{:4}.) {:26}{:20}{:10}{:15}{:20}{:17}{}\n'.format(num,timestamp[:-6],diff_time, leaf.group(), interface.group(), '', lc,  description_final)
         for t in polisting:
             t.join()
             po = que.get()
             logger.debug('{} {}'.format(fault, diff_time))
-            teststring += '{:26}{:20}{:10}{:15}{:18}{:18}{}\n'.format(timestamp[:-6],diff_time, leaf.group(), interface.group(), po, lc, description_final)
-    print(teststring)
+            tablestring += '{:4}.) {:26}{:20}{:10}{:15}{:20}{:17}{}\n'.format(num,timestamp[:-6],diff_time, leaf.group(), interface.group(), po[:19], lc, description_final)
+    #import pdb; pdb.set_trace()
+    print(tablestring)
     print('\n')
+    while True:
+        refresh = False
+        while True:
+            moredetails = custom_raw_input("More details, select number [default=No]:  ")
+            if moredetails == '':
+                break
+            if moredetails.isdigit() and int(moredetails) <= len(listdetail) and int(moredetails) > 0:
+                break
+            else:
+                print('\x1b[41;1mInvalid, number does not exist...try again\x1b[0m\n') 
+        if moredetails == '':
+            print('')
+            return
+           # refresh = True
+        if refresh:
+            print('')
+            break
+        timestamp = ' '.join(listdetail[int(moredetails)-1]['faultInst']['attributes']['lastTransition'].split('T'))
+        diff_time = time_difference(current_time,timestamp[:-6])
+        print('\n\n{:26}{:20}{:7}{:30}{}\n'.format('Time','Time Difference', 'Code','Cause','Object-Affected'))
+        print('-'*120)
+        print('\x1b[1;33;40m{:26}{:20}{:7}{:30}{}'.format(' '.join(listdetail[int(moredetails)-1]['faultInst']['attributes']['lastTransition'].split('T'))[:-7],diff_time, listdetail[int(moredetails)-1]['faultInst']['attributes']['code'],listdetail[int(moredetails)-1]['faultInst']['attributes']['cause'],'/'.join(str(listdetail[int(moredetails)-1]['faultInst']['attributes']['dn']).split('/')[:-1])))
+        print('')
+        print('\x1b[0mEvent Details')
+        print('-'*15)
+        print('\x1b[1;33;40m' + listdetail[int(moredetails)-1]['faultInst']['attributes']['descr'])
+        print('')
+        print('\x1b[0mEvent ChangeSet')
+        print('-'*15)
+        print('\x1b[1;33;40m' + listdetail[int(moredetails)-1]['faultInst']['attributes']['changeSet'] + '\x1b[0m')
+        print('\n')
+        #refresh = askrefresh()
+        #if refresh == True:
+        #    continue
+        #else:
+        #    print('\nEnding Program...\n')
+        #    break
+    refresh = False
 def detail_leaf_spine_uplink_faults(listdetail,apic=None):
     current_time = get_APIC_clock(apic,cookie)
     print('\r')
