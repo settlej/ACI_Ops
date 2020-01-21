@@ -339,12 +339,13 @@ def main():
                             '\t ---------------------------------------------------\n\n' +
                             '\t  [INFORMATION]\n'
                             '\t ---------------------------------------------------\n' +
-                            '\t| 17.) Endpoint Search\n' + 
+                            '\t| 17.) IP/Endpoint Search\n' + 
                             '\t| 18.) Show ACI infrustructure status\n' +
                             '\t| 19.) Show all IPs in a Bridge Domain\n' +
-                            '\t| 20.) Show port-channel location\n' +
-                            '\t| 21.) Show Leaf Profile tree structure\n' +
-                            '\t| 22.) Show Top 50 counters\n' +
+                            '\t| 20.) Show Port-channel location\n' +
+                            '\t| 21.) Show Static Routes (with add/remove)\n '+
+                            '\t| 22.) Show Leaf Profile tree structure\n' +
+                            '\t| 23.) Show Top 50 counters\n' +
                             #'\t| 16.) Show Leaf/Spine/APIC info (Not Available)\n' +
                             #'\t| 17.) EPG to EPG troubleshooting (alpha)\n' +
                             #'\t| 18.) Route lookup to endpoint (alpha)\n' +
@@ -352,9 +353,9 @@ def main():
                             '\t ---------------------------------------------------\n\n' +
                             '\t  [CONFIGURATION]\n'
                             '\t ---------------------------------------------------\n' +
-                            '\t| 23.) Configure Local Span\n' + 
-                            '\t| 24.) Capture server traffic ERSPAN to server (Beta)\n' + 
-                            '\t| 25.) Clone VPC/PC and deploy\n' + 
+                            '\t| 24.) Configure Local Span\n' + 
+                            '\t| 25.) Capture server traffic ERSPAN to server (Beta)\n' + 
+                            '\t| 26.) Clone VPC/PC and deploy\n' + 
                             #'\t| 20.) Create EPGs (Not Available)\n' +
                             '\t ---------------------------------------------------\x1b[0m')
             print('\x1b[7')
@@ -369,7 +370,7 @@ def main():
             writepermissionlist = ['1','2','3','22','23','24']
 
             while True:
-                chosen = custom_raw_input('\x1b[u\x1b[45;1H Select a number: ')
+                chosen = custom_raw_input('\x1b[u\x1b[46;1H Select a number: ')
                 if chosen == '1':
                     try:
                         shut_noshut_interfaces.main(apic,cookie)
@@ -378,7 +379,7 @@ def main():
                         print('\nExit to Main menu\n')
                         keyinterrupt = True
                         break		
-                if chosen == '22':
+                if chosen == '23':
                     try:
                         top_interface_problems.main(apic,cookie)
                         keyinterrupt = False
@@ -452,7 +453,7 @@ def main():
           #              print('\nExit to Main menu\n')
           #              keyinterrupt = True
           #              continue
-                elif chosen == '21':
+                elif chosen == '22':
                     try:
                         display_switch_to_leaf_structure.main(apic,cookie)
                         keyinterrupt = False
@@ -460,7 +461,7 @@ def main():
                         print('\nExit to Main menu\n')
                         keyinterrupt = True
                         break
-                elif chosen == '25':
+                elif chosen == '26':
                     try:
                         clonevpcanddeploy.main(apic,cookie)
                         keyinterrupt = False
@@ -605,18 +606,16 @@ def main():
                 #        keyinterrupt = True
                 #        continue      
     
-                elif chosen == '113':
-                 
-                                 # break   
+                elif chosen == '21':
                     try:
                         show_static_routes.main(apic,cookie)
                         keyinterrupt = False
                     except KeyboardInterrupt as k:
                         print('\nExit to Main menu\n')
                         keyinterrupt = True
-                        continue
+                        break
     
-                elif chosen == '23':
+                elif chosen == '24':
                     try:
                         create_local_span_session.main(apic,cookie)
                         keyinterrupt = False
@@ -626,7 +625,7 @@ def main():
                         break
                 #elif chosen == 'exit':
                 #    raise KeyboardInterrupt
-                elif chosen == '24':
+                elif chosen == '25':
                     try:
                         span_to_server.main(apic,cookie,current_user)
                         keyinterrupt = False
