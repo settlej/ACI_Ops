@@ -85,6 +85,13 @@ class l3outandsubnet():
     def __repr__(self):
         return self.dn
 
+def addressInNetwork(ip, net):
+   import socket,struct
+   ipaddr = int(''.join([ '%02x' % int(x) for x in ip.split('.') ]), 16)
+   netstr, bits = net.split('/')
+   netaddr = int(''.join([ '%02x' % int(x) for x in netstr.split('.') ]), 16)
+   mask = (0xffffffff << (32 - int(bits))) & 0xffffffff
+   return (ipaddr & mask) == (netaddr & mask)
 
 def gather_Tenants():
     #url = """https://{apic}/api/node/class/fvTenant.json?rsp-subtree=children&rsp-subtree-class=fvCtx""".format(apic=apic)
@@ -288,7 +295,7 @@ def main(import_apic,import_cookie):
                 '\t2.) Search IP in static routes\n')
         while True:
             ask = custom_raw_input('Select number:')
-            if ask != '' and ask.isdigit() and int(ask) > 0 and int(ask) <= 2:
+            if ask != '' and ask.isdigit() and int(ask) > 0 and int(ask) <= 3:
                 break
             else:
                 continue
@@ -415,6 +422,29 @@ def main(import_apic,import_cookie):
                     print('\n\x1b[1;31;40mInvalid option, please try again...\x1b[0m')
                     continue
             raw_input('\n Press Enter to continue...')
+        if ask == '3':
+            l3outnodelist = gather_l3out_nodes(returnoption='obj')
+            while True:
+                searchip = custom_raw_input('Provide ip or subnet to search if existing static route: ')
+                import pdb; pdb.set_trace()
+                if '/' in searchip:
+                    try:
+                        searchsubnet = ipaddress.ip_network(unicode(searchip))
+                    except ValueError:
+                        print('\n\x1b[1;31;40mInvalid IP subnet, try again...\x1b[0m')
+                        continue
+                for l3out in l3outnodelist:
+                    print(l3out.static_routelist)
+                    converedroutelist = map(unicode, l3out.static_routelist)
+                    foundlist = filter(lambda x: searchsubnet.subnet_of(ipaddress.IPv4Network(x,strict=False)),converedroutelist)
+                    import pdb; pdb.set_trace()
+                    #for route in l3out.static_routelist:
+                    #    currentroute = ipaddress.IPv4Address(unicode(route.ip))
+                    #    searchsubnet.subnet_of(currentroute)
+                    #    if addressInNetwork(searchip, route.ip):
+                    #        print(route.ip)
+                    
+
 ##def get_static_routes(*tenants):
 ##    for tenant in tenants:
 ##        url = """https://{apic}/api/mo/ni/SI.json?target-subtree-class=l3extRsExtx&query-target-filter=eq(l3extRsEctx.tnFvCtxName,"SI")&query-target=subtree
