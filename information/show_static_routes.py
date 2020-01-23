@@ -465,8 +465,22 @@ def main(import_apic,import_cookie):
                             if searchip in currentroute:
                                 #if searchsubnet.subnet_of(ipaddress.IPv4Network(route.ip,strict=False)):
                                 foundlist.append((l3out,route))
-                    for l3,route in foundlist:
-                        print('/'.join(l3.dn.split('/')[1:3]), l3.tDn, route.ip)
+                    if len(foundlist) > 1:
+                        print('\nFound {} static subnets\n'.format(len(foundlist)))
+                    elif len(foundlist) == 1:
+                        print('\r')
+                        tenantvrflist = map(lambda x: '/'.join(x[0].dn.split('/')[1:3]).replace('tn-','').replace('out-',''), foundlist)
+                        tenantvrfwidth = len(max(tenantvrflist))
+                       # tenantvrf, l3outname = map(lambda, foundlist[0][0].dn.split('/')[1:3])
+                       # tenantvrf = tenantvrf[3:]
+                       # l3outname = l3outname[4:]
+                       #import pdb; pdb.set_trace()
+                    for l3,route in sorted(foundlist, key=lambda x: (x[0].dn,x[0].tDn)):
+                        import pdb; pdb.set_trace()
+                        print('\t{}/{} {}  {}'.format(l3out[0], l3out[1], l3outname, l3.tDn, route.ip))
+
+#                    for l3,route in foundlist:
+#                        print('/'.join(l3.dn.split('/')[1:3]), l3.tDn, route.ip)
                 if not foundlist:
                     print('\n\x1b[1;31;40mNo subnets found!\x1b[0m')
                 del foundlist

@@ -42,6 +42,19 @@ f_handler.setFormatter(f_format)
 logger.addHandler(c_handler)
 logger.addHandler(f_handler)
 
+
+class vlanCktEp():
+    def __init__(self, **kwargs):
+        self.__dict__.update(kwargs)
+        self.tenant = self.epgDn.split('/')[1].replace('tn-','')
+        self.app = lambda x : '/'.join(self.epgDn.split('/')[2:]) if 'LDevInst' in self.epgDn.split('/')[2] else self.epgDn.split('/')[2].replace('ap-','')
+        self.epg = '/'.join(self.epgDn.split('/')[3:]).replace('epg-','')
+    def __repr__(self):
+        if self.name != '':
+            return self.name
+        else:
+            return self.epgDn
+
 class epmMacEp():
     def __init__(self, **kwargs):
         self.__dict__.update(kwargs)
@@ -75,42 +88,42 @@ class epmMacEp():
 #        return ', '.join(iplist)
 
 
-class fvIp():
-    def __init__(self, addr=None, rn=None,fvReportingNodes=None):
-        self.addr = addr
-        self.rn = rn
-        self.fvReportingNodes = fvReportingNodes
-    def __repr__(self):
-        return self.addr
-    def __getitem__(self, addr):
-        if addr in self.addr:
-            return self.addr
-        else:
-            return None
-
-class fvRsCEpToPathEp():
-    def __init__(self, tDn=None, lcC=None, fvReportingNodes=[], forceResolve=None):
-        self.lcC = lcC #shows location it learned if 'vmm' vmm knows it cause vmware, 'vmm,learned' means vmware and switch knows, if just 'learned' not vmm source 
-        self.tDn = tDn # location of learned interface "topology/pod-1/paths-102/extpaths-112/pathep-[eth1/25]" example
-        self.fvReportingNodes = fvReportingNodes # looks like port-channels use fvReportingNode api class (describes leafs where ep is discovered)
-        self.forceResolve = forceResolve
-    def __repr__(self):
-        return self.tDn
-
-class fvRsVm():
-    def __init__(self, state=None, tDn=None, dn=None):
-        self.state = state
-        self.dn = dn
-        self.tDn = tDn #internal vm name to lookup vmware vm name
-    def __repr__(self):
-        return self.tDn
-
-class fvRsHyper():
-    def __init__(self, state=None, tDn=None):
-        self.state = state
-        self.tDn = tDn  #hyperviser internal name to look up vmware host name
-    def __repr__(self):
-        return self.tDn
+#class fvIp():
+#    def __init__(self, addr=None, rn=None,fvReportingNodes=None):
+#        self.addr = addr
+#        self.rn = rn
+#        self.fvReportingNodes = fvReportingNodes
+#    def __repr__(self):
+#        return self.addr
+#    def __getitem__(self, addr):
+#        if addr in self.addr:
+#            return self.addr
+#        else:
+#            return None
+#
+#class fvRsCEpToPathEp():
+#    def __init__(self, tDn=None, lcC=None, fvReportingNodes=[], forceResolve=None):
+#        self.lcC = lcC #shows location it learned if 'vmm' vmm knows it cause vmware, 'vmm,learned' means vmware and switch knows, if just 'learned' not vmm source 
+#        self.tDn = tDn # location of learned interface "topology/pod-1/paths-102/extpaths-112/pathep-[eth1/25]" example
+#        self.fvReportingNodes = fvReportingNodes # looks like port-channels use fvReportingNode api class (describes leafs where ep is discovered)
+#        self.forceResolve = forceResolve
+#    def __repr__(self):
+#        return self.tDn
+#
+#class fvRsVm():
+#    def __init__(self, state=None, tDn=None, dn=None):
+#        self.state = state
+#        self.dn = dn
+#        self.tDn = tDn #internal vm name to lookup vmware vm name
+#    def __repr__(self):
+#        return self.tDn
+#
+#class fvRsHyper():
+#    def __init__(self, state=None, tDn=None):
+#        self.state = state
+#        self.tDn = tDn  #hyperviser internal name to look up vmware host name
+#    def __repr__(self):
+#        return self.tDn
 
 def gather_epmMacEp_fullinfo(macpullresult):
     epmMacEplist = []
@@ -119,13 +132,16 @@ def gather_epmMacEp_fullinfo(macpullresult):
         if mac['epmMacEp'].get('children'):
             for child in mac['epmMacEp']['children']:
                 epmMacEpObj.ip.append(child['epmRsMacEpToIpEpAtt']['attributes']['tDn'].split('/')[-1][4:-1])
-                epmMacEpObj.tenant_vrf = child['epmRsMacEpToIpEpAtt']['attributes']['tDn'].split('/')[4]
-                epmMacEpObj.bd = child['epmRsMacEpToIpEpAtt']['attributes']['tDn'].split('/')[5]
-                epmMacEpObj.encap = child['epmRsMacEpToIpEpAtt']['attributes']['tDn'].split('/')[6]
-                epmMacEpObj.bd_encap = epmMacEpObj.bd + '/' + epmMacEpObj.encap
+        #import pdb; pdb.set_trace()
+        epmMacEpObj.tenant_vrf = mac['epmMacEp']['attributes']['dn'].split('/')[4]
+        epmMacEpObj.bd = mac['epmMacEp']['attributes']['dn'].split('/')[5]
+        epmMacEpObj.encap = mac['epmMacEp']['attributes']['dn'].split('/')[6]
+        epmMacEpObj.bd_encap = epmMacEpObj.bd + '/' + epmMacEpObj.encap
+        epmMacEpObj.po_interfaces = []
         epmMacEplist.append(epmMacEpObj)
-    #import pdb; pdb.set_trace()
+        #print(epmMacEpObj)
     return epmMacEplist
+
 #def gather_fvCEp_fullinfo(result):
 #    eplist = []
 #    fvRsVmobject = None
@@ -188,17 +204,24 @@ class pcAggrIf():
         return self.id
 
 def gather_pclist(result):
+    polist = []
     for pc in result:
-        currentpcagg = pcAggIf
+        currentpcagg = pcAggrIf(**pc['pcAggrIf']['attributes'])
+        if pc['pcAggrIf'].get('children'):
+            for ethpmAggrif in  pc['pcAggrIf']['children']:
+                activephys = ethpmAggrif['ethpmAggrIf']['attributes']['activeMbrs'].split(',')
+                currentpcagg.activephys = filter(lambda x: x != 'unspecified', activephys)
+        polist.append(currentpcagg)
+    return polist
 
-def pull_vlan_info_for_leaf(apic, cookie, leaf):
+def pull_vlan_info_for_leaf(chosenleafs):
     url = """https://{apic}/api/node/class/topology/pod-1/node-{leaf}/vlanCktEp.json""".format(apic=apic, leaf=chosenleafs[0])
     logger.info(url)
     result = GetResponseData(url, cookie)
     vlanlist = [vlanCktEp(**x['vlanCktEp']['attributes']) for x in result]
     return vlanlist
 
-def pull_bd_info_for_leaf(apic, cookie, leaf):
+def pull_bd_info_for_leaf(chosenleafs):
     url = """https://{apic}/api/node/class/topology/pod-1/node-{leaf}/l2BD.json""".format(apic=apic, leaf=chosenleafs[0])
     logger.info(url)
     result = GetResponseData(url, cookie)
@@ -213,10 +236,11 @@ def pull_mac_and_ip(chosenleafs):
     return epmMacEplist
 
 def pull_port_channel_info(chosenleafs):
-    url = """https://{apic}/api/node/class/topology/pod-1/node-{leaf}/pcAggrIf.json""".format(apic=apic, leaf=chosenleafs[0])
+    url = """https://{apic}/api/node/class/topology/pod-1/node-{leaf}/pcAggrIf.json?rsp-subtree-class=ethpmAggrIf&rsp-subtree=children""".format(apic=apic, leaf=chosenleafs[0])
     logger.info(url)
     result = GetResponseData(url,cookie)
     pclist = gather_pclist(result)
+    return pclist
 
 def main(import_apic,import_cookie):
     global apic
@@ -242,7 +266,7 @@ def main(import_apic,import_cookie):
                 chosenleafs = physical_leaf_selection(all_leaflist, apic, cookie)
                 switchpreviewutil.main(apic,cookie,chosenleafs, purpose='port_switching')
                 returnedlist = physical_interface_selection(apic, cookie, chosenleafs, provideleaf=False)
-
+                #import pdb; pdb.set_trace()
                 #returnedlist = physical_selection(all_leaflist, apic, cookie)
                 #interface =  interfacelist[0].name
                 #interfacelist = physical_selection(all_leaflist, allepglist)
@@ -259,19 +283,32 @@ def main(import_apic,import_cookie):
             print(e)
             raw_input('Completed. Press enter to return....')
 
-            #custom_raw_input('#Press enter to continue...')
 
-        #all_leaflist = get_All_leafs()
         epmMacEplist = pull_mac_and_ip(chosenleafs)
-        #import pdb; pdb.set_trace()
-   #     if fvCEplist == []:
+        polist = pull_port_channel_info(chosenleafs)
+        for po in polist:
+            for epmmacep in epmMacEplist:
+                if po.id == epmmacep.ifId:
+                    epmmacep.physlocation = po.activephys
+        print(chosenleafs)
+        vlanlist = pull_vlan_info_for_leaf(chosenleafs)
+        for x in epmMacEplist:
+            for vlan in vlanlist:
+                if x.tenant_vrf in vlan.dn:
+                    x.foundvlan = vlan.name
+                        
+        import pdb; pdb.set_trace()
         macsfound = 0
-        print('{:20}  {:15}  {:25}  {}'.format('MAC', 'Last IP', 'All Live IPs', 'EPG'))
+        print('{:20}  {:15}  {:25}  {}'.format('MAC', 'All Live IPs', 'EPG',  'IP'))
         print('---------------------------------------------------------------------------')
         for x in epmMacEplist:
-            #print('\t', x.fvRsCEpToPathEp, interfacelist[0])
-            if str(x.ifId) in str(returnedlist[0]):
-                print("{:20}  {:15}  {:25}  {}".format(x.addr,x.ip,x.bd_encap,x.flags))
+            if hasattr(x, 'physlocation'):
+                shortname = str(returnedlist[0].dn.split('[')[-1][:-1])
+                if shortname in x.physlocation:
+                    macsfound += 1
+                    print("{:20}  {:15}  {:25}  {}  {}".format(x.addr,x.foundvlan,x.flags, x.ifId, x.ip))
+            elif str(x.ifId) in str(returnedlist[0]):
+                print("{:20}  {:15}  {:25}  {}".format(x.addr,x.foundvlan,x.flags,x.ip))
                 macsfound +=1
         if macsfound == 0 and selection == '1':
             print("No endpoints found!\n\n**If this interface is part of a PC or VPC on interface please search using interface type pc/vpc")
@@ -280,8 +317,10 @@ def main(import_apic,import_cookie):
         elif macsfound == 0:
             print("No endpoints found!")
             raw_input('\n\n#Press enter to return')
+        elif macsfound == 1:
+            raw_input('\nFound {} endpoint.\n\n#Press enter to return...'.format(macsfound))
         else:
-            raw_input('\nFound {} endpoints.\n\n #Press enter to return...'.format(macsfound))
+            raw_input('\nFound {} endpoints.\n\n#Press enter to return...'.format(macsfound))
 
       #  macsfound = 0
       #  print('{:20}  {:15}  {:25}  {}'.format('MAC', 'Last IP', 'All Live IPs', 'EPG'))
