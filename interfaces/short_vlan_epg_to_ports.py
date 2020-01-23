@@ -163,6 +163,7 @@ def compare_allowedvlans_and_opervlans(opervlanstringlist, allowedvlansstringlis
 def pull_interface_with_vlaninfo(apic, cookie, leaf):
     url = """https://{apic}/api/node/class/topology/pod-1/node-{leaf}/l1PhysIf.json?rsp-subtree=children&rsp-subtree-class=pcAggrMbrIf,ethpmPhysIf&order-by=l1PhysIf.id|asc""".format(apic=apic, leaf=leaf[0])
     result = GetResponseData(url, cookie)
+    logger.info(url)
     l1PhysIflist = []
     for x in result:
         l1PhysIfobj = l1PhysIf(**x['l1PhysIf']['attributes'])
@@ -239,12 +240,14 @@ def pull_interface_with_vlaninfo(apic, cookie, leaf):
             
 def pull_vlan_info_for_leaf(apic, cookie, leaf):
     url = """https://{apic}/api/node/class/topology/pod-1/node-{leaf}/vlanCktEp.json""".format(apic=apic, leaf=leaf[0])
+    logger.info(url)
     result = GetResponseData(url, cookie)
     vlanlist = [vlanCktEp(**x['vlanCktEp']['attributes']) for x in result]
     return vlanlist
 
 def pull_bd_info_for_leaf(apic, cookie, leaf):
     url = """https://{apic}/api/node/class/topology/pod-1/node-{leaf}/l2BD.json""".format(apic=apic, leaf=leaf[0])
+    logger.info(url)
     result = GetResponseData(url, cookie)
     bdlist = [l2BD(**x['l2BD']['attributes']) for x in result]
     return bdlist
@@ -252,6 +255,7 @@ def pull_bd_info_for_leaf(apic, cookie, leaf):
 
 def pull_each_vlan(apic, leaf, vlan, q):
     url = """https://{apic}/api/mo/{vlan}.json?query-target=children&target-subtree-class=l2RsPathDomAtt""".format(apic=apic, vlan=vlan.dn)
+    logger.info(url)
     result = GetResponseData(url, cookie)
     q.put((vlan,result))
 

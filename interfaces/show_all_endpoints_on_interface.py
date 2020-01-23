@@ -42,31 +42,37 @@ f_handler.setFormatter(f_format)
 logger.addHandler(c_handler)
 logger.addHandler(f_handler)
 
-class fvCEp():
-    def __init__(self, mac=None, name=None, encap=None,
-                 lcC=None, dn=None, fvRsVm=None, fvRsHyper=None,
-                 fvRsCEpToPathEp=None, ip=None, fvIplist=[]):
-        self.mac = mac
-        self.name = name
-        self.encap = encap
-        self.dn = dn
-        self.lcC = lcC
-        self.fvRsVm = fvRsVm
-        self.fvRsHyper = fvRsHyper
-        self.ip = ip
-        #self.iplist = iplist
-        self.fvIplist = fvIplist
-        self.fvRsCEpToPathEp = fvRsCEpToPathEp
+class epmMacEp():
+    def __init__(self, **kwargs):
+        self.__dict__.update(kwargs)
+        self.ip = []
     def __repr__(self):
-        return self.dn
-    def __getitem__(self, mac):
-        if mac in self.mac:
-            return self.mac
-        else:
-            return None
-    def showips(self):
-        iplist = [fvIP.addr for fvIP in self.fvIplist]
-        return ', '.join(iplist)
+        return self.addr
+#class fvCEp():
+#    def __init__(self, mac=None, name=None, encap=None,
+#                 lcC=None, dn=None, fvRsVm=None, fvRsHyper=None,
+#                 fvRsCEpToPathEp=None, ip=None, fvIplist=[]):
+#        self.mac = mac
+#        self.name = name
+#        self.encap = encap
+#        self.dn = dn
+#        self.lcC = lcC
+#        self.fvRsVm = fvRsVm
+#        self.fvRsHyper = fvRsHyper
+#        self.ip = ip
+#        #self.iplist = iplist
+#        self.fvIplist = fvIplist
+#        self.fvRsCEpToPathEp = fvRsCEpToPathEp
+#    def __repr__(self):
+#        return self.dn
+#    def __getitem__(self, mac):
+#        if mac in self.mac:
+#            return self.mac
+#        else:
+#            return None
+#    def showips(self):
+#        iplist = [fvIP.addr for fvIP in self.fvIplist]
+#        return ', '.join(iplist)
 
 
 class fvIp():
@@ -106,62 +112,111 @@ class fvRsHyper():
     def __repr__(self):
         return self.tDn
 
+def gather_epmMacEp_fullinfo(macpullresult):
+    epmMacEplist = []
+    for mac in macpullresult:
+        epmMacEpObj = epmMacEp(**mac['epmMacEp']['attributes'])
+        if mac['epmMacEp'].get('children'):
+            for child in mac['epmMacEp']['children']:
+                epmMacEpObj.ip.append(child['epmRsMacEpToIpEpAtt']['attributes']['tDn'].split('/')[-1][4:-1])
+                epmMacEpObj.tenant_vrf = child['epmRsMacEpToIpEpAtt']['attributes']['tDn'].split('/')[4]
+                epmMacEpObj.bd = child['epmRsMacEpToIpEpAtt']['attributes']['tDn'].split('/')[5]
+                epmMacEpObj.encap = child['epmRsMacEpToIpEpAtt']['attributes']['tDn'].split('/')[6]
+                epmMacEpObj.bd_encap = epmMacEpObj.bd + '/' + epmMacEpObj.encap
+        epmMacEplist.append(epmMacEpObj)
+    #import pdb; pdb.set_trace()
+    return epmMacEplist
+#def gather_fvCEp_fullinfo(result):
+#    eplist = []
+#    fvRsVmobject = None
+#    fvRsCEpToPathEpobject = None
+#    fvRsHyperobject = None
+#    fvIplist = []
+#    for ep in result:
+#        fvReportingNodes = []
+#        mac = ep['fvCEp']['attributes']['mac']
+#        name = ep['fvCEp']['attributes']['name']
+#        encap = ep['fvCEp']['attributes']['encap']
+#        lcC = ep['fvCEp']['attributes']['lcC']
+#        dn = ep['fvCEp']['attributes']['dn']
+#        ip = ep['fvCEp']['attributes']['ip']
+#        if ep['fvCEp'].get('children'):
+#            for ceptopath in ep['fvCEp']['children']:
+#                if ceptopath.get('fvRsCEpToPathEp') and ceptopath['fvRsCEpToPathEp']['attributes']['state'] == 'formed':
+#                    fvRsCEpToPathEp_tDn = ceptopath['fvRsCEpToPathEp']['attributes']['tDn']
+#                    fvRsCEpToPathEp_lcC = ceptopath['fvRsCEpToPathEp']['attributes']['lcC']
+#                    fvRsCEpToPathEp_forceResolve = ceptopath['fvRsCEpToPathEp']['attributes']['forceResolve']
+#                    fvRsCEpToPathEpobject = fvRsCEpToPathEp(forceResolve=fvRsCEpToPathEp_forceResolve, 
+#                                                            tDn=fvRsCEpToPathEp_tDn, lcC=fvRsCEpToPathEp_lcC)
+#                elif ceptopath.get('fvIp'):
+#                    fvIp_addr = ceptopath['fvIp']['attributes']['addr']
+#                    fvIp_rn = ceptopath['fvIp']['attributes']['rn']
+#                    if ceptopath['fvIp'].get('children'):
+#                        fvReportingNodes = [node['fvReportingNode']['attributes']['rn'] for node in ceptopath['fvIp']['children'] if node.get('fvReportingNode')]
+#                    else:
+#                        fvReportingNodes = None
+#                    fvIplist.append(fvIp(addr=fvIp_addr, rn=fvIp_rn,
+#                                        fvReportingNodes=fvReportingNodes))
+#                elif ceptopath.get('fvRsVm') and ceptopath['fvRsVm']['attributes']['state'] == 'formed':
+#                    fvRsVm_state = ceptopath['fvRsVm']['attributes']['state']
+#                    fvRsVm_tDn = ceptopath['fvRsVm']['attributes']['tDn']
+#                    fvRsVmobject = fvRsVm(state=fvRsVm_state,
+#                                            tDn=fvRsVm_tDn)
+#                elif ceptopath.get('fvRsHyper') and ceptopath['fvRsHyper']['attributes']['state'] == 'formed':
+#                    fvRsHyper_state = ceptopath['fvRsHyper']['attributes']['state']
+#                    fvRsHyper_tDn = ceptopath['fvRsHyper']['attributes']['tDn']
+#                    fvRsHyperobject = fvRsHyper(state=fvRsHyper_state,
+#                                                tDn=fvRsHyper_tDn)
+#        eplist.append(fvCEp(mac=mac, name=name, encap=encap,
+#                                lcC=lcC, dn=dn, fvRsVm=fvRsVmobject, fvRsCEpToPathEp=fvRsCEpToPathEpobject, 
+#                                ip=ip, fvRsHyper=fvRsHyperobject, fvIplist=fvIplist))
+#        fvIplist = []
+#    return eplist
 
-def gather_fvCEp_fullinfo(result):
-    eplist = []
-    fvRsVmobject = None
-    fvRsCEpToPathEpobject = None
-    fvRsHyperobject = None
-    fvIplist = []
-    for ep in result:
-        fvReportingNodes = []
-        mac = ep['fvCEp']['attributes']['mac']
-        name = ep['fvCEp']['attributes']['name']
-        encap = ep['fvCEp']['attributes']['encap']
-        lcC = ep['fvCEp']['attributes']['lcC']
-        dn = ep['fvCEp']['attributes']['dn']
-        ip = ep['fvCEp']['attributes']['ip']
-        if ep['fvCEp'].get('children'):
-            for ceptopath in ep['fvCEp']['children']:
-                if ceptopath.get('fvRsCEpToPathEp') and ceptopath['fvRsCEpToPathEp']['attributes']['state'] == 'formed':
-                    fvRsCEpToPathEp_tDn = ceptopath['fvRsCEpToPathEp']['attributes']['tDn']
-                    fvRsCEpToPathEp_lcC = ceptopath['fvRsCEpToPathEp']['attributes']['lcC']
-                    fvRsCEpToPathEp_forceResolve = ceptopath['fvRsCEpToPathEp']['attributes']['forceResolve']
-                    fvRsCEpToPathEpobject = fvRsCEpToPathEp(forceResolve=fvRsCEpToPathEp_forceResolve, 
-                                                            tDn=fvRsCEpToPathEp_tDn, lcC=fvRsCEpToPathEp_lcC)
-                elif ceptopath.get('fvIp'):
-                    fvIp_addr = ceptopath['fvIp']['attributes']['addr']
-                    fvIp_rn = ceptopath['fvIp']['attributes']['rn']
-                    if ceptopath['fvIp'].get('children'):
-                        fvReportingNodes = [node['fvReportingNode']['attributes']['rn'] for node in ceptopath['fvIp']['children'] if node.get('fvReportingNode')]
-                    else:
-                        fvReportingNodes = None
-                    fvIplist.append(fvIp(addr=fvIp_addr, rn=fvIp_rn,
-                                        fvReportingNodes=fvReportingNodes))
-                elif ceptopath.get('fvRsVm') and ceptopath['fvRsVm']['attributes']['state'] == 'formed':
-                    fvRsVm_state = ceptopath['fvRsVm']['attributes']['state']
-                    fvRsVm_tDn = ceptopath['fvRsVm']['attributes']['tDn']
-                    fvRsVmobject = fvRsVm(state=fvRsVm_state,
-                                            tDn=fvRsVm_tDn)
-                elif ceptopath.get('fvRsHyper') and ceptopath['fvRsHyper']['attributes']['state'] == 'formed':
-                    fvRsHyper_state = ceptopath['fvRsHyper']['attributes']['state']
-                    fvRsHyper_tDn = ceptopath['fvRsHyper']['attributes']['tDn']
-                    fvRsHyperobject = fvRsHyper(state=fvRsHyper_state,
-                                                tDn=fvRsHyper_tDn)
-        eplist.append(fvCEp(mac=mac, name=name, encap=encap,
-                                lcC=lcC, dn=dn, fvRsVm=fvRsVmobject, fvRsCEpToPathEp=fvRsCEpToPathEpobject, 
-                                ip=ip, fvRsHyper=fvRsHyperobject, fvIplist=fvIplist))
-        fvIplist = []
-    return eplist
 
+#def mac_path_function():
+#    url = """https://{apic}/api/node/class/topology/pod-1/node-101/fvCEp.json?rsp-subtree=full&target-subtree-class=fvCEp,fvRsCEpToPathEp""".format(apic=apic)
+#    logger.info(url)
+#    result = GetResponseData(url,cookie)
+#    fvCEplist = gather_fvCEp_fullinfo(result)
+#    return fvCEplist
 
-def mac_path_function():
-    url = """https://{apic}/api/node/class/fvCEp.json?rsp-subtree=full&target-subtree-class=fvCEp,fvRsCEpToPathEp""".format(apic=apic)
+class pcAggrIf():
+    def __init__(self, **kwargs):
+        self.__dict__.update(kwargs)
+    def __repr__(self):
+        return self.id
+
+def gather_pclist(result):
+    for pc in result:
+        currentpcagg = pcAggIf
+
+def pull_vlan_info_for_leaf(apic, cookie, leaf):
+    url = """https://{apic}/api/node/class/topology/pod-1/node-{leaf}/vlanCktEp.json""".format(apic=apic, leaf=chosenleafs[0])
+    logger.info(url)
+    result = GetResponseData(url, cookie)
+    vlanlist = [vlanCktEp(**x['vlanCktEp']['attributes']) for x in result]
+    return vlanlist
+
+def pull_bd_info_for_leaf(apic, cookie, leaf):
+    url = """https://{apic}/api/node/class/topology/pod-1/node-{leaf}/l2BD.json""".format(apic=apic, leaf=chosenleafs[0])
+    logger.info(url)
+    result = GetResponseData(url, cookie)
+    bdlist = [l2BD(**x['l2BD']['attributes']) for x in result]
+    return bdlist
+
+def pull_mac_and_ip(chosenleafs):
+    url = """https://{apic}/api/node/class/topology/pod-1/node-{leaf}/epmMacEp.json?rsp-subtree=full""".format(apic=apic, leaf=chosenleafs[0])
     logger.info(url)
     result = GetResponseData(url,cookie)
-    fvCEplist = gather_fvCEp_fullinfo(result)
-    return fvCEplist
+    epmMacEplist = gather_epmMacEp_fullinfo(result)
+    return epmMacEplist
 
+def pull_port_channel_info(chosenleafs):
+    url = """https://{apic}/api/node/class/topology/pod-1/node-{leaf}/pcAggrIf.json""".format(apic=apic, leaf=chosenleafs[0])
+    logger.info(url)
+    result = GetResponseData(url,cookie)
+    pclist = gather_pclist(result)
 
 def main(import_apic,import_cookie):
     global apic
@@ -207,25 +262,44 @@ def main(import_apic,import_cookie):
             #custom_raw_input('#Press enter to continue...')
 
         #all_leaflist = get_All_leafs()
-        fvCEplist = mac_path_function()
+        epmMacEplist = pull_mac_and_ip(chosenleafs)
         #import pdb; pdb.set_trace()
    #     if fvCEplist == []:
         macsfound = 0
         print('{:20}  {:15}  {:25}  {}'.format('MAC', 'Last IP', 'All Live IPs', 'EPG'))
         print('---------------------------------------------------------------------------')
-        for x in fvCEplist:
+        for x in epmMacEplist:
             #print('\t', x.fvRsCEpToPathEp, interfacelist[0])
-            if str(x.fvRsCEpToPathEp) == str(returnedlist[0]):
-                print("{:20}  {:15}  {:25}  {}".format(x.mac,x.ip,x.fvIplist,x.dn[x.dn.find('/')+1:x.dn.rfind('/')]))
+            if str(x.ifId) in str(returnedlist[0]):
+                print("{:20}  {:15}  {:25}  {}".format(x.addr,x.ip,x.bd_encap,x.flags))
                 macsfound +=1
         if macsfound == 0 and selection == '1':
             print("No endpoints found!\n\n**If this interface is part of a PC or VPC on interface please search using interface type pc/vpc")
+            import pdb; pdb.set_trace()
             raw_input('\n\n#Press enter to return')
         elif macsfound == 0:
             print("No endpoints found!")
             raw_input('\n\n#Press enter to return')
         else:
             raw_input('\nFound {} endpoints.\n\n #Press enter to return...'.format(macsfound))
+
+      #  macsfound = 0
+      #  print('{:20}  {:15}  {:25}  {}'.format('MAC', 'Last IP', 'All Live IPs', 'EPG'))
+      #  print('---------------------------------------------------------------------------')
+      #  for x in fvCEplist:
+      #      #print('\t', x.fvRsCEpToPathEp, interfacelist[0])
+      #      if str(x.fvRsCEpToPathEp) == str(returnedlist[0]):
+      #          print("{:20}  {:15}  {:25}  {}".format(x.mac,x.ip,x.fvIplist,x.dn[x.dn.find('/')+1:x.dn.rfind('/')]))
+      #          macsfound +=1
+      #  if macsfound == 0 and selection == '1':
+      #      print("No endpoints found!\n\n**If this interface is part of a PC or VPC on interface please search using interface type pc/vpc")
+      #      import pdb; pdb.set_trace()
+      #      raw_input('\n\n#Press enter to return')
+      #  elif macsfound == 0:
+      #      print("No endpoints found!")
+      #      raw_input('\n\n#Press enter to return')
+      #  else:
+      #      raw_input('\nFound {} endpoints.\n\n #Press enter to return...'.format(macsfound))
 #def     main():
 #        get_Cookie()
 #        mac_path_function()

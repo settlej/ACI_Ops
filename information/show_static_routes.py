@@ -292,7 +292,7 @@ def main(import_apic,import_cookie):
         print('Static Route Menu: ')
         print('\n\t1.) Add Static route\n' + 
                 '\t2.) Remove Static route\n' +
-                '\t2.) Search IP in static routes\n')
+                '\t3.) Search IP in static routes\n')
         while True:
             ask = custom_raw_input('Select number:')
             if ask != '' and ask.isdigit() and int(ask) > 0 and int(ask) <= 3:
@@ -425,19 +425,53 @@ def main(import_apic,import_cookie):
         if ask == '3':
             l3outnodelist = gather_l3out_nodes(returnoption='obj')
             while True:
-                searchip = custom_raw_input('Provide ip or subnet to search if existing static route: ')
-                import pdb; pdb.set_trace()
+                searchip = custom_raw_input('\nProvide ip or subnet to search if existing static route: ')
+                #import pdb; pdb.set_trace()
+                foundlist = []
                 if '/' in searchip:
                     try:
-                        searchsubnet = ipaddress.ip_network(unicode(searchip))
+                        searchsubnet = ipaddress.ip_network(unicode(searchip),strict=False)
+                        #print(searchsubnet)
+                    except ValueError:
+                        print('\n\x1b[1;31;40mInvalid IP Address, try again...\x1b[0m')
+                        continue
+                    foundlist = []
+                    for l3out in l3outnodelist:
+                        #print(l3out.static_routelist)
+                        for route in l3out.static_routelist:
+#                        converedroutelist = map(unicode, l3out.static_routelist)
+                            if searchsubnet.subnet_of(ipaddress.IPv4Network(route.ip,strict=False)):
+                                foundlist.append((l3out,route))
+                    if len(foundlist) > 1:
+                        print('\nFound {} static subnets\n'.format(len(foundlist)))
+                    for l3,route in sorted(foundlist, key=lambda x: (x[0].dn,x[0].tDn)):
+                        print('\t{}  {}  {}'.format(('/'.join(l3.dn.split('/')[1:3])).replace('tn-','').replace('out-',''), l3.tDn, route.ip))
+                        #foundlist.extend(filter(lambda x: searchsubnet.subnet_of(ipaddress.IPv4Network(x,strict=False)),converedroutelist))
+                    #custom_raw_input('\nPress enter to continue...')
+                    #import pdb; pdb.set_trace()
+                else:
+                    try:
+                        searchip = ipaddress.IPv4Address(unicode(searchip))
+                        #import pdb; pdb.set_trace()
                     except ValueError:
                         print('\n\x1b[1;31;40mInvalid IP subnet, try again...\x1b[0m')
                         continue
-                for l3out in l3outnodelist:
-                    print(l3out.static_routelist)
-                    converedroutelist = map(unicode, l3out.static_routelist)
-                    foundlist = filter(lambda x: searchsubnet.subnet_of(ipaddress.IPv4Network(x,strict=False)),converedroutelist)
-                    import pdb; pdb.set_trace()
+                    foundlist = []
+                    for l3out in l3outnodelist:
+                        #print(l3out.static_routelist)
+                        for route in l3out.static_routelist:
+#                        converedroutelist = map(unicode, l3out.static_routelist)
+                            currentroute = ipaddress.IPv4Network(route.ip,strict=False)
+                            if searchip in currentroute:
+                                #if searchsubnet.subnet_of(ipaddress.IPv4Network(route.ip,strict=False)):
+                                foundlist.append((l3out,route))
+                    for l3,route in foundlist:
+                        print('/'.join(l3.dn.split('/')[1:3]), l3.tDn, route.ip)
+                if not foundlist:
+                    print('\n\x1b[1;31;40mNo subnets found!\x1b[0m')
+                del foundlist
+                custom_raw_input('\nPress enter to continue...')
+                break
                     #for route in l3out.static_routelist:
                     #    currentroute = ipaddress.IPv4Address(unicode(route.ip))
                     #    searchsubnet.subnet_of(currentroute)

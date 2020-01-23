@@ -183,9 +183,9 @@ def POSTRequest(url, data, icookie):
 def interface_menu():
     while True:
         print("\nSelect type of interface(s): \n\n" + \
-          "\t1.) Physical Interfaces: \n" + \
-          "\t2.) PC Interfaces: \n" + \
-          "\t3.) VPC Interfaces: \n")
+          "\t1.) Physical Interfaces \n" + \
+          "\t2.) PC Interfaces \n" + \
+          "\t3.) VPC Interfaces \n")
         selection = custom_raw_input("Select number: ")
         print('\r')
         if selection.isdigit() and selection != '' and 1 <= int(selection) <= 3:

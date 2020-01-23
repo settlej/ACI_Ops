@@ -46,7 +46,7 @@ logger.addHandler(c_handler)
 logger.addHandler(f_handler)
 
 
-def interface_menu():
+def local_interface_menu():
     while True:
         print("\nSelect type of interface(s): \n\n" + \
           "\t1.) PC Interfaces: \n" + \
@@ -75,7 +75,7 @@ def main(import_apic,import_cookie):
         clear_screen()
         location_banner('Show port-channel locations')
 
-        selection = interface_menu()
+        selection = local_interface_menu()
         if selection == '1':
             interfacelist = port_channel_selection(allpclist)
             all_locations = port_channel_location(interfacelist[0].name,apic,cookie)
