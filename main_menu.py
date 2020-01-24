@@ -470,15 +470,6 @@ def main():
             #        keyinterrupt = True
             #        continue      
 
-            #elif chosen == '17':
-            #    try:
-            #        show_static_routes.main(apic,cookie)
-            #        keyinterrupt = False
-            #    except KeyboardInterrupt as k:
-            #        print('\nExit to Main menu\n')
-            #        keyinterrupt = True
-            #        continue
-
             elif chosen == '17':
                 try:
                     create_local_span_session.main(apic,cookie)
