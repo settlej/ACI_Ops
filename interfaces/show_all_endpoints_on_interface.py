@@ -138,6 +138,8 @@ def gather_epmMacEp_fullinfo(macpullresult):
         epmMacEpObj.encap = mac['epmMacEp']['attributes']['dn'].split('/')[6]
         epmMacEpObj.bd_encap = epmMacEpObj.bd + '/' + epmMacEpObj.encap
         epmMacEpObj.po_interfaces = []
+        epmMacEpObj.shortname = None
+        epmMacEpObj.ethname = None
         epmMacEplist.append(epmMacEpObj)
         #print(epmMacEpObj)
     return epmMacEplist
@@ -219,6 +221,7 @@ def pull_vlan_info_for_leaf(chosenleafs):
     logger.info(url)
     result = GetResponseData(url, cookie)
     vlanlist = [vlanCktEp(**x['vlanCktEp']['attributes']) for x in result]
+   # import pdb; pdb.set_trace()
     return vlanlist
 
 def pull_bd_info_for_leaf(chosenleafs):
@@ -241,6 +244,39 @@ def pull_port_channel_info(chosenleafs):
     result = GetResponseData(url,cookie)
     pclist = gather_pclist(result)
     return pclist
+
+def get_column_sizes(objlist, *args):
+    templist = []
+    #for column in args:
+    #    nestedlist = False
+    #    c_objlist = filter(lambda x: hasattr(x, column), objlist)
+    #    currentcolumnmaxobj = max(c_objlist, key=lambda x: getattr(x, column))
+    #    if type(getattr(currentcolumnmaxobj, column)) == list:
+    #        rowlistmax = 0
+    #        for row in objlist:
+    #            currentlistmax = len(max(row, key=lambda x: len(str(x))))
+    #            if currentlistmax == rowlistmax:
+    #                continue
+    #            elif currentlistmax > rowlistmax:
+    #                rowlistmax = len(max(row, key=lambda x: len(str(x))))
+    #            elif currentlistmax < rowlistmax:
+    #                rowlistmax = len(max(row, key=lambda x: len(str(x))))
+    #            else:
+    #                rowlistmax = len(max(row, key=lambda x: len(str(x))))
+#
+#
+#
+    #        columnlist = getattr(currentcolumnmaxobj, column)
+    #        #for insideobj in getattr(currentcolumnmaxobj, column):
+    #        insidelistmaxobj = max(columnlist, key=lambda x: len(str(x)))
+    #        import pdb; pdb.set_trace()
+    #        nestedlist = True
+    #    if nestedlist:
+    #        templist.append((column, len(insidelistmaxobj)))
+    #    else:
+    #        templist.append((column, len(getattr(max(c_objlist, key=lambda x: getattr(x, column)),column))))
+    #    #import pdb; pdb.set_trace()
+    return templist
 
 def main(import_apic,import_cookie):
     global apic
@@ -265,6 +301,7 @@ def main(import_apic,import_cookie):
                 print("\r")
                 chosenleafs = physical_leaf_selection(all_leaflist, apic, cookie)
                 switchpreviewutil.main(apic,cookie,chosenleafs, purpose='port_switching')
+               # import pdb; pdb.set_trace()
                 returnedlist = physical_interface_selection(apic, cookie, chosenleafs, provideleaf=False)
                 #import pdb; pdb.set_trace()
                 #returnedlist = physical_selection(all_leaflist, apic, cookie)
@@ -290,29 +327,71 @@ def main(import_apic,import_cookie):
             for epmmacep in epmMacEplist:
                 if po.id == epmmacep.ifId:
                     epmmacep.physlocation = po.activephys
-        print(chosenleafs)
+        #print(chosenleafs)
         vlanlist = pull_vlan_info_for_leaf(chosenleafs)
         for x in epmMacEplist:
+            found = False
             for vlan in vlanlist:
-                if x.tenant_vrf in vlan.dn:
+                #rint(x.bd_encap, vlan.dn)
+                #if x.encap == 'db-ep':
+                #    #import pdb; pdb.set_trace()
+                #    #if x.bd in vlan.dn:
+                #    
+                #    print(x.bd, vlan.tenant, vlan.encap, vlan.name, vlan.dn, vlan.epgDn)
+                    #x.foundvlan = vlan.name
+                if x.bd_encap in vlan.dn:
                     x.foundvlan = vlan.name
+                    found = True
+            if not found:
+                url = """https://{apic}/api/node/class/fvCEp.json?query-target-filter=eq(fvCEp.mac,"{addr}")""".format(apic=apic,addr=x.addr)
+                result = GetResponseData(url, cookie)
+                x.foundvlan = ':'.join(result[0]['fvCEp']['attributes']['dn'].split('/')[1:4]).replace('tn-','').replace('ap-','').replace('epg-','')
                         
-        import pdb; pdb.set_trace()
+        xxx = ('dn','addr','ip','foundvlan')
+        get_column_sizes(epmMacEplist, *xxx)
         macsfound = 0
         print('{:20}  {:15}  {:25}  {}'.format('MAC', 'All Live IPs', 'EPG',  'IP'))
         print('---------------------------------------------------------------------------')
+        namelist = map(lambda x: x.name, returnedlist)
         for x in epmMacEplist:
             if hasattr(x, 'physlocation'):
-                shortname = str(returnedlist[0].dn.split('[')[-1][:-1])
-                if shortname in x.physlocation:
+                
+                #import pdb; pdb.set_trace()
+                
+                for shortname in namelist:
+                    print(shortname, x.physlocation)
+                    if shortname in x.physlocation:
+                        x.ethname = shortname
+                        x.shortname = shortname[shortname.rfind('/')+1:]
+            elif x.ifId not in namelist:
+                x.shortname = x.ifId[x.ifId.rfind('/')+1:]
+                x.ethname = x.ifId
+            else:
+                x.shortname == None
+        #import pdb; pdb.set_trace()
+        #for x in epmMacEplist:
+        #    if x.addr == '00:50:56:86:20:D3':
+        filtedepmMaclist = filter(lambda x: x.shortname != None, epmMacEplist)
+        if filtedepmMaclist != None:
+            try:
+                for x in sorted(filtedepmMaclist, key=lambda x: int(x.shortname)):
                     macsfound += 1
-                    print("{:20}  {:15}  {:25}  {}  {}".format(x.addr,x.foundvlan,x.flags, x.ifId, x.ip))
-            elif str(x.ifId) in str(returnedlist[0]):
-                print("{:20}  {:15}  {:25}  {}".format(x.addr,x.foundvlan,x.flags,x.ip))
-                macsfound +=1
+                    #if x.ethname in returnedlist:
+                    print("{:10} {:20}  {:15}  {:25}  {}  {}".format(x.ethname,x.addr,x.foundvlan,x.flags, x.ifId, x.ip))
+            except:
+                raw_input()#import pdb; pdb.set_trace()
+        #filtedepmMaclist = filter(lambda x: not hasattr(x, 'shortname'), epmMacEplist)
+#
+        #for x in filtedepmMaclist:
+        #    import pdb; pdb.set_trace()
+        #    macsfound += 1
+        #    print("{:10} {:20}  {:15}  {:25}  {}  {}".format(x.ifId,x.addr,x.foundvlan,x.flags, "", x.ip))
+        #    elif str(x.ifId) in str(returnedlist[0]):
+        #        print("{:20}  {:15}  {:25}  {}".format(x.addr,x.foundvlan,x.flags,x.ip))
+        #      macsfound +=1
         if macsfound == 0 and selection == '1':
             print("No endpoints found!\n\n**If this interface is part of a PC or VPC on interface please search using interface type pc/vpc")
-            import pdb; pdb.set_trace()
+            #import pdb; pdb.set_trace()
             raw_input('\n\n#Press enter to return')
         elif macsfound == 0:
             print("No endpoints found!")
