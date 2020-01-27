@@ -233,7 +233,7 @@ def readable_dnpath(dnpath):
 
 
 def display_live_history_info(ipaddressEP, totalcount):
-    url = """https://{apic}/mqapi2/troubleshoot.eptracker.json?ep={}&order-by=troubleshootEpTransition.date|desc""".format(ipaddressEP.dn,apic=apic)
+    url = """https://{apic}/mqapi2/troubleshoot.eptracker.json?ep={}&order-by=troubleshootEpTransition.date|desc&page=0&page-size=32""".format(ipaddressEP.dn,apic=apic)
     logger.info(url)
     result, totalcount = GetResponseData(url, cookie, return_count=True)
     if totalcount == '0':
@@ -351,10 +351,13 @@ def display_vm_information(endpointobject, compVm):
                     print("{:96}{:18}\n{:96}{:18}\n".format('','','',vmhostname))
 
 def find_and_display_current_location_info(macEP, totalcount, compVm=None):
-    dnpath = macEP.fvRsCEpToPathEp.tDn
-    #print(dnpath)
-    interfacename = dnpath[dnpath.find('[')+1:dnpath.find(']')]
-    dnpath = readable_dnpath(dnpath)
+    if macEP.fvRsCEpToPathEp == None:
+        dnpath = 'Discovered in virtual env, Not learned on leaf'
+    else:
+        dnpath = macEP.fvRsCEpToPathEp.tDn
+        #print(dnpath)
+        interfacename = dnpath[dnpath.find('[')+1:dnpath.find(']')]
+        dnpath = readable_dnpath(dnpath)
     print('\n')
     # Account for mac addresses that have mulitple ip addresses, need to display all IPs if possible.
     if macEP.fvIplist == []:
@@ -531,7 +534,26 @@ def ip_path_function(ipaddr):
         print('\n[History]')
         display_live_history_info(completefvCEplist[0], totalcount)
 
-
+def last4_function(endpoint):
+    url = """https://{apic}/api/node/class/fvCEp.json?query-target-filter=wcard(fvCEp.mac,"{last4}")""".format(apic=apic,last4=endpoint)
+    logger.info(url)
+    result = GetResponseData(url, cookie)
+    if len(result) > 1:
+        print('\nPlease select from the follow MACs found:\n')
+        for num,endpoint in enumerate(result,1):
+            mac = endpoint['fvCEp']['attributes']['name']
+            ip = endpoint['fvCEp']['attributes']['ip']
+            epg = '/'.join(endpoint['fvCEp']['attributes']['dn'].split('/')[1:4]).replace('tn-','').replace('ap-','').replace('epg-','')
+            print("{num}.) {mac} {epg} {ip}".format(num=num,mac=mac,epg=epg,ip=ip))
+        print('\r')
+        while True:
+            desiredmac = custom_raw_input("Select one: ")
+            if desiredmac != '' and desiredmac.strip().lstrip().isdigit() and int(desiredmac) > 0 and int(desiredmac) <= len(result):
+                return result[int(desiredmac)-1]['fvCEp']['attributes']['name']
+            else:
+                print('\n\x1b[1;31;40mInvalid selection...\x1b[0m\n')
+                continue
+    
 
 def main(import_apic,import_cookie):
     global apic
@@ -540,19 +562,29 @@ def main(import_apic,import_cookie):
     apic = import_apic
     while True:
         clear_screen()
-        search = custom_raw_input("\nWhat is the IP, MAC, or VM name?: ")
+        location_banner('Search for Endpoint')
+        print('\r')
+        print('Last 4 Mac requries xx:xx format. [Example: 56:AB]\nFull MAC format xx:xx:xx:xx:xx:xx')
+        print('\r')
+        search = custom_raw_input("\nWhat is the IP, MAC, Last-4-Mac, or VM name?: ")
         logger.debug('raw_input: {}'.format(search))
-        if re.match("[0-9a-f]{2}([-:]?)[0-9a-f]{2}(\\1[0-9a-f]{2}){4}$", search.lower()):
+        if re.match("[0-9a-f]{2}([-:]?)[0-9a-f]{2}(\\1[0-9a-f]{2}){4}$", search.strip().lstrip().lower()):
             logger.debug('Matched MAC lookup')
-            endpoint = search.upper()
+            endpoint = search.strip().lstrip().upper()
             mac_path_function(endpoint)
         elif re.match(r"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$",search.strip().lstrip()):
             logger.debug('Matched IP lookup')
             endpoint = search
             ip_path_function(endpoint)
+        elif re.match(r"^[0-9a-fA-F]{2}:[0-9a-fA-F]{2}", search.strip().lstrip()):
+            # last 4 mac lookup
+            logger.debug('Last 4 MAC lookup')
+            endpoint = search.strip().lstrip().upper()
+            fullmac = last4_function(endpoint)
+            mac_path_function(fullmac)
         else:
             logger.debug('Matched VM lookup')
-            endpoint = search
+            endpoint = search.strip().lstrip()
             endpoint = vm_search_function(endpoint)
         while True:
             history = custom_raw_input("\nWould you like to search event logs for {}? [y|n=default]: ".format(endpoint)) or 'n'

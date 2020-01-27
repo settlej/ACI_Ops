@@ -90,7 +90,7 @@ def refreshToken(apic,icookie):
     cookies = 'APIC-cookie=' + icookie
     request = urllib2.Request(url)
     request.add_header("Cookie", cookies)
-    response = urllib2.urlopen(request, timeout=4)
+    response = urllib2.urlopen(request, timeout=6)
     result = json.loads(response.read())
     return result["imdata"][0]["aaaLogin"]["attributes"]["token"]
 
@@ -112,7 +112,7 @@ def refreshToken(apic,icookie):
 #############################################################################################################################################
 
 
-def GetRequest(url, icookie, timeout=4):
+def GetRequest(url, icookie, timeout=24):
     # Function to Perform HTTP Get REST calls and return server recieved data in an http object
     method = "GET"
     # icookie comes from the GetResponseData fuction that references 'cookie' which is a global variable from reading /.aci/.sessions/.token
