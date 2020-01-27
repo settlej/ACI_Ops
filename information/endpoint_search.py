@@ -576,7 +576,7 @@ def main(import_apic,import_cookie):
             logger.debug('Matched IP lookup')
             endpoint = search
             ip_path_function(endpoint)
-        elif re.match(r"^[0-9a-fA-F]{2}:[0-9a-fA-F]{2}", search.strip().lstrip()):
+        elif re.match(r"^[0-9a-fA-F]{2}:[0-9a-fA-F]{2}$", search.strip().lstrip()):
             # last 4 mac lookup
             logger.debug('Last 4 MAC lookup')
             endpoint = search.strip().lstrip().upper()

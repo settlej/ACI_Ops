@@ -325,7 +325,7 @@ def main():
                             '\t| 6.)  Show leaf port view\n' +
                             '\t| 7.)  Show leaf port view (Detail)\n' + 
                             '\t| 8.)  Show EPG --> Interface (per leaf)\n'
-                            '\t| 9.)  Show Endpoints on interface (Beta)\n' +
+                            '\t| 9.)  Show Endpoints on interface\n' +
                             '\t ---------------------------------------------------\n\n' +
                             '\t  [FAULTS and LOGS]\n'
                             '\t ---------------------------------------------------\n' +

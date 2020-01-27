@@ -246,6 +246,13 @@ def pull_port_channel_info(chosenleafs):
     pclist = gather_pclist(result)
     return pclist
 
+def pull_all_nonvpc_port_channel_info():
+    url = """https://{apic}/api/node/class/pcAggrIf.json?rsp-subtree-class=ethpmAggrIf&rsp-subtree=children""".format(apic=apic)
+    logger.info(url)
+    result = GetResponseData(url,cookie)
+    pclist = gather_pclist(result)
+    return pclist
+
 def get_column_sizes(objlist, *args):
     templist = []
     for column in args:
@@ -300,6 +307,9 @@ def main(import_apic,import_cookie):
     allpclist = get_All_PCs(apic,cookie)
     allvpclist = get_All_vPCs(apic,cookie)
     all_leaflist = get_All_leafs(apic,cookie)
+    url = """https://{apic}/api/node/class/fvBD.json""".format(apic=apic)
+    logger.info(url)
+    bdresult = GetResponseData(url, cookie)
     if all_leaflist == []:
         print('\x1b[1;31;40mFailed to retrieve active leafs, make sure leafs are operational...\x1b[0m')
         custom_raw_input('\n#Press enter to continue...')
@@ -307,12 +317,18 @@ def main(import_apic,import_cookie):
     while True:
         clear_screen()
         location_banner('Show Endpoints on Interface')
-        selection = interface_menu()
+        #selection = interface_menu()
         try:
-            if selection == '1':
+            #if selection == '1':
                 print("\nSelect leaf(s): ")
                 print("\r")
-                chosenleafs = physical_leaf_selection(all_leaflist, apic, cookie)
+                while True:
+                    chosenleafs = physical_leaf_selection(all_leaflist, apic, cookie)
+                    if len(chosenleafs) > 1:
+                        print('\n\x1b[1;31;40mOnce leaf supported at this time, please try again...\x1b[0m')
+                        print('\r')
+                    else:
+                        break
                 switchpreviewutil.main(apic,cookie,chosenleafs, purpose='port_switching')
                # import pdb; pdb.set_trace()
                 returnedlist = physical_interface_selection(apic, cookie, chosenleafs, provideleaf=False)
@@ -322,159 +338,248 @@ def main(import_apic,import_cookie):
                 #interfacelist = physical_selection(all_leaflist, allepglist)
                 #print(returnedlist)
                 #custom_raw_input('#Press enter to continue...')
-            elif selection == '2':
-                returnedlist = port_channel_selection(allpclist)
-                #print(returnedlist)
-                #custom_raw_input('#Press enter to continue...')
-            elif selection == '3':
-                returnedlist = port_channel_selection(allvpclist)
-                #print(returnedlist)
+                epmMacEplist = pull_mac_and_ip(chosenleafs)
+                epmMacEplist = [x for x in epmMacEplist if 'tunnel' not in x.ifId]
+                if epmMacEplist == []:
+                    print('\n\x1b[1;31;40mNo Endpoints found on interfaces\x1b[0m\n')
+                    custom_raw_input('#Press Enter to continue...')
+                    continue
+                else:
+                    polist = pull_port_channel_info(chosenleafs)
+                    for po in polist:
+                        for epmmacep in epmMacEplist:
+                            if po.id == epmmacep.ifId:
+                                epmmacep.physlocation = po.activephys
+                    #print(chosenleafs)
+                    vlanlist = pull_vlan_info_for_leaf(chosenleafs)
+                    for x in epmMacEplist:
+                        found = False
+                        for vlan in vlanlist:
+                            #rint(x.bd_encap, vlan.dn)
+                            #if x.encap == 'db-ep':
+                            #    #import pdb; pdb.set_trace()
+                            #    #if x.bd in vlan.dn:
+                            #    
+                            #    print(x.bd, vlan.tenant, vlan.encap, vlan.name, vlan.dn, vlan.epgDn)
+                                #x.foundvlan = vlan.name
+                            if x.bd_encap in vlan.dn:
+                                x.foundvlan = vlan.name
+                                x.encap = x.encap.replace('vlan-[','')[:-1]
+                                found = True
+                        if not found:
+                            bdfound = False
+                            for v in bdresult:
+                                bd = x.bd[x.bd.rfind('[')+1:-1].replace('vxlan-','')
+                                if bd in v['fvBD']['attributes']['seg']:
+                                    x.foundvlan = v['fvBD']['attributes']['dn'].replace('tn-','')[4:]
+                                    x.encap = ''
+                                    bdfound = True
+                            if bdfound == False:
+                                x.foundvlan = ''
+                                    #print('hit')
+            
+                            #url = """https://{apic}/api/node/class/fvCEp.json?query-target-filter=eq(fvCEp.mac,"{addr}")""".format(apic=apic,addr=x.addr)
+                            #result = GetResponseData(url, cookie)
+                            #x.foundvlan = ':'.join(result[0]['fvCEp']['attributes']['dn'].split('/')[1:4]).replace('tn-','').replace('ap-','').replace('epg-','')
+                                    
+            
+                    macsfound = 0
+                    desiredlist = map(lambda x: x.dn, returnedlist)
+                    endpointlist = []
+                    #print(len(epmMacEplist))
+                    for macep in epmMacEplist:
+                        if hasattr(macep, 'physlocation'):
+                            for location in macep.physlocation:
+                              #  import pdb; pdb.set_trace()
+                                #for port in macep.activephys:
+                                ethname = location
+                                if ethname.count('/') > 1:
+                                    shortname = ''.join(ethname.split('/')[-2:])
+                                else:
+                                    shortname = ethname[ethname.rfind('/')+1:]
+                                endpointlist.append(endpoint(ethname=ethname,shortname=shortname,**macep.__dict__))
+                        else:
+                            ethname = macep.ifId
+                            if ethname.count('/') > 1:
+                                shortname = ''.join(ethname.split('/')[-3:]).replace('eth','')
+                            else:
+                                shortname = ethname[ethname.rfind('/')+1:]
+                            endpointlist.append(endpoint(ethname=ethname,shortname=shortname,**macep.__dict__))
+                    filteredlist = []
+                    for endp in endpointlist:
+                        if endp.ethname.count('/') > 1:
+                            localethname = 'eth' + '/'.join(endp.ethname.split('/')[-2:])
+                            expaths = endp.ethname.split('/')[0][3:]
+                            topology = ('/'.join(endp.dn.split('/')[:3]) + '/extpaths-' + expaths + '/pathep-[' + localethname + ']').replace('node-','paths-')
+                        else:
+                            topology = ('/'.join(endp.dn.split('/')[:3]) + '/pathep-[' + endp.ethname + ']').replace('node-','paths-')
+                        if topology in desiredlist:
+                            filteredlist.append(endp)
+                    columnwidthfind = ('ethname','addr','foundvlan','encap','ifId','ip')
+                    sizes = get_column_sizes(filteredlist, *columnwidthfind)
+                    print('{:{inter}}  {:{mac}}  {:{epg}}  {:{encap}}  {:{po}}  {:{ip}}'.format('Interface', 'MAC', 'EPG', 'Encap', 'Po #', 'IP',inter=sizes[0]+4,mac=sizes[1],epg=sizes[2],encap=sizes[3],po=sizes[4],ip=sizes[5]))
+                    print('{:-<{inter}}  {:-<{mac}}  {:-<{epg}}  {:-<{encap}}  {:-<{po}}  {:-<{ip}}'.format('', '', '', '', '', '',inter=sizes[0]+4,mac=sizes[1],epg=sizes[2],encap=sizes[3],po=sizes[4],ip=sizes[5]))
+                    #import pdb; pdb.set_trace()
+                    for ep in sorted(filteredlist, key=lambda x : int(x.shortname)):
+                        if 'po' in ep.ifId:
+                            macsfound += 1
+                            print('{:{inter}}  {:{mac}}  {:{epg}}  {:{encap}}  {:{po}}  {:{ip}}'.format(ep.ethname,ep.addr,ep.foundvlan,ep.encap,ep.ifId,','.join(ep.ip),inter=sizes[0]+4,mac=sizes[1],epg=sizes[2],encap=sizes[3],po=sizes[4],ip=sizes[5]))
+                        else:
+                            macsfound += 1
+                            print('{:{inter}}  {:{mac}}  {:{epg}}  {:{encap}}  {:{po}}  {:{ip}}'.format(ep.ethname,ep.addr,ep.foundvlan,ep.encap,'',','.join(ep.ip),inter=sizes[0]+4,mac=sizes[1],epg=sizes[2],encap=sizes[3],po=sizes[4],ip=sizes[5]))
+                    if macsfound == 0 and selection == '1':
+                        print("No endpoints found!\n\n**If this interface is part of a PC or VPC on interface please search using interface type pc/vpc")
+                        #import pdb; pdb.set_trace()
+                        raw_input('\n#Press enter to continue...')
+                    elif macsfound == 0:
+                        print("No endpoints found!")
+                        raw_input('\n#Press enter to continue...')
+                    elif macsfound == 1:
+                        print('\nFound {} endpoint.\n'.format(macsfound))
+                        raw_input('\n#Press enter to continue...')
+                    else:
+                        print('\nFound {} endpoint.\n'.format(macsfound))
+                        raw_input('\n#Press enter to continue...')
+                   #     raw_input('\nFound {} endpoints.\n\n#Press enter to return...'.format(macsfound))
+
+            #elif selection == '2':
+            #    returnedlist = port_channel_selection(allpclist)
+            #    pclist = pull_all_nonvpc_port_channel_info()
+            #    #pclistname = map(lambda x: str(x.name), pclist)
+            #    pcnamelist = map(lambda x: str(x.name), returnedlist)
+            #    filteredlist = [x for x in pclist if str(x.name) in pcnamelist]
+            #    import pdb; pdb.set_trace()
+#
+            #    #print(returnedlist)
+            #    #epmMacEplist = pull_mac_and_ip(chosenleafs)
+            #    #epmMacEplist = [x for x in epmMacEplist if 'tunnel' not in x.ifId]
+            #    #if epmMacEplist == []:
+            #    #    print('\n\x1b[1;31;40mNo Endpoints found on interfaces\x1b[0m\n')
+            #    #    custom_raw_input('#Press Enter to continue...')
+            #    #    continue
+            #    #else:
+            #    #    polist = pull_port_channel_info(chosenleafs)
+            #    #    for po in polist:
+            #    #        for epmmacep in epmMacEplist:
+            #    #            if po.id == epmmacep.ifId:
+            #    #                epmmacep.physlocation = po.activephys
+            #    #    #print(chosenleafs)
+            #    #    vlanlist = pull_vlan_info_for_leaf(chosenleafs)
+            #    #    for x in epmMacEplist:
+            #    #        found = False
+            #    #        for vlan in vlanlist:
+            #    #            #rint(x.bd_encap, vlan.dn)
+            #    #            #if x.encap == 'db-ep':
+            #    #            #    #import pdb; pdb.set_trace()
+            #    #            #    #if x.bd in vlan.dn:
+            #    #            #    
+            #    #            #    print(x.bd, vlan.tenant, vlan.encap, vlan.name, vlan.dn, vlan.epgDn)
+            #    #                #x.foundvlan = vlan.name
+            #    #            if x.bd_encap in vlan.dn:
+            #    #                x.foundvlan = vlan.name
+            #    #                x.encap = x.encap.replace('vlan-[','')[:-1]
+            #    #                found = True
+            #    #        if not found:
+            #    #            bdfound = False
+            #    #            for v in bdresult:
+            #    #                bd = x.bd[x.bd.rfind('[')+1:-1].replace('vxlan-','')
+            #    #                if bd in v['fvBD']['attributes']['seg']:
+            #    #                    x.foundvlan = v['fvBD']['attributes']['dn'].replace('tn-','')[4:]
+            #    #                    x.encap = ''
+            #    #                    bdfound = True
+            #    #            if bdfound == False:
+            #    #                x.foundvlan = ''
+            #    #                    #print('hit')
+            ##
+            #    #            #url = """https://{apic}/api/node/class/fvCEp.json?query-target-filter=eq(fvCEp.mac,"{addr}")""".format(apic=apic,addr=x.addr)
+            #    #            #result = GetResponseData(url, cookie)
+            #    #            #x.foundvlan = ':'.join(result[0]['fvCEp']['attributes']['dn'].split('/')[1:4]).replace('tn-','').replace('ap-','').replace('epg-','')
+            #    #                    
+            ##
+            #    #    macsfound = 0
+            #    #    import pdb; pdb.set_trace()
+            #    #    desiredlist = map(lambda x: x.dn, returnedlist)
+            #    #    endpointlist = []
+            #    #    #print(len(epmMacEplist))
+            #    #    for macep in epmMacEplist:
+            #    #        if hasattr(macep, 'physlocation'):
+            #    #            for location in macep.physlocation:
+            #    #              #  import pdb; pdb.set_trace()
+            #    #                #for port in macep.activephys:
+            #    #                ethname = location
+            #    #                if ethname.count('/') > 1:
+            #    #                    shortname = ''.join(ethname.split('/')[-2:])
+            #    #                else:
+            #    #                    shortname = ethname[ethname.rfind('/')+1:]
+            #    #                endpointlist.append(endpoint(ethname=ethname,shortname=shortname,**macep.__dict__))
+            #    #        else:
+            #    #            ethname = macep.ifId
+            #    #            if ethname.count('/') > 1:
+            #    #                shortname = ''.join(ethname.split('/')[-3:]).replace('eth','')
+            #    #            else:
+            #    #                shortname = ethname[ethname.rfind('/')+1:]
+            #    #            endpointlist.append(endpoint(ethname=ethname,shortname=shortname,**macep.__dict__))
+            #    #    filteredlist = []
+            #    #    for endp in endpointlist:
+            #    #        if endp.ethname.count('/') > 1:
+            #    #            localethname = 'eth' + '/'.join(endp.ethname.split('/')[-2:])
+            #    #            expaths = endp.ethname.split('/')[0][3:]
+            #    #            topology = ('/'.join(endp.dn.split('/')[:3]) + '/extpaths-' + expaths + '/pathep-[' + localethname + ']').replace('node-','paths-')
+            #    #        else:
+            #    #            topology = ('/'.join(endp.dn.split('/')[:3]) + '/pathep-[' + endp.ethname + ']').replace('node-','paths-')
+            #    #        if topology in desiredlist:
+            #    #            filteredlist.append(endp)
+            #    #    columnwidthfind = ('ethname','addr','foundvlan','encap','ifId','ip')
+            #    #    sizes = get_column_sizes(filteredlist, *columnwidthfind)
+            #    #    print('{:{inter}}  {:{mac}}  {:{epg}}  {:{encap}}  {:{po}}  {:{ip}}'.format('Interface', 'MAC', 'EPG', 'Encap', 'Po #', 'IP',inter=sizes[0]+4,mac=sizes[1],epg=sizes[2],encap=sizes[3],po=sizes[4],ip=sizes[5]))
+            #    #    print('{:-<{inter}}  {:-<{mac}}  {:-<{epg}}  {:-<{encap}}  {:-<{po}}  {:-<{ip}}'.format('', '', '', '', '', '',inter=sizes[0]+4,mac=sizes[1],epg=sizes[2],encap=sizes[3],po=sizes[4],ip=sizes[5]))
+            #    #    #import pdb; pdb.set_trace()
+            #    #    for ep in sorted(filteredlist, key=lambda x : int(x.shortname)):
+            #    #        if 'po' in ep.ifId:
+            #    #            macsfound += 1
+            #    #            print('{:{inter}}  {:{mac}}  {:{epg}}  {:{encap}}  {:{po}}  {:{ip}}'.format(ep.ethname,ep.addr,ep.foundvlan,ep.encap,ep.ifId,','.join(ep.ip),inter=sizes[0]+4,mac=sizes[1],epg=sizes[2],encap=sizes[3],po=sizes[4],ip=sizes[5]))
+            #    #    if macsfound == 0 and selection == '1':
+            #    #        print("No endpoints found!\n\n**If this interface is part of a PC or VPC on interface please search using interface type pc/vpc")
+            #    #        #import pdb; pdb.set_trace()
+            #    #        raw_input('\n#Press enter to continue...')
+            #    #    elif macsfound == 0:
+            #    #        print("No endpoints found!")
+            #    #        raw_input('\n#Press enter to continue...')
+            #    #    elif macsfound == 1:
+            #    #        print('\nFound {} endpoint.\n'.format(macsfound))
+            #    #        raw_input('\n#Press enter to continue...')
+            #    #    else:
+            #    #        print('\nFound {} endpoint.\n'.format(macsfound))
+            #    #        raw_input('\n#Press enter to continue...')
+            #    #   #     raw_input('\nFound {} endpoints.\n\n#Press enter to return...'.format(macsfound))
+            #elif selection == '3':
+            #    returnedlist = port_channel_selection(allvpclist)
+            #    #print(returnedlist)
         except Exception as e:
             print(e)
             raw_input('Completed. Press enter to return....')
 
 
-        epmMacEplist = pull_mac_and_ip(chosenleafs)
-        polist = pull_port_channel_info(chosenleafs)
-        for po in polist:
-            for epmmacep in epmMacEplist:
-                if po.id == epmmacep.ifId:
-                    epmmacep.physlocation = po.activephys
-        #print(chosenleafs)
-        vlanlist = pull_vlan_info_for_leaf(chosenleafs)
-        for x in epmMacEplist:
-            found = False
-            for vlan in vlanlist:
-                #rint(x.bd_encap, vlan.dn)
-                #if x.encap == 'db-ep':
-                #    #import pdb; pdb.set_trace()
-                #    #if x.bd in vlan.dn:
-                #    
-                #    print(x.bd, vlan.tenant, vlan.encap, vlan.name, vlan.dn, vlan.epgDn)
-                    #x.foundvlan = vlan.name
-                if x.bd_encap in vlan.dn:
-                    x.foundvlan = vlan.name
-                    found = True
-            if not found:
-                url = """https://{apic}/api/node/class/fvCEp.json?query-target-filter=eq(fvCEp.mac,"{addr}")""".format(apic=apic,addr=x.addr)
-                result = GetResponseData(url, cookie)
-                x.foundvlan = ':'.join(result[0]['fvCEp']['attributes']['dn'].split('/')[1:4]).replace('tn-','').replace('ap-','').replace('epg-','')
-                        
-
-        macsfound = 0
-        desiredlist = map(lambda x: x.dn, returnedlist)
-        endpointlist = []
-        #print(len(epmMacEplist))
-        for macep in epmMacEplist:
-            if hasattr(macep, 'physlocation'):
-                for location in macep.physlocation:
-                  #  import pdb; pdb.set_trace()
-                    #for port in macep.activephys:
-                    ethname = location
-                    if ethname.count('/') > 1:
-                        shortname = ''.join(ethname.split('/')[-2:])
-                    else:
-                        shortname = ethname[ethname.rfind('/')+1:]
-                    endpointlist.append(endpoint(ethname=ethname,shortname=shortname,**macep.__dict__))
-            else:
-                ethname = macep.ifId
-                if ethname.count('/') > 1:
-                    shortname = ''.join(ethname.split('/')[-3:]).replace('eth','')
-                else:
-                    shortname = ethname[ethname.rfind('/')+1:]
-                endpointlist.append(endpoint(ethname=ethname,shortname=shortname,**macep.__dict__))
-        filteredlist = []
-        for endp in endpointlist:
-            if endp.ethname.count('/') > 1:
-                localethname = 'eth' + '/'.join(endp.ethname.split('/')[-2:])
-                expaths = endp.ethname.split('/')[0][3:]
-                topology = ('/'.join(endp.dn.split('/')[:3]) + '/extpaths-' + expaths + '/pathep-[' + localethname + ']').replace('node-','paths-')
-            else:
-                topology = ('/'.join(endp.dn.split('/')[:3]) + '/pathep-[' + endp.ethname + ']').replace('node-','paths-')
-            if topology in desiredlist:
-                filteredlist.append(endp)
-        columnwidthfind = ('ethname','addr','foundvlan','ifId','ip')
-        sizes = get_column_sizes(filteredlist, *columnwidthfind)
-        print('{:{inter}}  {:{mac}}  {:{epg}}  {:{po}}  {:{ip}}'.format('Interface', 'MAC', 'EPG', 'Po #', 'IP',inter=sizes[0]+4,mac=sizes[1],epg=sizes[2],po=sizes[3],ip=sizes[4]))
-        print('{:-<{inter}}  {:-<{mac}}  {:-<{epg}}  {:-<{po}}  {:-<{ip}}'.format('', '', '', '', '',inter=sizes[0]+4,mac=sizes[1],epg=sizes[2],po=sizes[3],ip=sizes[4]))
-        #import pdb; pdb.set_trace()
-        for ep in sorted(filteredlist, key=lambda x : int(x.shortname)):
-            if 'po' in ep.ifId:
-                macsfound += 1
-                print('{:{inter}}  {:{mac}}  {:{epg}}  {:{po}}  {:{ip}}'.format(ep.ethname,ep.addr,ep.foundvlan,ep.ifId,','.join(ep.ip),inter=sizes[0]+4,mac=sizes[1],epg=sizes[2],po=sizes[3],ip=sizes[4]))
-            else:
-                macsfound += 1
-                print('{:{inter}}  {:{mac}}  {:{epg}}  {:{po}}  {:{ip}}'.format(ep.ethname,ep.addr,ep.foundvlan,'',','.join(ep.ip),inter=sizes[0]+4,mac=sizes[1],epg=sizes[2],po=sizes[3],ip=sizes[4]))
-            #print(ep.__dict__)
-        #import pdb; pdb.set_trace()
-        #for x in epmMacEplist:
-        #    if hasattr(x, 'physlocation'):
-        #        for port in returnedlist:
-        #            print(port, x.physlocation)
-        #            if port in x.physlocation:
-        #                x.ethname = port
-        #                x.shortname = port[port.rfind('/')+1:]
-        
-            #elif x.ifId not in desiredlist:
-            #    x.shortname = x.ifId[x.ifId.rfind('/')+1:]
-            #    x.ethname = x.ifId
-            #else:
-            #    x.shortname == None
-        #import pdb; pdb.set_trace()
-        #for x in epmMacEplist:
-        #    if x.addr == '00:50:56:86:20:D3':
-        #filtedepmMaclist = filter(lambda x: x.shortname != None, epmMacEplist)
-        #if filtedepmMaclist != None:
-        
-        #try:
-        #    for x in sorted(filtedepmMaclist, key=lambda x: int(x.shortname)):
-        #        macsfound += 1
-        #        #if x.ethname in returnedlist:
-        #        print("{:10} {:20}  {:15}  {:25}  {}  {}".format(x.ethname,x.addr,x.foundvlan,x.flags, x.ifId, x.ip))
-        #except:
-        #    raw_input()#import pdb; pdb.set_trace()
-        #filtedepmMaclist = filter(lambda x: not hasattr(x, 'shortname'), epmMacEplist)
-#
-        #for x in filtedepmMaclist:
-        #    import pdb; pdb.set_trace()
-        #    macsfound += 1
-        #    print("{:10} {:20}  {:15}  {:25}  {}  {}".format(x.ifId,x.addr,x.foundvlan,x.flags, "", x.ip))
-        #    elif str(x.ifId) in str(returnedlist[0]):
-        #        print("{:20}  {:15}  {:25}  {}".format(x.addr,x.foundvlan,x.flags,x.ip))
-        #      macsfound +=1
-        if macsfound == 0 and selection == '1':
-            print("No endpoints found!\n\n**If this interface is part of a PC or VPC on interface please search using interface type pc/vpc")
-            #import pdb; pdb.set_trace()
-            raw_input('\n\n#Press enter to continue...')
-        elif macsfound == 0:
-            print("No endpoints found!")
-            raw_input('\n\n#Press enter to continue...')
-        elif macsfound == 1:
-            print('\nFound {} endpoint.\n\n'.format(macsfound))
-            raw_input('\n\n#Press enter to continue...')
-        else:
-            print('\nFound {} endpoint.\n\n'.format(macsfound))
-            raw_input('\n\n#Press enter to continue...')
-       #     raw_input('\nFound {} endpoints.\n\n#Press enter to return...'.format(macsfound))
-
-      #  macsfound = 0
-      #  print('{:20}  {:15}  {:25}  {}'.format('MAC', 'Last IP', 'All Live IPs', 'EPG'))
-      #  print('---------------------------------------------------------------------------')
-      #  for x in fvCEplist:
-      #      #print('\t', x.fvRsCEpToPathEp, interfacelist[0])
-      #      if str(x.fvRsCEpToPathEp) == str(returnedlist[0]):
-      #          print("{:20}  {:15}  {:25}  {}".format(x.mac,x.ip,x.fvIplist,x.dn[x.dn.find('/')+1:x.dn.rfind('/')]))
-      #          macsfound +=1
-      #  if macsfound == 0 and selection == '1':
-      #      print("No endpoints found!\n\n**If this interface is part of a PC or VPC on interface please search using interface type pc/vpc")
-      #      import pdb; pdb.set_trace()
-      #      raw_input('\n\n#Press enter to return')
-      #  elif macsfound == 0:
-      #      print("No endpoints found!")
-      #      raw_input('\n\n#Press enter to return')
-      #  else:
-      #      raw_input('\nFound {} endpoints.\n\n #Press enter to return...'.format(macsfound))
-#def     main():
-#        get_Cookie()
-#        mac_path_function()
-
+    
+          #  macsfound = 0
+          #  print('{:20}  {:15}  {:25}  {}'.format('MAC', 'Last IP', 'All Live IPs', 'EPG'))
+          #  print('---------------------------------------------------------------------------')
+          #  for x in fvCEplist:
+          #      #print('\t', x.fvRsCEpToPathEp, interfacelist[0])
+          #      if str(x.fvRsCEpToPathEp) == str(returnedlist[0]):
+          #          print("{:20}  {:15}  {:25}  {}".format(x.mac,x.ip,x.fvIplist,x.dn[x.dn.find('/')+1:x.dn.rfind('/')]))
+          #          macsfound +=1
+          #  if macsfound == 0 and selection == '1':
+          #      print("No endpoints found!\n\n**If this interface is part of a PC or VPC on interface please search using interface type pc/vpc")
+          #      import pdb; pdb.set_trace()
+          #      raw_input('\n\n#Press enter to return')
+          #  elif macsfound == 0:
+          #      print("No endpoints found!")
+          #      raw_input('\n\n#Press enter to return')
+          #  else:
+          #      raw_input('\nFound {} endpoints.\n\n #Press enter to return...'.format(macsfound))
+    #def     main():
+    #        get_Cookie()
+    #        mac_path_function()
+    
+    

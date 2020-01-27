@@ -96,6 +96,25 @@ def postnoshut(interface,queue, apic, cookie):
         else:
             queue.put('\x1b[1;37;41mFailure\x1b[0m -- ' + error)
 
+def shut_or_noshut_confirmation(interfacelist, operation = 'shut'):
+    print('\nVerify ' + operation + ' for interface:\n')
+    for interface in interfacelist:
+        if hasattr(interface, 'leaf'):
+            print("\t{} {}".format(interface.leaf,interface.name))
+        else:
+            print("\t{}".format(interface.name))
+    print('\n')
+    while True:
+        ask = custom_raw_input('Confirmation [y|n=default]: ') or 'n'
+        if ask != '' and ask.strip().lstrip()[0].lower() == 'n':
+            return False
+        elif ask != '' and ask.strip().lstrip()[0].lower() == 'y':
+            return True
+        else:
+            print('\x1b[1;37;41mInvalid option...\x1b[0')
+            continue
+
+    
 
 def main(import_apic, import_cookie):
     while True:
@@ -123,21 +142,36 @@ def main(import_apic, import_cookie):
                         \nSelect a number: "))
                 if option == '1':
                     print('\n')
-                    shutinterfaces(returnedlist, apic, cookie)
+                    confirmed = shut_or_noshut_confirmation(returnedlist, operation = '"shut"')
+                    if confirmed:
+                        print('\n')
+                        shutinterfaces(returnedlist, apic, cookie)
+                    else:
+                        print('\nCancelled\n')
                     break
                 elif option == '2':
                     print('\n')
-                    noshutinterfaces(returnedlist, apic, cookie)
+                    confirmed = shut_or_noshut_confirmation(returnedlist, operation = '"no shut"')
+                    if confirmed:
+                        print('\n')
+                        noshutinterfaces(returnedlist, apic, cookie)
+                    else:
+                        print('\nCancelled\n')
                     break
                 elif option == '3':
                     print('\n')
-                    shutinterfaces(returnedlist, apic, cookie)
-                    noshutinterfaces(returnedlist, apic, cookie)
+                    confirmed = shut_or_noshut_confirmation(returnedlist, operation = '"bounce"')
+                    if confirmed:
+                        print('\n')
+                        shutinterfaces(returnedlist, apic, cookie)
+                        noshutinterfaces(returnedlist, apic, cookie)
+                    else:
+                        print('\nCancelled\n')
                     break
                 else:
                     print('\n\x1b[1;31;40mInvalid option, please try again...\x1b[0m\n')
                     continue
-            custom_raw_input('\n#Press enter to continue...')
+            custom_raw_input('\n#Press Enter to continue...')
         elif selection == '2':
             returnedlist = port_channel_selection(allpclist)
             print('\r')
@@ -149,15 +183,37 @@ def main(import_apic, import_cookie):
                         \nSelect a number: "))
             if option == '1':
                 print('\n')
-                shutinterfaces(returnedlist, apic, cookie)
+                confirmed = shut_or_noshut_confirmation(returnedlist, operation = '"shut"')
+                if confirmed:
+                    print('\n')
+                    shutinterfaces(returnedlist, apic, cookie)
+                else:
+                    print('\nCancelled\n')
+                break
             elif option == '2':
                 print('\n')
-                noshutinterfaces(returnedlist, apic, cookie)
-            else:
+                confirmed = shut_or_noshut_confirmation(returnedlist, operation = '"no shut"')
+                if confirmed:
+                    print('\n')
+                    noshutinterfaces(returnedlist, apic, cookie)
+                else:
+                    print('\nCancelled\n')
+                break
+            elif option == '3':
                 print('\n')
-                shutinterfaces(returnedlist, apic, cookie)
-                noshutinterfaces(returnedlist, apic, cookie)
-            custom_raw_input('\n#Press enter to continue...')
+                confirmed = shut_or_noshut_confirmation(returnedlist, operation = '"bounce"')
+                if confirmed:
+                    print('\n')
+                    shutinterfaces(returnedlist, apic, cookie)
+                    noshutinterfaces(returnedlist, apic, cookie)
+                else:
+                    print('\nCancelled\n')
+                break
+            else:
+                print('\n\x1b[1;31;40mInvalid option, please try again...\x1b[0m\n')
+                continue
+
+            custom_raw_input('\n#Press Enter to continue...')
 
         elif selection == '3':
             returnedlist = port_channel_selection(allvpclist)
@@ -170,13 +226,33 @@ def main(import_apic, import_cookie):
                         \nSelect a number: "))
             if option == '1':
                 print('\n')
-                shutinterfaces(returnedlist, apic, cookie)
+                confirmed = shut_or_noshut_confirmation(returnedlist, operation = '"shut"')
+                if confirmed:
+                    print('\n')
+                    shutinterfaces(returnedlist, apic, cookie)
+                else:
+                    print('\nCancelled\n')
+                break
             elif option == '2':
                 print('\n')
-                noshutinterfaces(returnedlist, apic, cookie)
-            else:
+                confirmed = shut_or_noshut_confirmation(returnedlist, operation = '"no shut"')
+                if confirmed:
+                    print('\n')
+                    noshutinterfaces(returnedlist, apic, cookie)
+                else:
+                    print('\nCancelled\n')
+                break
+            elif option == '3':
                 print('\n')
-                shutinterfaces(returnedlist, apic, cookie)
-                noshutinterfaces(returnedlist, apic, cookie)
-            custom_raw_input('\n#Press enter to continue...')
-
+                confirmed = shut_or_noshut_confirmation(returnedlist, operation = '"bounce"')
+                if confirmed:
+                    print('\n')
+                    shutinterfaces(returnedlist, apic, cookie)
+                    noshutinterfaces(returnedlist, apic, cookie)
+                else:
+                    print('\nCancelled\n')
+                break
+            else:
+                print('\n\x1b[1;31;40mInvalid option, please try again...\x1b[0m\n')
+                continue
+            custom_raw_input('\n#Press Enter to continue...')
