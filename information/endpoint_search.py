@@ -343,16 +343,18 @@ def display_vm_information(endpointobject, compVm):
                     print("{:96}vm_name = {:18}\n{:96}{:18}\n".format('',vmname,'',vmhostname))#,vmstate))
                 else:
                     if vmpowerstate == 'poweredOff':
-                        print("{:96}vm_name = {:18}\n{:96}Host = {:18}\n{:96}State = \x1b[1;31;40m{:18}\x1b[0m\n".format('',vmname,'',vmhostname,'',vmpowerstate))#,vmstate))
+                        print("{:96}vm_name = {:18}\n{:96}Host = {:18}\n{:96}State = \x1b[1;31;40m{:18}\x1b[0m".format('',vmname,'',vmhostname,'',vmpowerstate))#,vmstate))
                     else:
-                        print("{:96}vm_name = {:18}\n{:96}Host = {:18}\n{:96}State = {:18}\n".format('',vmname,'',vmhostname,'',vmpowerstate))#,vmstate))
+                        print("{:96}vm_name = {:18}\n{:96}Host = {:18}\n{:96}State = {:18}".format('',vmname,'',vmhostname,'',vmpowerstate))#,vmstate))
             else:
                 if vmhostname == '\x1b[1;37;41m****OLD INFORMATION PHASING OUT****\x1b[0m':
                     print("{:96}{:18}\n{:96}{:18}\n".format('','','',vmhostname))
 
 def find_and_display_current_location_info(macEP, totalcount, compVm=None):
-    if macEP.fvRsCEpToPathEp == None:
-        dnpath = 'Discovered in virtual env, Not learned on leaf'
+    if macEP.fvRsCEpToPathEp == None and compVm != None:
+        dnpath = 'Found in Virtual env, not discovered on leaf(s)'
+    elif macEP.fvRsCEpToPathEp == None:
+        dnpath = 'unknown'
     else:
         dnpath = macEP.fvRsCEpToPathEp.tDn
         #print(dnpath)
@@ -370,7 +372,8 @@ def find_and_display_current_location_info(macEP, totalcount, compVm=None):
         display_vm_information(macEP, compVm)
         if 'pc-' in dnpath:
             all_locations = port_channel_location(interfacename,apic=apic, cookie=cookie)
-            print("{:96}{}".format('','Port-Channel Locaiton:'))
+            print('\r')
+            print("{:96}{}".format('','Port-Channel Location:'))
             print('{:96}{}'.format('','-'*20))
             for locations in sorted(all_locations):
                 print("{:26}\t{:15}\t\t{:38}\t{} {}".format('','','',', '.join(locations[:1]), ', '.join(locations[1])))
@@ -384,7 +387,8 @@ def find_and_display_current_location_info(macEP, totalcount, compVm=None):
             if 'pc-' in dnpath:
                 all_locations = port_channel_location(interfacename,apic=apic, cookie=cookie)
                 #import pdb; pdb.set_trace()
-                print("{:96}{}".format('','Port-Channel Locaiton:'))
+                print('\r')
+                print("{:96}{}".format('','Port-Channel Location:'))
                 print('{:96}{}'.format('','-'*20))
                 for locations in sorted(all_locations):
                     print("{:26}\t{:15}\t\t{:38}\t{} [{}]".format('','','',', '.join(locations[:1]), ', '.join(locations[1])))
@@ -443,10 +447,13 @@ def vm_search_function(vm_name):
 
 
 def mac_path_function(mac, compVM=None):
+    if mac == None:
+        totalcount ='0'
+    else:    
+        url = """https://{apic}/api/node/class/fvCEp.json?rsp-subtree=full&query-target-filter=eq(fvCEp.mac,"{}")""".format(mac,apic=apic)
+        logger.info(url)
+        result, totalcount = GetResponseData(url, cookie, return_count=True)
     epglist =[]
-    url = """https://{apic}/api/node/class/fvCEp.json?rsp-subtree=full&query-target-filter=eq(fvCEp.mac,"{}")""".format(mac,apic=apic)
-    logger.info(url)
-    result, totalcount = GetResponseData(url, cookie, return_count=True)
     if totalcount == '0' and compVM:
         print('\n')
         url = """https://{apic}/api/node/mo/{}.json""".format(compVM.host_rn_reference,apic=apic)
@@ -499,38 +506,55 @@ def mac_path_function(mac, compVM=None):
 
 
 def ip_path_function(ipaddr):
-    firstmatch = False
+    primaryquerymatch = False
     totalcount2 = 1
+    totalcount3 = 1
     url = """https://{apic}/api/node/class/fvIp.json?query-target-filter=eq(fvIp.addr,"{ipaddr}")""".format(ipaddr=ipaddr,apic=apic)
     logger.info(url)
     result, totalcount = GetResponseData(url, cookie, return_count=True)
     if totalcount > '0':
-        firstmatch = True
+        primaryquerymatch = True
     if totalcount == '0':
         url = """https://{apic}/api/node/class/fvCEp.json?rsp-subtree=full&rsp-subtree-include=required&query-target-filter=eq(fvCEp.ip,"{}")""".format(ipaddr,apic=apic)
         logger.info(url)
         result, totalcount2 = GetResponseData(url, cookie, return_count=True)
-    if totalcount2 == '0' :
+    if totalcount2 == '0':
+        url = """https://{apic}/api/node/class/arpAdjEp.json?query-target-filter=and(eq(arpAdjEp.ip,"{}"))&order-by=arpAdjEp.modTs|desc""".format(ipaddr,apic=apic)
+        logger.info(url)
+        result, totalcount3 = GetResponseData(url, cookie, return_count=True)
+        arpquerymatch = True
+    if totalcount2 == '0' and totalcount3 == '0' :
         print('\n')
         print("{:26}\t{:15}\t{:18}\t{}".format("Date", "encap-vlan", "Ip Address", "Mac Address"))
         print('-'*97)
         print('\x1b[41;1mNo "LIVE Endpoint" IP found...check event history\x1b[0m\n')
         print('\n')
     else:
-        if firstmatch:
-            macaddr = result[0]['fvIp']['attributes']['dn'].split('/')[4].replace('cep-','')
+        if primaryquerymatch:
+            macaddr = result[0]['fvIp']['attributes']['dn'].split('/')[-2].replace('cep-','')
             url = """https://{apic}/api/node/class/fvCEp.json?query-target-filter=eq(fvCEp.mac,"{macaddr}")&rsp-subtree=full&rsp-subtree-include=required""".format(apic=apic,macaddr=macaddr)
             result, totalcount = GetResponseData(url, cookie, return_count=True) 
             logger.info(url)
-        fvCEplist = gather_fvCEp_fullinfo(result)
-        for fvCEp in fvCEplist:
-            url = """https://{apic}/api/node/mo/{}.json?rsp-subtree=full&target-subtree-class=fvCEp,fvRsCEpToPathEp,fvRsHyper,fvRsToNic,fvRsToVm""".format(fvCEp.dn,apic=apic)
-            logger.info(url)
-            result, totalcount = GetResponseData(url, cookie, return_count=True)
-            completefvCEplist = gather_fvCEp_fullinfo(result)
-            #Display current endpoint info
-            find_and_display_current_location_info(completefvCEplist[0], totalcount)
-            #Display current known endpoint history
+            fvCEplist = gather_fvCEp_fullinfo(result)
+            for fvCEp in fvCEplist:
+                url = """https://{apic}/api/node/mo/{}.json?rsp-subtree=full&target-subtree-class=fvCEp,fvRsCEpToPathEp,fvRsHyper,fvRsToNic,fvRsToVm""".format(fvCEp.dn,apic=apic)
+                logger.info(url)
+                result, totalcount = GetResponseData(url, cookie, return_count=True)
+                completefvCEplist = gather_fvCEp_fullinfo(result)
+                #Display current endpoint info
+                find_and_display_current_location_info(completefvCEplist[0], totalcount)
+                #Display current known endpoint history
+        elif arpquerymatch:
+            macaddrlist = [x['arpAdjEp']['attributes']['mac'] for x in result]
+            for macaddr in macaddrlist:
+                url = """https://{apic}/api/node/class/fvCEp.json?query-target-filter=eq(fvCEp.mac,"{macaddr}")&rsp-subtree=full&rsp-subtree-include=required""".format(apic=apic,macaddr=macaddr)
+                logger.info(url)
+                result, totalcount = GetResponseData(url, cookie, return_count=True)
+                completefvCEplist = gather_fvCEp_fullinfo(result)
+                import pdb; pdb.set_trace()
+                #Display current endpoint info
+                find_and_display_current_location_info(completefvCEplist[0], totalcount)
+        
         print('\n[History]')
         display_live_history_info(completefvCEplist[0], totalcount)
 
@@ -553,7 +577,10 @@ def last4_function(endpoint):
             else:
                 print('\n\x1b[1;31;40mInvalid selection...\x1b[0m\n')
                 continue
-    
+    elif len(result) == 1:
+        return result[0]['fvCEp']['attributes']['name']
+    else:
+        return None
 
 def main(import_apic,import_cookie):
     global apic
@@ -590,7 +617,7 @@ def main(import_apic,import_cookie):
             history = custom_raw_input("\nWould you like to search event logs for {}? [y|n=default]: ".format(endpoint)) or 'n'
             if history != '' and history[0].lower() == 'y':
                 eventhistory(endpoint)
-                custom_raw_input('#Press enter to continue...')
+                custom_raw_input('\n#Press enter to continue...')
                 break
             elif history[0].lower() == 'n':
                 endpoint = None

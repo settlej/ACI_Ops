@@ -208,9 +208,12 @@ def display_port_custom(nodeinterfacegrouping, interfacelist):
 def pull_leaf_state_interfaces(leaf, apic, q):
     url = """https://{apic}/api/node-{leaf}/class/l1PhysIf.json""".format(leaf=leaf,apic=apic)
     logger.info(url)
-    result = GetResponseData(url, cookie)
-    logger.info('complete')
-    q.put((leaf, result))
+    try:
+        result = GetResponseData(url, cookie)
+        logger.info('complete')
+        q.put((leaf, result))
+    except HTTPError:
+        raise KeyboardInterrupt
 
 def main(import_apic,import_cookie, leafs, interfacelist=None, purpose='port_status'):
     #while True:

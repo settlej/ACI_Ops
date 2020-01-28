@@ -190,7 +190,7 @@ def display_static_routes(tenantlist):
                     if len(l3out.static_routelist) >= 1:
                         columnstring += ('{:{tenantwidth}} | {:{vrfwidth}} | {:{l3width}} | Static Routes: {numroutes}\n'.format('','',vrf.l3outlist[-1], numroutes=len(l3out.static_routelist),l3width=l3width,tenantwidth=tenantwidth,vrfwidth=vrfwidth))
                         #', '.join(map(str, l3out.static_routelist[0]))))
-                        for num,route in enumerate(l3out.static_routelist,1):
+                        for num,route in enumerate(sorted(l3out.static_routelist, key=lambda x:x[1].ip),1):
                             #import pdb; pdb.set_trace()
                             if route[1].nexthoplist:
                                 columnstring += ('{:{tenantwidth}} | {:{vrfwidth}} | {:{l3width}} | {}.) {:35}   {:4}   {:18}   {:11}   {}\n'.format('','','',num,', '.join(map(str, route)),route[1].pref,route[1].nexthoplist[0][0],route[1].nexthoplist[0][1],route[1].descr,tenantwidth=tenantwidth,vrfwidth=vrfwidth,l3width=l3width))
