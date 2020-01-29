@@ -180,6 +180,11 @@ def POSTRequest(url, data, icookie):
         failure_reason = json.loads(urle.read())
         return 'invalid', failure_reason
 
+class json_collector(object):
+    def __init__(self, **kwargs):
+        self.__dict__.update(kwargs)
+
+
 def interface_menu():
     while True:
         print("\nSelect type of interface(s): \n\n" + \

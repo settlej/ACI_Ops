@@ -116,7 +116,7 @@ def postremove(interface_epg,queue):
     logger.debug(result)
     if result[0] == []:
         removeendingrspathAtt = interface_epg.find('rspathAtt')-1
-        queue.put('Success! -- Removed ' + interface_epg[:removeendingrspathAtt] + ' > ' + interfacepath)
+        queue.put('\x1b[1;32;40mSuccess!\x1b[0m -- Removed ' + interface_epg[:removeendingrspathAtt] + ' > ' + interfacepath)
     else:
         queue.put('\x1b[1;37;41mFailure!\x1b[0m -- ' + result[0])
 

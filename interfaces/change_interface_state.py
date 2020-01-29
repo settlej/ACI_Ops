@@ -66,7 +66,7 @@ def postshut(interface,queue, apic, cookie):
         result, error =  PostandGetResponseData(url, data, cookie)
         #import pdb; pdb.set_trace()
         if result == []:
-            queue.put('[Complete] shut ' + interface.name)
+            queue.put('\x1b[1;32;40m[Complete]\x1b[0m shut ' + interface.name)
         else:
             queue.put('\x1b[1;37;41mFailure\x1b[0m -- ' + error)
 
@@ -92,7 +92,7 @@ def postnoshut(interface,queue, apic, cookie):
         logger.info(data)
         result, error =  PostandGetResponseData(url, data, cookie)
         if result == []:
-            queue.put('[Complete] no shut ' + interface.name)
+            queue.put('\x1b[1;32;40m[Complete]\x1b[0m no shut ' + interface.name)
         else:
             queue.put('\x1b[1;37;41mFailure\x1b[0m -- ' + error)
 

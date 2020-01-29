@@ -125,7 +125,7 @@ def submit_add_post_request(url,interfacetype,queue, cookie):
     logger.info(error)
     shorturl = url.url[30:-5]
     if error == None and result == []:
-        finalresult = 'Success! -- Added ' + shorturl + ' > ' + str(url.interface)
+        finalresult = '\x1b[1;32;40mSuccess!\x1b[0m -- Added ' + shorturl + ' > ' + str(url.interface)
         queue.put(finalresult)
         logger.debug('{} modify: {}'.format(interfacetype, finalresult))
     elif result == 'invalid':
