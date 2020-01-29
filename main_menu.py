@@ -16,7 +16,7 @@ import fabric_access.display_switch_to_leaf_structure as display_switch_to_leaf_
 import interfaces.change_interface_state as shut_noshut_interfaces
 import interfaces.assign_epg_interfaces as assign_epg_interfaces
 import interfaces.remove_epgs_interfaces as remove_egps
-#import interfaces.show_interface_epgs as show_epgs
+import interfaces.vlan_epg_to_ports as show_epgs
 import interfaces.show_all_endpoints_on_interface as show_all_endpoints_on_interface
 import interfaces.portsanddescriptions as portsanddescriptions
 import interfaces.interfacecounters as showinterface
@@ -323,28 +323,29 @@ def main():
                             '\t| 5.)  Show interface counters and EPGs\n' + 
                             '\t| 6.)  Show leaf port view\n' +
                             '\t| 7.)  Show leaf port view (Detail)\n' + 
-                            '\t| 8.)  Show EPG --> Interface (per leaf)\n'
-                            '\t| 9.)  Show Endpoints on interface\n' +
+                            '\t| 8.)  Show EPG --> Interface (Operational)\n' +
+                            '\t| 9.)  Show EPG --> Interface (Tagged or Native)\n' +
+                            '\t| 10.) Show Endpoints on interface\n' +
                             '\t ---------------------------------------------------\n\n' +
                             '\t  [FAULTS and LOGS]\n'
                             '\t ---------------------------------------------------\n' +
-                            '\t| 10.) Important Faults Summary\n' + 
-                            '\t| 11.) Recent Port up/down intefaces\n'
-                            '\t| 12.) Recent Faults\n' +
-                            '\t| 13.) Recent Admin Changes\n' + 
-                            '\t| 14.) Recent Events\n' +
-                            '\t| 15.) Faults/Admin/Events Between Dates\n' + 
-                            '\t| 16.) Faults/Admin/Events Between Dates (Detail)\n' +
+                            '\t| 11.) Important Faults Summary\n' + 
+                            '\t| 12.) Recent Port up/down intefaces\n'
+                            '\t| 13.) Recent Faults\n' +
+                            '\t| 14.) Recent Admin Changes\n' + 
+                            '\t| 15.) Recent Events\n' +
+                            '\t| 16.) Faults/Admin/Events Between Dates\n' + 
+                            '\t| 17.) Faults/Admin/Events Between Dates (Detail)\n' +
                             '\t ---------------------------------------------------\n\n' +
                             '\t  [INFORMATION]\n'
                             '\t ---------------------------------------------------\n' +
-                            '\t| 17.) IP/Endpoint Search\n' + 
-                            '\t| 18.) Show ACI infrustructure status\n' +
-                            '\t| 19.) Show all IPs in a Bridge Domain\n' +
-                            '\t| 20.) Show Port-channel location\n' +
-                            '\t| 21.) Show Static Routes (with add/remove)\n '+
-                            '\t| 22.) Show Leaf Profile tree structure\n' +
-                            '\t| 23.) Show Top 50 counters\n' +
+                            '\t| 18.) IP/Endpoint Search\n' + 
+                            '\t| 19.) Show ACI infrustructure status\n' +
+                            '\t| 20.) Show all IPs in a Bridge Domain\n' +
+                            '\t| 21.) Show Port-channel location\n' +
+                            '\t| 22.) Show Static Routes (with add/remove)\n '+
+                            '\t| 23.) Show Leaf Profile tree structure\n' +
+                            '\t| 24.) Show Top 50 counters\n' +
                             #'\t| 16.) Show Leaf/Spine/APIC info (Not Available)\n' +
                             #'\t| 17.) EPG to EPG troubleshooting (alpha)\n' +
                             #'\t| 18.) Route lookup to endpoint (alpha)\n' +
@@ -352,9 +353,9 @@ def main():
                             '\t ---------------------------------------------------\n\n' +
                             '\t  [CONFIGURATION]\n'
                             '\t ---------------------------------------------------\n' +
-                            '\t| 24.) Configure Local Span\n' + 
-                            '\t| 25.) Capture server traffic ERSPAN to server (Beta)\n' + 
-                            '\t| 26.) Clone VPC/PC and deploy\n' + 
+                            '\t| 25.) Configure Local Span\n' + 
+                            '\t| 26.) Capture server traffic ERSPAN to server (Beta)\n' + 
+                            '\t| 27.) Clone VPC/PC and deploy\n' + 
                             #'\t| 20.) Create EPGs (Not Available)\n' +
                             '\t ---------------------------------------------------\x1b[0m')
             print('\x1b[7')
@@ -376,9 +377,17 @@ def main():
                         print('\nExit to Main menu\n')
                         keyinterrupt = True
                         break		
-                if chosen == '23':
+                if chosen == '24':
                     try:
                         top_interface_problems.main(apic,cookie)
+                        keyinterrupt = False
+                    except KeyboardInterrupt as k:
+                        print('\nExit to Main menu\n')
+                        keyinterrupt = True
+                        break
+                if chosen == '9':
+                    try:
+                        show_epgs.main(apic,cookie)
                         keyinterrupt = False
                     except KeyboardInterrupt as k:
                         print('\nExit to Main menu\n')
@@ -432,7 +441,7 @@ def main():
                         print('\nExit to Main menu\n')
                         keyinterrupt = True
                         break
-                elif chosen == '19':
+                elif chosen == '20':
                     try:
                         endpoint_per_leaf.main(apic,cookie)
                         keyinterrupt = False
@@ -440,7 +449,7 @@ def main():
                         print('\nExit to Main menu\n')
                         keyinterrupt = True
                         break
-                elif chosen == '22':
+                elif chosen == '23':
                     try:
                         display_switch_to_leaf_structure.main(apic,cookie)
                         keyinterrupt = False
@@ -448,7 +457,7 @@ def main():
                         print('\nExit to Main menu\n')
                         keyinterrupt = True
                         break
-                elif chosen == '26':
+                elif chosen == '27':
                     try:
                         clonevpcanddeploy.main(apic,cookie)
                         keyinterrupt = False
@@ -456,7 +465,7 @@ def main():
                         print('\nExit to Main menu\n')
                         keyinterrupt = True
                         break
-                elif chosen == '18':
+                elif chosen == '19':
                     try:
                         switchandapicinfo.main(apic,cookie)
                         keyinterrupt = False
@@ -464,7 +473,7 @@ def main():
                         print('\nExit to Main menu\n')
                         keyinterrupt = True
                         break
-                elif chosen == '20':
+                elif chosen == '21':
                     try:
                         portchannel_to_phy_interfaces.main(apic,cookie)
                         keyinterrupt = False
@@ -488,7 +497,7 @@ def main():
                         print('\nExit to Main menu\n')
                         keyinterrupt = True
                         break              
-                elif chosen == '9':
+                elif chosen == '10':
                     try:
                         show_all_endpoints_on_interface.main(apic,cookie)
                         keyinterrupt = False
@@ -497,7 +506,7 @@ def main():
                         print('\nExit to Main menu\n')
                         keyinterrupt = True
                         break
-                elif chosen == '10':
+                elif chosen == '11':
                     try:
                         fault_summary.main(apic,cookie)
                         keyinterrupt = False
@@ -505,7 +514,7 @@ def main():
                         print('\nExit to Main menu\n')
                         keyinterrupt = True
                         break		
-                elif chosen == '11':
+                elif chosen == '12':
                     try:
                         recent_port_down.main(apic,cookie)
                         keyinterrupt = False
@@ -513,7 +522,7 @@ def main():
                         print('\nExit to Main menu\n')
                         keyinterrupt = True
                         break	
-                elif chosen == '12':
+                elif chosen == '13':
                     try:
                         most_recent_fault_changes.main(apic,cookie)
                         keyinterrupt = False
@@ -521,7 +530,7 @@ def main():
                         print('\nExit to Main menu\n')
                         keyinterrupt = True
                         break
-                elif chosen == '13':
+                elif chosen == '14':
                     try:
                         most_recent_admin_changes.main(apic,cookie)
                         keyinterrupt = False
@@ -529,7 +538,7 @@ def main():
                         print('\nExit to Main menu\n')
                         keyinterrupt = True
                         break
-                elif chosen == '14':
+                elif chosen == '15':
                     try:
                         most_recent_event_changes.main(apic,cookie)
                         keyinterrupt = False
@@ -537,7 +546,7 @@ def main():
                         print('\nExit to Main menu\n')
                         keyinterrupt = True
                         break		
-                elif chosen == '15':
+                elif chosen == '16':
                     try:
                         alleventsbetweendates.main(apic,cookie)
                         keyinterrupt = False
@@ -545,7 +554,7 @@ def main():
                         print('\nExit to Main menu\n')
                         keyinterrupt = True
                         break
-                elif chosen == '16':
+                elif chosen == '17':
                     try:
                         alleventsbetweendates_fulldetail.main(apic,cookie)
                         keyinterrupt = False
@@ -553,7 +562,7 @@ def main():
                         print('\nExit to Main menu\n')
                         keyinterrupt = True
                         break
-                elif chosen == '17':
+                elif chosen == '18':
                     try:
                         ipendpoint_search.main(apic,cookie)
                         keyinterrupt = False
@@ -593,7 +602,7 @@ def main():
                 #        keyinterrupt = True
                 #        continue      
     
-                elif chosen == '21':
+                elif chosen == '22':
                     try:
                         show_static_routes.main(apic,cookie)
                         keyinterrupt = False
@@ -602,7 +611,7 @@ def main():
                         keyinterrupt = True
                         break
     
-                elif chosen == '24':
+                elif chosen == '25':
                     try:
                         create_local_span_session.main(apic,cookie)
                         keyinterrupt = False
@@ -612,7 +621,7 @@ def main():
                         break
                 #elif chosen == 'exit':
                 #    raise KeyboardInterrupt
-                elif chosen == '25':
+                elif chosen == '26':
                     try:
                         span_to_server.main(apic,cookie,current_user)
                         keyinterrupt = False

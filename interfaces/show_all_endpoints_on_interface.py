@@ -435,8 +435,8 @@ def main(import_apic,import_cookie):
                                   #  import pdb; pdb.set_trace()
                                     #for port in macep.activephys:
                                     ethname = location
-                                    if ethname.count('/') > 1:
-                                        shortname = ''.join(ethname.split('/')[-2:])
+                                    if ethname.count('/') > 1: 
+                                        shortname = ''.join(ethname.split('/')[-2:]) 
                                     else:
                                         shortname = ethname[ethname.rfind('/')+1:]
                                     endpointlist.append(endpoint(ethname=ethname,shortname=shortname,**macep.__dict__))

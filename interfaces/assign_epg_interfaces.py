@@ -47,30 +47,6 @@ logger.addHandler(c_handler)
 logger.addHandler(f_handler)
 
 
-def parseandreturnsingelist2(liststring, collectionlist):
-    try:
-        rangelist = []
-        singlelist = []
-        seperated_list = liststring.split(',')
-        for x in seperated_list:
-            if '-' in x:
-                rangelist.append(x)
-            else:
-                singlelist.append(int(x))
-        if len(rangelist) >= 1:
-            for foundrange in rangelist:
-                tempsplit = foundrange.split('-')
-                for i in xrange(int(tempsplit[0]), int(tempsplit[1])+1):
-                    singlelist.append(int(i))
-   #     print(sorted(singlelist))
-        if max(singlelist) > len(collectionlist) or min(singlelist) < 1:
-            print('\n\x1b[1;37;41mInvalid format and/or range...Try again\x1b[0m\n')
-            return 'invalid'
-        return list(set(singlelist)) 
-    except ValueError as v:
-        print('\n\x1b[1;37;41mInvalid format and/or range...Try again\x1b[0m\n')
-        return 'invalid'
-
 def vlan_and_url_generating(chosenepgs,choseninterfaceobjectlist, apic, epg_type):
     urllist = []
     confirmationlist = []
@@ -91,13 +67,13 @@ def vlan_and_url_generating(chosenepgs,choseninterfaceobjectlist, apic, epg_type
         for interface in sorted(choseninterfaceobjectlist):
             if epg_type == 'trunk_port':
                 data = """'{{"fvRsPathAtt":{{"attributes":{{"encap":"vlan-{vlan}","instrImedcy":"immediate",\
-                     "tDn":"{}","status":"created"}},"children":[]}}}}'""".format(interface.dn,vlan=vlan)
+                        "tDn":"{}","status":"created"}},"children":[]}}}}'""".format(interface.dn,vlan=vlan)
             elif epg_type == 'access_port':
                 data = """'{{"fvRsPathAtt":{{"attributes":{{"encap":"vlan-{vlan}","mode":"native","instrImedcy":"immediate",\
-                         "tDn":"{}","status":"created"}},"children":[]}}}}'""".format(interface.dn,vlan=vlan)
+                        "tDn":"{}","status":"created"}},"children":[]}}}}'""".format(interface.dn,vlan=vlan)
             elif epg_type == 'untagged_port':
                 data = """'{{"fvRsPathAtt":{{"attributes":{{"encap":"vlan-{vlan}","mode":"untagged","instrImedcy":"immediate",\
-                         "tDn":"{}","status":"created"}},"children":[]}}}}'""".format(interface.dn,vlan=vlan)
+                        "tDn":"{}","status":"created"}},"children":[]}}}}'""".format(interface.dn,vlan=vlan)
             urlmodify = namedtuple('urlmodify', ('url', 'interface', 'data'))
             urllist.append(urlmodify(url, interface, data))
         confirmationlist.append((choseninterfaceobjectlist,epg, vlan))

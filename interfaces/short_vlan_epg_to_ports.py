@@ -175,7 +175,7 @@ def pull_interface_with_vlaninfo(apic, cookie, leaf):
                     l1PhysIfobj.add_portchannel(pcAggrMbrIf(**y['pcAggrMbrIf']['attributes']))
         l1PhysIflist.append(l1PhysIfobj)
     print('\n')
-    print('{:12} {:12} {:32}   \x1b[1;33;40m{:32}\x1b[0m  {}'.format('Interface', 'Status', 'Configured Vlans', 'Working Vlans', 'Down Vlans'))
+    print('{:12} {:12} {:32}   {:32}  {}'.format('Interface', 'Status', 'Configured Vlans', 'Working Vlans', 'Down Vlans'))
     print('-' * 110)
     #shortenrangea = parseandreturnsingelist('1-3,5,7-9,11-15,17-21,23,24-28,34-35')
     #shortenrangeb = parseandreturnsingelist('1-3,5,9,12,20-21,23,25,27-28,34-35')

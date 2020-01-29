@@ -220,7 +220,7 @@ def main(import_apic,import_cookie):
             else:
                 print('  {:3}.) {:36} | {}'.format(num,bd, ', '.join(bd.subnets)))
         while True:
-            desiredbd = raw_input('\n  Show all IPs used in which BD?: ')
+            desiredbd = custom_raw_input('\n  Show all IPs used in which BD?: ')
             if desiredbd.isdigit() and int(desiredbd) > 0 and int(desiredbd) <= len(bdlist):
                 break
             else:
