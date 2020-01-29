@@ -293,7 +293,6 @@ def main():
    # print(role_rights)
    # rolerightsdict = {x['aaaRole']['attributes']['dn'][12:]:x['aaaRole']['attributes'] for x in role_rights}
    # import pdb; pdb.set_trace()
-    userdomainlist = {}
     while True:
         try:
             clear_screen()
@@ -366,8 +365,6 @@ def main():
             print('\x1b[1;33;40m\x1b[9;70H -----------------------------\x1b[0m')
             print('\x1b[8')
             cookie = refreshToken(apic, cookie)
-
-            writepermissionlist = ['1','2','3','22','23','24']
 
             while True:
                 chosen = custom_raw_input('\x1b[u\x1b[46;1H Select a number: ')

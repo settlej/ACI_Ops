@@ -553,6 +553,10 @@ def last4_function(endpoint):
             else:
                 print('\n\x1b[1;31;40mInvalid selection...\x1b[0m\n')
                 continue
+    elif len(result) == 1:
+        return result[0]['fvCEp']['attributes']['name']
+    else:
+        return None
     
 
 def main(import_apic,import_cookie):

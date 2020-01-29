@@ -509,7 +509,7 @@ def port_channel_selection(allpclist):
             print("\n\x1b[1;37;41mInvalid format and/or range...Try again\x1b[0m\n")
     return choseninterfaceobjectlist
 
-def parseandreturnsingelist(liststring, collectionlist):
+def parseandreturnsingelist(liststring, collectionlist=None):
     try:
         rangelist = []
         singlelist = []
@@ -525,9 +525,10 @@ def parseandreturnsingelist(liststring, collectionlist):
                 for i in xrange(int(tempsplit[0]), int(tempsplit[1])+1):
                     singlelist.append(int(i))
    #     print(sorted(singlelist))
-        if max(singlelist) > len(collectionlist) or min(singlelist) < 1:
-            print('\n\x1b[1;37;41mInvalid format and/or range...Try again\x1b[0m\n')
-            return 'invalid'
+        if collectionlist:
+            if max(singlelist) > len(collectionlist) or min(singlelist) < 1:
+                print('\n\x1b[1;37;41mInvalid format and/or range...Try again\x1b[0m\n')
+                return 'invalid'
         return list(set(singlelist)) 
     except ValueError as v:
         print('\n\x1b[1;37;41mInvalid format and/or range...Try again\x1b[0m\n')

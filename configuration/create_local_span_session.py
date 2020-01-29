@@ -183,10 +183,10 @@ logger.addHandler(f_handler)
 #                continue
 #            return filter(lambda x: x.number in intsinglelist, finalsortedinterfacelist), leaf
 
-def create_span_dest_url(source_int, name, leaf):
-    destport = source_int.dn
-    spandestgrpname = name + '_leaf' + leaf + '_' + source_int.name.replace('/','_')
-    spandestname = name + '_leaf' + leaf + '_' + source_int.name.replace('/','_')
+def create_span_dest_url(dest_int, name, leaf):
+    destport = dest_int.dn
+    spandestgrpname = name + '_leaf' + leaf + '_' + dest_int.name.replace('/','_')
+    spandestname = name + '_leaf' + leaf + '_' + dest_int.name.replace('/','_')
     desturl = """https://{apic}/api/node/mo/uni/infra/destgrp-{}.json""".format(spandestname,apic=apic)
     destdata = """{"spanDestGrp":{"attributes":{"name":"%s","status":"created"},"children":[{"spanDest":{"attributes":{"name":"%s","status":"created"},"children":[{"spanRsDestPathEp":{"attributes":{"tDn":"%s","status":"created"},"children":[]}}]}}]}}""" % (spandestgrpname, spandestname, destport)
     result, error = PostandGetResponseData(desturl, destdata, cookie)
@@ -198,12 +198,18 @@ def create_span_dest_url(source_int, name, leaf):
         return 'Failed'
 
 def create_source_session_and_port(source_int, dest_int, name, leaf):
-    spansourcename = name + '_leaf' + leaf + '_' + source_int.name.replace('/','_')
+    sourcelist = []
+    if len(source_int) > 1:
+        for source in source_int:
+            spansourcename = name + '_leaf' + leaf + '_' + source.name.replace('/','_')
+            sourcelist.append({"spanSrc":{"attributes":{"name":spansourcename,"status":"created"},"children":[{"spanRsSrcToPathEp":{"attributes":{"tDn":source.dn,"status":"created"},"children":[]}}]}})
     spandestname = name + '_leaf'  + leaf + '_'+ dest_int.name.replace('/','_')
     spansessionname = name  + '_leaf' + leaf + '_' + 'SPAN_SESSION' #+ datetime.datetime.now().strftime('%Y:%m:%dT%H:%M:%S')
-    sourceport = source_int.dn
+    #sourceport = source_int.dn
     sourceurl = """https://{apic}/api/node/mo/uni/infra/srcgrp-{}.json""".format(spansessionname,apic=apic)
-    sourcedata = """{"spanSrcGrp":{"attributes":{"name":"%s","status":"created"},"children":[{"spanSpanLbl":{"attributes":{"name":"%s","status:"created"},"children":[]}},{"spanSrc":{"attributes":{"name":"%s","status":"created"},"children":[{"spanRsSrcToPathEp":{"attributes":{"tDn":"%s","status":"created"},"children":[]}}]}}]}}""" % (spansessionname, spandestname, spansourcename, sourceport)
+    sourcedata = {"spanSrcGrp":{"attributes":{"name":spansessionname,"status":"created"},"children":[{"spanSpanLbl":{"attributes":{"name":spandestname,"status":"created"},"children":[]}}]}}
+    sourcedata['spanSrcGrp']['children'].extend(sourcelist)
+    sourcedata = json.dumps(sourcedata)
     result, error = PostandGetResponseData(sourceurl, sourcedata, cookie)
     if result == []:
         print("Successfully added Source Session and Source Port")
@@ -234,11 +240,21 @@ def main(import_apic,import_cookie):
         direction= 'Source'
         print("\nSelect \x1b[1;33;40m{}\x1b[0m interface by number: \n".format(direction))
         source_returnedlist = physical_interface_selection(apic, cookie, chosenleafs, provideleaf=False)
+        import pdb; pdb.set_trace()
         direction = 'Destination'
         print("\nSelect \x1b[1;33;40m{}\x1b[0m interface by number: \n".format(direction))
         dest_returnedlist = physical_interface_selection(apic, cookie, chosenleafs, provideleaf=False)
-        print('Local SPAN setup:\n Source Port: \x1b[1;33;40m{} {}\x1b[0m to Destination Port: \x1b[1;33;40m{} {}\x1b[0m'.format(source_returnedlist[0].leaf, source_returnedlist[0].name,
-                                                                                     dest_returnedlist[0].leaf, dest_returnedlist[0].name))
+        confirmstr = 'Local SPAN setup:\n Source Port:'
+         #\x1b[1;33;40m{} {}\x1b[0m '.format(source_returnedlist[0].leaf, source_returnedlist[0].name)
+        for source in source_returnedlist:
+            confirmstr += ' \x1b[1;33;40m{} {}\x1b[0m'.format(source.leaf, source.name)
+            if len(source_returnedlist) > 1 and source_returnedlist[-1] != source:
+                confirmstr += ','
+        for dest in dest_returnedlist:
+            confirmstr += ' to Destination Port: \x1b[1;33;40m{} {}\x1b[0m '.format(dest.leaf, dest.name)
+            if len(dest_returnedlist) > 1 and dest_returnedlist[-1] != dest:
+                confirmstr += ','
+        print(confirmstr)
        # import pdb; pdb.set_trace()
         while True:
             ask = custom_raw_input('\nConfirm Local SPAN deployment? [y|n]: ')
@@ -253,7 +269,7 @@ def main(import_apic,import_cookie):
         if span_dest_result == 'Failed':
             custom_raw_input("\n\x1b[1;37;41mFailed to created SPAN destination port\x1b[0m.  Press enter to continue...")
             continue
-        create_source_session_and_port(source_returnedlist[0],dest_returnedlist[0], name, chosenleafs[0])
+        create_source_session_and_port(source_returnedlist,dest_returnedlist[0], name, chosenleafs[0])
         cookie = refreshToken(apic, cookie)
         custom_raw_input('\n#Press enter to continue...')
         break

@@ -171,8 +171,8 @@ def display_static_routes(tenantlist):
     l3width = longestl3outname
     #import pdb; pdb.set_trace()
     columnstring = ''
-    columnstring += ('{:{tenantwidth}} | {:{vrfwidth}} | {:{l3width}} | {:39} {:4}   | {:18}   {:11} | {}\n'.format('Tenant','VRF','L3out','Static Routes ','Pref','Next Hop', 'NH Pref','Description', tenantwidth=tenantwidth,vrfwidth=vrfwidth,l3width=l3width))
-    columnstring += ('{:=>{width}}\n'.format('=',width=tenantwidth + vrfwidth + l3width + 104))
+    columnstring += ('{:{tenantwidth}} | {:{vrfwidth}} | {:{l3width}} | {:39}  {:4}   | {:18}   {:11} | {}\n'.format('Tenant','VRF','L3out','Static Routes ','Pref','Next Hop', 'NH Pref','Description', tenantwidth=tenantwidth,vrfwidth=vrfwidth,l3width=l3width))
+    columnstring += ('{:=>{width}}\n'.format('=',width=tenantwidth + vrfwidth + l3width + 105))
     for tenant in tenantlist:
         if tenant != tenantlist[0]:
            #columnstring += '\n'
@@ -190,10 +190,10 @@ def display_static_routes(tenantlist):
                     if len(l3out.static_routelist) >= 1:
                         columnstring += ('{:{tenantwidth}} | {:{vrfwidth}} | {:{l3width}} | Static Routes: {numroutes}\n'.format('','',vrf.l3outlist[-1], numroutes=len(l3out.static_routelist),l3width=l3width,tenantwidth=tenantwidth,vrfwidth=vrfwidth))
                         #', '.join(map(str, l3out.static_routelist[0]))))
-                        for num,route in enumerate(l3out.static_routelist,1):
+                        for num,route in enumerate(sorted(l3out.static_routelist, key=lambda x: x[1].ip),1):
                             #import pdb; pdb.set_trace()
                             if route[1].nexthoplist:
-                                columnstring += ('{:{tenantwidth}} | {:{vrfwidth}} | {:{l3width}} | {}.) {:35}   {:4}   {:18}   {:11}   {}\n'.format('','','',num,', '.join(map(str, route)),route[1].pref,route[1].nexthoplist[0][0],route[1].nexthoplist[0][1],route[1].descr,tenantwidth=tenantwidth,vrfwidth=vrfwidth,l3width=l3width))
+                                columnstring += ('{:{tenantwidth}} | {:{vrfwidth}} | {:{l3width}} | {:4} {:35}   {:4}   {:18}   {:11}   {}\n'.format('','','',str(num) +'.)',', '.join(map(str, route)),route[1].pref,route[1].nexthoplist[0][0],route[1].nexthoplist[0][1],route[1].descr,tenantwidth=tenantwidth,vrfwidth=vrfwidth,l3width=l3width))
                             if len(route[1].nexthoplist) > 1:
                                 for num2,routes in enumerate(route[1].nexthoplist[1:],1):
                                     columnstring += ('{:{tenantwidth}} | {:{vrfwidth}} | {:{l3width}} | {}   {:36}   {:4}   {:18}   {:11}   {}\n'.format('','','','','','',route[1].nexthoplist[num2][0],route[1].nexthoplist[num2][1],'',tenantwidth=tenantwidth,vrfwidth=vrfwidth,l3width=l3width))
@@ -471,19 +471,22 @@ def main(import_apic,import_cookie):
                                 if searchip in currentroute:
                                     #if searchsubnet.subnet_of(ipaddress.IPv4Network(route.ip,strict=False)):
                                     foundlist.append((l3out,route))
-                        if len(foundlist) > 1:
+                        if len(foundlist) >= 1:
                             print('\nFound {} static subnets\n'.format(len(foundlist)))
-                        elif len(foundlist) == 1:
-                            print('\r')
-                            tenantvrflist = map(lambda x: '/'.join(x[0].dn.split('/')[1:3]).replace('tn-','').replace('out-',''), foundlist)
-                            tenantvrfwidth = len(max(tenantvrflist))
-                           # tenantvrf, l3outname = map(lambda, foundlist[0][0].dn.split('/')[1:3])
-                           # tenantvrf = tenantvrf[3:]
-                           # l3outname = l3outname[4:]
-                           #import pdb; pdb.set_trace()
-                        for l3,route in sorted(foundlist, key=lambda x: (x[0].dn,x[0].tDn)):
-                            import pdb; pdb.set_trace()
-                            print('\t{}/{} {}  {}'.format(l3out[0], l3out[1], l3outname, l3.tDn, route.ip))
+                            for l3,route in sorted(foundlist, key=lambda x: (x[0].dn,x[0].tDn)):
+                                print('\t{}  {}  {}'.format(('/'.join(l3.dn.split('/')[1:3])).replace('tn-','').replace('out-',''), l3.tDn, route.ip))
+
+                        #elif len(foundlist) == 1:
+                        #    print('\r')
+                        #    tenantvrflist = map(lambda x: '/'.join(x[0].dn.split('/')[1:3]).replace('tn-','').replace('out-',''), foundlist)
+                        #    tenantvrfwidth = len(max(tenantvrflist))
+                        #   # tenantvrf, l3outname = map(lambda, foundlist[0][0].dn.split('/')[1:3])
+                        #   # tenantvrf = tenantvrf[3:]
+                        #   # l3outname = l3outname[4:]
+                        #   #import pdb; pdb.set_trace()
+                        #    for l3,route in sorted(foundlist, key=lambda x: (x[0].dn,x[0].tDn)):
+                        #        import pdb; pdb.set_trace()
+                        #        print('\t{}/{} {}  {}  {}'.format(l3out[0], l3out[1], l3outname, l3.tDn, route.ip))
 
     #                    for l3,route in foundlist:
     #                        print('/'.join(l3.dn.split('/')[1:3]), l3.tDn, route.ip)
