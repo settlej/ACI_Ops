@@ -12,6 +12,7 @@ import trace
 import os
 from localutils.custom_utils import *
 import logging
+from collections import OrderedDict
 
 # Create a custom logger
 # Allows logging to state detailed info such as module where code is running and 
@@ -192,7 +193,14 @@ class l1RsCdpIfPolCons():
             return self.tDn
         else:
             return self
-
+class l1RsAttEntityPCons():
+    def __init__(self, kwargs):
+        self.__dict__.update(**kwargs)
+    def __repr__(self):
+        if hasattr(self, 'tDn'):
+            return self.tDn
+        else:
+            return self
 
 #['l1PrioFlowCtrlP']
 #['l1RsQosEgressDppIfPolCons']
@@ -248,7 +256,7 @@ def gather_l1PhysIf_info(result):
                 #elif children.get('rmonEtherStats'):
                 #    physinterface.add_child(rmonEtherStats(**children['rmonEtherStats']['attributes']))
         listofinterfaces.append(physinterface)
-    import pdb; pdb.set_trace()
+    #import pdb; pdb.set_trace()
     return listofinterfaces
 
 #def gather_l1PhysIf_info(result):
@@ -280,7 +288,7 @@ def pull_leaf_interfaces(leafs):
     leaf_interface_collection = []
     for leaf in leafs:
         #url = """https://{apic}/api/node-{}/class/l1PhysIf.json?rsp-subtree-class=rmonIfIn,rmonIfOut,pcAggrMbrIf,ethpmPhysIf,l1PhysIf,rmonEtherStats&rsp-subtree=full""".format(leaf,apic=apic)
-        url = """https://{apic}/api/node/class/topology/pod-1/node-{leaf}/l1PhysIf.json?rsp-subtree=children&rsp-subtree-class=l1RsQosEgressDppIfPolCons,l1RsLldpIfPolCons,l1RsMonPolIfPolCons,l1RsStpIfPolCons,l1RsQosIngressDppIfPolCons,l1RsL2PortSecurityCons,l1RsStormctrlIfPolCons,l1RsL3IfPolCons,l1RsMacsecPolCons,l1RsDwdmIfPolCons,l1RsMcpIfPolCons,l1RsL2IfPolCons,l1RsFcIfPolCons,l1RsQosSdIfPolCons,l1RsCoppIfPolCons,l1RsHIfPolCons,l1RsQosPfcIfPolCons,l1RsCdpIfPolCons&order-by=l1PhysIf.id|asc""".format(apic=apic,leaf=leaf)
+        url = """https://{apic}/api/node/class/topology/pod-1/node-{leaf}/l1PhysIf.json?rsp-subtree=children&rsp-subtree-class=l1RsAttEntityPCons,l1RsQosEgressDppIfPolCons,l1RsLldpIfPolCons,l1RsMonPolIfPolCons,l1RsStpIfPolCons,l1RsQosIngressDppIfPolCons,l1RsL2PortSecurityCons,l1RsStormctrlIfPolCons,l1RsL3IfPolCons,l1RsMacsecPolCons,l1RsDwdmIfPolCons,l1RsMcpIfPolCons,l1RsL2IfPolCons,l1RsFcIfPolCons,l1RsQosSdIfPolCons,l1RsCoppIfPolCons,l1RsHIfPolCons,l1RsQosPfcIfPolCons,l1RsCdpIfPolCons&order-by=l1PhysIf.id|asc""".format(apic=apic,leaf=leaf)
         logger.info(url)
         result = GetResponseData(url, cookie)
         logger.debug(result)
@@ -405,6 +413,171 @@ def print_interfaces_layout(leafallinterfacesdict,leafs):
                                            str(sfp),errors, packets , '','','',column.descr))
     print(interface_output)
 
+
+def print_attribute_layout(leafallinterfacesdict,leafs):
+    for leaf,leafinterlist in sorted(leafallinterfacesdict.items()):
+        interfaces = gather_l1PhysIf_info(leafinterlist)
+        print('-'*222)
+        topstring =' {:13} | {:20} | {:20} | {:20} | {:20} | {:20} | {:20} | {:20} | {:20} | {:20} |'
+        topstring = topstring.format('Interface', 'AAEP','CDP','CoPP','Dwdm','Fiber-Channel if','Link Level','L2 Policy','Port-Security','L3 Policy')
+        print(topstring)
+        print('-'*222)
+        rowlist =[]
+        for profile in interfaces:
+            rowlist.append(rowobj(profile))
+        rowstring =''
+        for row in rowlist:
+            if rowstring == '':
+                rowstring += ' {:13} |'.format(row.id)
+            rowstring += ' {:20} |'.format(repr(row.column1)[repr(row.column1).find('-')+1:])
+            rowstring += ' {:20} |'.format(repr(row.column2)[repr(row.column2).find('-')+1:])
+            rowstring += ' {:20} |'.format(repr(row.column3)[repr(row.column3).find('-')+1:])
+            rowstring += ' {:20} |'.format(repr(row.column4)[repr(row.column4).find('-')+1:])
+            rowstring += ' {:20} |'.format(repr(row.column5)[repr(row.column5).find('-')+1:])
+            rowstring += ' {:20} |'.format(repr(row.column6)[repr(row.column6).find('-')+1:])
+            rowstring += ' {:20} |'.format(repr(row.column7)[repr(row.column7).find('-')+1:])
+            rowstring += ' {:20} |'.format(repr(row.column8)[repr(row.column8).find('-')+1:])
+            rowstring += ' {:20} |'.format(repr(row.column9)[repr(row.column9).find('-')+1:])
+            print(rowstring)
+            rowstring =''
+        
+        #rowstring = ''
+        #for profile in interfaces:
+        #    od = OrderedDict(profile.profiles, key=lambda x:x[0])
+        #    for column in sorted(od)[:10]:
+        #        if rowstring == '':
+        #            rowstring += ' {:13} |'.format(profile)
+        #        else:
+        #            if column == 'l1RsL2PortSecurityCons':
+        #                rowstring += ' {:20} |'.format(profile.profiles[column].tDn[profile.profiles[column].tDn.find('-')+1:])
+        #            else:
+        #                #rowstring += ' {:20} |'.format(column)
+        #                rowstring += ' {:20} |'.format(profile.profiles[column].tDn[profile.profiles[column].tDn.find('-')+1:])
+        #    print(rowstring)
+        #    rowstring = ''
+        print('')
+        print('-'*222)
+        topstring = ' {:13} | {:20} | {:20} | {:20} | {:20} | {:20} | {:20} | {:20} | {:20} | {:20} |'
+        topstring = topstring.format('Interface','LLDP','MACsec','MCP','Monitor','Egree Data-Plane','Ingree Data-Plane','Flow-Control','Slow-Drain','Storm-Control')
+        print(topstring)
+        print('-'*222)
+        rowstring =''
+        for row in rowlist:
+            if rowstring == '':
+                rowstring += ' {:13} |'.format(row.id)
+            rowstring += ' {:20} |'.format(repr(row.column10)[repr(row.column10).find('-')+1:])
+            rowstring += ' {:20} |'.format(repr(row.column11)[repr(row.column11).find('-')+1:])
+            rowstring += ' {:20} |'.format(repr(row.column12)[repr(row.column12).find('-')+1:])
+            rowstring += ' {:20} |'.format(repr(row.column13)[repr(row.column13).find('-')+1:])
+            rowstring += ' {:20} |'.format(repr(row.column14)[repr(row.column14).find('-')+1:])
+            rowstring += ' {:20} |'.format(repr(row.column15)[repr(row.column15).find('-')+1:])
+            rowstring += ' {:20} |'.format(repr(row.column16)[repr(row.column16).find('-')+1:])
+            rowstring += ' {:20} |'.format(repr(row.column17)[repr(row.column17).find('-')+1:])
+            rowstring += ' {:20} |'.format(repr(row.column18)[repr(row.column18).find('-')+1:])
+            print(rowstring)
+            rowstring =''
+        #for profile in interfaces:
+        #    od = OrderedDict(profile.profiles, key=lambda x:x[0])
+        #    for column in sorted(od)[9:]:
+#
+        #        if rowstring == '':
+        #            rowstring += ' {:13} |'.format(profile)
+        #        else:
+        #            if column == 'l1RsL2PortSecurityCons':
+        #                rowstring += ' {:20} |'.format(profile.profiles[column].tDn[profile.profiles[column].tDn.find('-')+1:])
+        #            else:
+        #                #rowstring += ' {:20} |'.format(column)
+        #                rowstring += ' {:20} |'.format(profile.profiles[column].tDn[profile.profiles[column].tDn.find('-')+1:])
+        #    print(rowstring)
+        #    rowstring = ''
+        #rowlist = []
+      #  for profile in interfaces:
+      #      rowlist.append(row(profile))
+      #  import pdb; pdb.set_trace()
+
+
+class rowobj():
+    column_order = {
+       'column1'  : 'l1RsAttEntityPCons',
+       'column2'  : 'l1RsCdpIfPolCons',
+       'column3'  : 'l1RsCoppIfPolCons',
+       'column4'  : 'l1RsDwdmIfPolCons',
+       'column5'  : 'l1RsFcIfPolCons',
+       'column6'  : 'l1RsHIfPolCons',
+       'column7'  : 'l1RsL2IfPolCons',
+       'column8'  : 'l1RsL2PortSecurityCons',
+       'column9'  :  'l1RsL3IfPolCons',
+       'column10' : 'l1RsLldpIfPolCons',
+       'column11' : 'l1RsMacsecPolCons',
+       'column12' : 'l1RsMcpIfPolCons',
+       'column13' : 'l1RsMonPolIfPolCons',
+       'column14' : 'l1RsQosEgressDppIfPolCons',
+       'column15' : 'l1RsQosIngressDppIfPolCons',
+       'column16' : 'l1RsQosPfcIfPolCons',
+       'column17' : 'l1RsQosSdIfPolCons',
+       'column18' : 'l1RsStormctrlIfPolCons',
+       'column19' : 'l1RsStpIfPolCons'
+       }
+    def __init__(self, obj):
+        self.id = obj.id
+        self.column1 = '' 
+        self.column2 = ''
+        self.column3 = ''
+        self.column4 = ''
+        self.column5 = ''
+        self.column6 = ''
+        self.column7 = ''
+        self.column8 = ''
+        self.column9 = ''
+        self.column10 =''
+        self.column11 =''
+        self.column12 =''
+        self.column13 =''
+        self.column14 =''
+        self.column15 =''
+        self.column16 =''
+        self.column17 =''
+        self.column18 =''
+        self.column19 =''
+        for num, column in enumerate(sorted(obj.profiles.items())):
+            #import pdb; pdb.set_trace()
+          #  if len(obj.profiles) == 18:
+            if obj.profiles.get(rowobj.column_order['column' + str(num+1)]):
+                self['column' + str(num+1)] = obj.profiles[rowobj.column_order['column' + str(num+1)]] 
+           #         self[column] = 'None'
+           #         self['column' + str(num+1)] = column
+           #     else:
+           #         self['column' + str(num+1)] = column
+           # else:
+           #     self['column' + str(num)] = column
+            #if len(column) >= 16 and len(column) < 19:
+        #import pdb; pdb.set_trace()
+            #    self['column' + str(num)] = column
+    def __setitem__(self, k,v):
+        setattr(self, k, v)
+    def __getitem__(self,k):
+        return getattr(self,k)
+#['l1PrioFlowCtrlP']
+#['l1RsQosEgressDppIfPolCons']
+#['l1RsLldpIfPolCons']
+#['l1RsMonPolIfPolCons']
+#['l1RsStpIfPolCons']
+#['l1RsQosIngressDppIfPolCons']
+#['l1RsL2PortSecurityCons']
+#['l1RsStormctrlIfPolCons']
+#['l1RsL3IfPolCons']
+#['l1RsMacsecPolCons']
+#['l1RsDwdmIfPolCons']
+#['l1RsMcpIfPolCons']
+#['l1RsL2IfPolCons']
+#['l1RsFcIfPolCons']
+#['l1RsQosSdIfPolCons']
+#['l1RsCoppIfPolCons']
+#['l1RsHIfPolCons']
+#['l1RsQosPfcIfPolCons']
+#['l1RsCdpIfPolCons']
+
+
 def main(import_apic,import_cookie):
     while True:
         global apic
@@ -415,5 +588,6 @@ def main(import_apic,import_cookie):
         location_banner('Show interface status')
         leafs = leaf_selection(get_All_leafs(apic, cookie))
         leafallinterfacesdict = pull_leaf_interfaces(leafs)
-        print_interfaces_layout(leafallinterfacesdict,leafs)
+        print_attribute_layout(leafallinterfacesdict,leafs)
+
         custom_raw_input('#Press enter to continue...')
