@@ -26,6 +26,7 @@ import interfaces.clonevpcanddeploy as clonevpcanddeploy
 import interfaces.autodeploy as autodeploy
 import interfaces.portchannel_to_phy_interfaces as portchannel_to_phy_interfaces
 import interfaces.short_vlan_epg_to_ports as short_vlan_epg_to_ports
+import interfaces.show_interface_attributes as show_interface_attributes
 import information.switchandapicinfo as switchandapicinfo
 import information.endpoint_per_leaf as endpoint_per_leaf
 import information.top_interface_problems as top_interface_problems
@@ -376,7 +377,16 @@ def main():
                     except KeyboardInterrupt as k:
                         print('\nExit to Main menu\n')
                         keyinterrupt = True
-                        break		
+                        break
+                if chosen == '444':
+                    try:
+                        show_interface_attributes.main(apic,cookie)
+                        keyinterrupt = False
+                    except KeyboardInterrupt as k:
+                        print('\nExit to Main menu\n')
+                        keyinterrupt = True
+                        break
+
                 if chosen == '24':
                     try:
                         top_interface_problems.main(apic,cookie)
