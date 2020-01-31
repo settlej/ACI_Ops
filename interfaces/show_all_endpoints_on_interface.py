@@ -253,52 +253,11 @@ def pull_all_nonvpc_port_channel_info():
     pclist = gather_pclist(result)
     return pclist
 
-def get_column_sizes(objlist, args, minimum=5):
-    templist = []
-    for column in args:
-        nestedlist = False
-        c_objlist = filter(lambda x: hasattr(x, column), objlist)
-        if c_objlist == [] or c_objlist == None:
-            templist.append(minimum)    
-        else:
-            currentcolumnmaxobj = max(c_objlist, key=lambda x: len(getattr(x, column)))
-            #print(getattr(currentcolumnmaxobj,column))
-            if type(getattr(currentcolumnmaxobj, column)) == list:
-                currentcolumnmaxobj = max(c_objlist, key=lambda x: len(','.join(getattr(x, column))))
-                #import pdb; pdb.set_trace()
-                #rowlistmax = 0
-                #for row in currentcolumnmaxobj.ip:
-                #    import pdb; pdb.set_trace()
-                #    currentlistmax = len(row)
-                #    if currentlistmax == rowlistmax:
-                #        continue
-                #    elif currentlistmax > rowlistmax:
-                #        rowlistmax = len(row)
-                #    elif currentlistmax < rowlistmax:
-                #        rowlistmax = len(row)
-                #    else:
-                #        rowlistmax = len(row)
-                insidelistmax = len(','.join(currentcolumnmaxobj.ip))
-                #for insideobj in getattr(currentcolumnmaxobj, column):
-                #insidelistmaxobj = max(columnlist, key=lambda x: len(str(x)))
-                #import pdb; pdb.set_trace()
-                nestedlist = True
-            if nestedlist:
-                if insidelistmax < 1:
-                    templist.append(minimum)
-                else:
-                    templist.append(insidelistmax)
-                #templist.append((column, insidelistmax))
-            else:
-                if len(getattr(currentcolumnmaxobj, column)) < 1:
-                    templist.append(minimum)
-                else:
-                    templist.append(len(getattr(currentcolumnmaxobj, column)))
             #templist.append((column, len(getattr(currentcolumnmaxobj, column))))
         #import pdb; pdb.set_trace()
     #columnsizes = namedtuple('columnsizes', ','.join(*args))
     #import pdb; pdb.set_trace()
-    return templist
+    
 
 def gather_arp_entries(chosenleaf):
     for leaf in chosenleaf:

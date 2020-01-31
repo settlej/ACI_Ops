@@ -323,6 +323,107 @@ def goodspacing(column):
     elif column.fex == '':
         return column.leaf + ' ' + str(column.name)
 
+def get_column_sizes(objlist, args, minimum=5, baseminimum=[]):
+    templist = []
+    for num,column in enumerate(args):
+        #print(num,column)
+        #import pdb; pdb.set_trace()
+        nestedlist = False
+        c_objlist = filter(lambda x: hasattr(x, column), objlist)
+        if c_objlist == [] or c_objlist == None:
+            templist.append(len(str(column)))    
+
+        else:
+            currentcolumnmaxobj = max(c_objlist, key=lambda x: len(str(getattr(x, column))))
+           # print(getattr(currentcolumnmaxobj,column))
+            if type(getattr(currentcolumnmaxobj, column)) == list:
+                currentcolumnmaxobj = max(c_objlist, key=lambda x: len(','.join(str(getattr(x, column)))))
+                insidelistmax = len(','.join(getattr(currentcolumnmaxobj,column)))
+                #print(','.join(getattr(currentcolumnmaxobj,column)))
+                nestedlist = True
+            if nestedlist:
+                if insidelistmax < 1:
+                    if baseminimum == []:
+                        templist.append(len(baseminimum[num]))
+                    else:
+                        templist.append(len(baseminimum[num]))
+                else:
+                    templist.append(insidelistmax)
+            else:
+                if len(str(getattr(currentcolumnmaxobj, column))) < 1:
+                    if baseminimum == []:
+                        templist.append(minimum)
+                    else:
+                        templist.append(len(baseminimum[num]))
+                else:
+                    if baseminimum == [] and len(str(getattr(currentcolumnmaxobj, column))) < minimum:
+                        templist.append(minimum)
+                    elif baseminimum != [] and len(str(getattr(currentcolumnmaxobj, column))) < len(baseminimum[num]):
+                        templist.append(len(baseminimum[num]))
+                    elif baseminimum != [] and len(str(getattr(currentcolumnmaxobj, column))) > len(baseminimum[num]):
+                        templist.append(len(str(getattr(currentcolumnmaxobj, column))))
+                    else:
+                        templist.append(len(str(getattr(currentcolumnmaxobj, column))))
+
+
+
+               # elif len(str(getattr(currentcolumnmaxobj, column))) < len(baseminimum[num]):
+               # else:
+               #     templist.append(len(str(getattr(currentcolumnmaxobj, column))))
+    return templist
+
+def get_column_sizes2(objlist, args, minimum=5):
+    templist = []
+    for column in args:
+        #import pdb; pdb.set_trace()
+        nestedlist = False
+        c_objlist = filter(lambda x: hasattr(x, column), objlist)
+        if c_objlist == [] or c_objlist == None:
+            templist.append(len(str(column)))    
+            print(str(column))
+
+        else:
+            import pdb; pdb.set_trace()
+            currentcolumnmaxobj = max(c_objlist, key=lambda x: len(str(getattr(x, column))))
+            #print(getattr(currentcolumnmaxobj,column))
+            if type(getattr(currentcolumnmaxobj, column)) == list:
+                currentcolumnmaxobj = max(c_objlist, key=lambda x: len(','.join(str(getattr(x, column)))))
+                #import pdb; pdb.set_trace()
+                #rowlistmax = 0
+                #for row in currentcolumnmaxobj.ip:
+                #    import pdb; pdb.set_trace()
+                #    currentlistmax = len(row)
+                #    if currentlistmax == rowlistmax:
+                #        continue
+                #    elif currentlistmax > rowlistmax:
+                #        rowlistmax = len(row)
+                #    elif currentlistmax < rowlistmax:
+                #        rowlistmax = len(row)
+                #    else:
+                #        rowlistmax = len(row)
+                insidelistmax = len(','.join(currentcolumnmaxobj.ip))
+                #for insideobj in getattr(currentcolumnmaxobj, column):
+                #insidelistmaxobj = max(columnlist, key=lambda x: len(str(x)))
+                #import pdb; pdb.set_trace()
+                nestedlist = True
+            if nestedlist:
+                if insidelistmax < 1:
+                    templist.append(len(str(column)))
+                    #print(str(column))
+                else:
+                    templist.append(insidelistmax)
+                    #print(str(column))
+                #templist.append((column, insidelistmax))
+            else:
+                if len(str(getattr(currentcolumnmaxobj, column))) < 1:
+                    templist.append(len(str(column)))
+                    #print(str(column))
+                else:
+                    templist.append(len(str(getattr(currentcolumnmaxobj, column))))
+                    #print(str(column))
+    return templist
+
+
 def display_and_select_epgs(choseninterfaceobjectlist, allepglist):
     numepgdict = {}
     print("\n{:>4} | {:8}|  {:15}|  {}".format("#","Tenant","App-Profile","EPG"))

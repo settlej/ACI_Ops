@@ -288,7 +288,7 @@ def pull_leaf_interfaces(leafs):
     leaf_interface_collection = []
     for leaf in leafs:
         #url = """https://{apic}/api/node-{}/class/l1PhysIf.json?rsp-subtree-class=rmonIfIn,rmonIfOut,pcAggrMbrIf,ethpmPhysIf,l1PhysIf,rmonEtherStats&rsp-subtree=full""".format(leaf,apic=apic)
-        url = """https://{apic}/api/node/class/topology/pod-1/node-{leaf}/l1PhysIf.json?rsp-subtree=children&rsp-subtree-class=l1RsAttEntityPCons,l1RsQosEgressDppIfPolCons,l1RsLldpIfPolCons,l1RsMonPolIfPolCons,l1RsStpIfPolCons,l1RsQosIngressDppIfPolCons,l1RsL2PortSecurityCons,l1RsStormctrlIfPolCons,l1RsL3IfPolCons,l1RsMacsecPolCons,l1RsDwdmIfPolCons,l1RsMcpIfPolCons,l1RsL2IfPolCons,l1RsFcIfPolCons,l1RsQosSdIfPolCons,l1RsCoppIfPolCons,l1RsHIfPolCons,l1RsQosPfcIfPolCons,l1RsCdpIfPolCons&order-by=l1PhysIf.id|asc""".format(apic=apic,leaf=leaf)
+        url = """https://{apic}/api/node/class/topology/pod-1/node-{leaf}/l1PhysIf.json?rsp-subtree=children&rsp-subtree-class=l1RsAttEntityPCons,l1RsQosEgressDppIfPolCons,l1RsLldpIfPolCons,l1RsMonPolIfPolCons,l1RsStpIfPolCons,l1RsQosIngressDppIfPolCons,l1RsL2PortSecurityCons,l1RsStormctrlIfPolCons,l1RsL3IfPolCons,l1RsMacsecPolCons,l1RsDwdmIfPolCons,l1RsMcpIfPolCons,l1RsL2IfPolCons,l1RsFcIfPolCons,l1RsQosSdIfPolCons,l1RsCoppIfPolCons,l1RsHIfPolCons,l1RsQosPfcIfPolCons,l1RsCdpIfPolCons,l1RsStpIfPolCons&order-by=l1PhysIf.id|asc""".format(apic=apic,leaf=leaf)
         logger.info(url)
         result = GetResponseData(url, cookie)
         logger.debug(result)
@@ -418,26 +418,39 @@ def print_attribute_layout(leafallinterfacesdict,leafs):
     for leaf,leafinterlist in sorted(leafallinterfacesdict.items()):
         interfaces = gather_l1PhysIf_info(leafinterlist)
         print('-'*222)
-        topstring =' {:13} | {:20} | {:20} | {:20} | {:20} | {:20} | {:20} | {:20} | {:20} | {:20} |'
-        topstring = topstring.format('Interface', 'AAEP','CDP','CoPP','Dwdm','Fiber-Channel if','Link Level','L2 Policy','Port-Security','L3 Policy')
-        print(topstring)
-        print('-'*222)
         rowlist =[]
         for profile in interfaces:
             rowlist.append(rowobj(profile))
-        rowstring =''
+        rowstring = ''
+        columnwidthfind = ('column1','column2','column3','column4','column5','column6',
+        'column7','column8','column9','column10','column11','column12','column13','column14','column15','column16',
+        'column17','column18','column19')
+        headers = ('AAEP','CDP','CoPP','Dwdm','Fiber-Channel','Link Level','L2 Policy','Port-Security','L3 Policy',
+        'LLDP','MACsec','MCP','Monitor','Egress D-Plane','Ingress D-Plane','Flow-Control','Slow-Drain','Storm-Control','Spanning-Tree')
+        sizes = get_column_sizes(rowlist, columnwidthfind, minimum=5, baseminimum=headers)
+        #sizes = map(lambda x: str(x)[str(x).find('-')+1:], sizes)
+        
+        #import pdb; pdb.set_trace()
+        topstring = ' {:13} | {:{aaep}} | {:{cdp}} | {:{copp}} | {:{dwdm}} | {:{fc}} | {:{ll}} | {:{l2}} | {:{ps}} | {:{l3}} |'
+        #topstring =' {:13} | {:20} | {:20} | {:20} | {:20} | {:20} | {:20} | {:20} | {:20} | {:20} |'
+        topstring = topstring.format('Interface', 'AAEP','CDP','CoPP','Dwdm','Fiber-Channel','Link Level','L2 Policy','Port-Security','L3 Policy',
+                    aaep=sizes[0],cdp=sizes[1],copp=sizes[2],dwdm=sizes[3],fc=sizes[4],ll=sizes[5],l2=sizes[6],ps=sizes[7],l3=sizes[8])
+        print(topstring)
+        print(' {:-<13} | {:-<{aaep}} | {:-<{cdp}} | {:-<{copp}} | {:-<{dwdm}} | {:-<{fc}} | {:-<{ll}} | {:-<{l2}} | {:-<{ps}} | {:-<{l3}} |'.format(
+            '','','','','','','','','','',aaep=sizes[0],cdp=sizes[1],copp=sizes[2],dwdm=sizes[3],fc=sizes[4],ll=sizes[5],l2=sizes[6],ps=sizes[7],l3=sizes[8]))
+
         for row in rowlist:
             if rowstring == '':
                 rowstring += ' {:13} |'.format(row.id)
-            rowstring += ' {:20} |'.format(repr(row.column1)[repr(row.column1).find('-')+1:])
-            rowstring += ' {:20} |'.format(repr(row.column2)[repr(row.column2).find('-')+1:])
-            rowstring += ' {:20} |'.format(repr(row.column3)[repr(row.column3).find('-')+1:])
-            rowstring += ' {:20} |'.format(repr(row.column4)[repr(row.column4).find('-')+1:])
-            rowstring += ' {:20} |'.format(repr(row.column5)[repr(row.column5).find('-')+1:])
-            rowstring += ' {:20} |'.format(repr(row.column6)[repr(row.column6).find('-')+1:])
-            rowstring += ' {:20} |'.format(repr(row.column7)[repr(row.column7).find('-')+1:])
-            rowstring += ' {:20} |'.format(repr(row.column8)[repr(row.column8).find('-')+1:])
-            rowstring += ' {:20} |'.format(repr(row.column9)[repr(row.column9).find('-')+1:])
+            rowstring += ' {:{aaep}} |'.format(str(row.column1),aaep=sizes[0])
+            rowstring += ' {:{cdp}} |'.format(str(row.column2),cdp=sizes[1])
+            rowstring += ' {:{copp}} |'.format(str(row.column3),copp=sizes[2])
+            rowstring += ' {:{dwdm}} |'.format(str(row.column4),dwdm=sizes[3])
+            rowstring += ' {:{fc}} |'.format(str(row.column5),fc=sizes[4])
+            rowstring += ' {:{ll}} |'.format(str(row.column6),ll=sizes[5])
+            rowstring += ' {:{l2}} |'.format(str(row.column7),l2=sizes[6])
+            rowstring += ' {:{ps}} |'.format(str(row.column8),ps=sizes[7])
+            rowstring += ' {:{l3}} |'.format(str(row.column9),l3=sizes[8])
             print(rowstring)
             rowstring =''
         
@@ -457,23 +470,29 @@ def print_attribute_layout(leafallinterfacesdict,leafs):
         #    rowstring = ''
         print('')
         print('-'*222)
-        topstring = ' {:13} | {:20} | {:20} | {:20} | {:20} | {:20} | {:20} | {:20} | {:20} | {:20} |'
-        topstring = topstring.format('Interface','LLDP','MACsec','MCP','Monitor','Egree Data-Plane','Ingree Data-Plane','Flow-Control','Slow-Drain','Storm-Control')
+        topstring = ' {:13} | {:{lldp}} | {:{macsec}} | {:{mcp}} | {:{mon}} | {:{egress}} | {:{ingress}} | {:{flowc}} | {:{slow}} | {:{storm}} | {:{stp}} |'
+       # topstring = ' {:13} | {:20} | {:20} | {:20} | {:20} | {:20} | {:20} | {:20} | {:20} | {:20} |'
+        topstring = topstring.format('Interface','LLDP','MACsec','MCP','Monitor','Egress D-Plane','Ingress D-Plane','Flow-Control','Slow-Drain','Storm-Control','Spanning-tree',
+                    lldp=sizes[9],macsec=sizes[10],mcp=sizes[11],mon=sizes[12],egress=sizes[13],ingress=sizes[14],flowc=sizes[15],slow=sizes[16],storm=sizes[17],stp=sizes[18])
         print(topstring)
-        print('-'*222)
+        print(' {:-<13} | {:-<{lldp}} | {:-<{macsec}} | {:-<{mcp}} | {:-<{mon}} | {:-<{egress}} | {:-<{ingress}} | {:-<{flowc}} | {:-<{slow}} | {:-<{storm}} | {:-<{stp}} |'.format(
+                    '','','','','','','','','','','',lldp=sizes[9],macsec=sizes[10],mcp=sizes[11],mon=sizes[12],egress=sizes[13],ingress=sizes[14],flowc=sizes[15],
+                    slow=sizes[16],storm=sizes[17],stp=sizes[18]))
+        #print('-'*222)
         rowstring =''
         for row in rowlist:
             if rowstring == '':
                 rowstring += ' {:13} |'.format(row.id)
-            rowstring += ' {:20} |'.format(repr(row.column10)[repr(row.column10).find('-')+1:])
-            rowstring += ' {:20} |'.format(repr(row.column11)[repr(row.column11).find('-')+1:])
-            rowstring += ' {:20} |'.format(repr(row.column12)[repr(row.column12).find('-')+1:])
-            rowstring += ' {:20} |'.format(repr(row.column13)[repr(row.column13).find('-')+1:])
-            rowstring += ' {:20} |'.format(repr(row.column14)[repr(row.column14).find('-')+1:])
-            rowstring += ' {:20} |'.format(repr(row.column15)[repr(row.column15).find('-')+1:])
-            rowstring += ' {:20} |'.format(repr(row.column16)[repr(row.column16).find('-')+1:])
-            rowstring += ' {:20} |'.format(repr(row.column17)[repr(row.column17).find('-')+1:])
-            rowstring += ' {:20} |'.format(repr(row.column18)[repr(row.column18).find('-')+1:])
+            rowstring += ' {:{lldp}} |'.format(str(row.column10),lldp=sizes[9])
+            rowstring += ' {:{macsec}} |'.format(str(row.column11),macsec=sizes[10])
+            rowstring += ' {:{mcp}} |'.format(str(row.column12),mcp=sizes[11])
+            rowstring += ' {:{mon}} |'.format(str(row.column13),mon=sizes[12])
+            rowstring += ' {:{egress}} |'.format(str(row.column14),egress=sizes[13])
+            rowstring += ' {:{ingress}} |'.format(str(row.column15),ingress=sizes[14])
+            rowstring += ' {:{flowc}} |'.format(str(row.column16),flowc=sizes[15])
+            rowstring += ' {:{slow}} |'.format(str(row.column17),slow=sizes[16])
+            rowstring += ' {:{storm}} |'.format(str(row.column18),storm=sizes[17])
+            rowstring += ' {:{stp}} |'.format(str(row.column19),stp=sizes[18])
             print(rowstring)
             rowstring =''
         #for profile in interfaces:
@@ -543,16 +562,13 @@ class rowobj():
             #import pdb; pdb.set_trace()
           #  if len(obj.profiles) == 18:
             if obj.profiles.get(rowobj.column_order['column' + str(num+1)]):
-                self['column' + str(num+1)] = obj.profiles[rowobj.column_order['column' + str(num+1)]] 
-           #         self[column] = 'None'
-           #         self['column' + str(num+1)] = column
-           #     else:
-           #         self['column' + str(num+1)] = column
-           # else:
-           #     self['column' + str(num)] = column
-            #if len(column) >= 16 and len(column) < 19:
-        #import pdb; pdb.set_trace()
-            #    self['column' + str(num)] = column
+                insideobj = obj.profiles[rowobj.column_order['column' + str(num+1)]] 
+                if 'uni' in str(insideobj):
+                    self['column' + str(num+1)] = str(insideobj)[str(insideobj).find('-')+1:]
+                else:
+                    self['column' + str(num+1)] = str(insideobj)
+
+    
     def __setitem__(self, k,v):
         setattr(self, k, v)
     def __getitem__(self,k):
