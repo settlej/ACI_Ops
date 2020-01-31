@@ -417,7 +417,6 @@ def print_interfaces_layout(leafallinterfacesdict,leafs):
 def print_attribute_layout(leafallinterfacesdict,leafs):
     for leaf,leafinterlist in sorted(leafallinterfacesdict.items()):
         interfaces = gather_l1PhysIf_info(leafinterlist)
-        print('-'*222)
         rowlist =[]
         for profile in interfaces:
             rowlist.append(rowobj(profile))
@@ -429,6 +428,7 @@ def print_attribute_layout(leafallinterfacesdict,leafs):
         'LLDP','MACsec','MCP','Monitor','Egress D-Plane','Ingress D-Plane','Flow-Control','Slow-Drain','Storm-Control','Spanning-Tree')
         sizes = get_column_sizes(rowlist, columnwidthfind, minimum=5, baseminimum=headers)
         #sizes = map(lambda x: str(x)[str(x).find('-')+1:], sizes)
+        print(' ' + '-'* (sum(sizes[:9]) + 42))
         
         #import pdb; pdb.set_trace()
         topstring = ' {:13} | {:{aaep}} | {:{cdp}} | {:{copp}} | {:{dwdm}} | {:{fc}} | {:{ll}} | {:{l2}} | {:{ps}} | {:{l3}} |'
@@ -469,7 +469,8 @@ def print_attribute_layout(leafallinterfacesdict,leafs):
         #    print(rowstring)
         #    rowstring = ''
         print('')
-        print('-'*222)
+        print(' ' + '-'* (sum(sizes[9:]) + 45))
+        #aaep=sizes[0],cdp=sizes[1],copp=sizes[2],dwdm=sizes[3],fc=sizes[4],ll=sizes[5],l2=sizes[6],ps=sizes[7],l3=sizes[8],lldp=sizes[9],macsec=sizes[10],mcp=sizes[11],mon=sizes[12],egress=sizes[13],ingress=sizes[14],flowc=sizes[15],slow=sizes[16],storm=sizes[17],stp=sizes[18])
         topstring = ' {:13} | {:{lldp}} | {:{macsec}} | {:{mcp}} | {:{mon}} | {:{egress}} | {:{ingress}} | {:{flowc}} | {:{slow}} | {:{storm}} | {:{stp}} |'
        # topstring = ' {:13} | {:20} | {:20} | {:20} | {:20} | {:20} | {:20} | {:20} | {:20} | {:20} |'
         topstring = topstring.format('Interface','LLDP','MACsec','MCP','Monitor','Egress D-Plane','Ingress D-Plane','Flow-Control','Slow-Drain','Storm-Control','Spanning-tree',
@@ -525,7 +526,7 @@ class rowobj():
        'column6'  : 'l1RsHIfPolCons',
        'column7'  : 'l1RsL2IfPolCons',
        'column8'  : 'l1RsL2PortSecurityCons',
-       'column9'  :  'l1RsL3IfPolCons',
+       'column9'  : 'l1RsL3IfPolCons',
        'column10' : 'l1RsLldpIfPolCons',
        'column11' : 'l1RsMacsecPolCons',
        'column12' : 'l1RsMcpIfPolCons',
@@ -606,4 +607,4 @@ def main(import_apic,import_cookie):
         leafallinterfacesdict = pull_leaf_interfaces(leafs)
         print_attribute_layout(leafallinterfacesdict,leafs)
 
-        custom_raw_input('#Press enter to continue...')
+        custom_raw_input('\n#Press enter to continue...')

@@ -321,7 +321,7 @@ def main():
                             '\t| 2.)  Add EPGs to interfaces\n' +
                             '\t| 3.)  Remove EPGs from interfaces\n' + 
                             '\t| 4.)  Show interface status\n' +
-                            '\t| 5.)  Show interface counters and EPGs\n' + 
+                            '\t| 5.)  Show single interface counters and EPGs\n' + 
                             '\t| 6.)  Show leaf port view\n' +
                             '\t| 7.)  Show leaf port view (Detail)\n' + 
                             '\t| 8.)  Show EPG --> Interface (Operational)\n' +
@@ -345,7 +345,7 @@ def main():
                             '\t| 20.) Show all IPs in a Bridge Domain\n' +
                             '\t| 21.) Show Port-channel location\n' +
                             '\t| 22.) Show Static Routes (with add/remove)\n '+
-                            '\t| 23.) Show Leaf Profile tree structure\n' +
+                            '\t| 23.) Show Physical Interface Profiles \n' +
                             '\t| 24.) Show Top 50 counters\n' +
                             #'\t| 16.) Show Leaf/Spine/APIC info (Not Available)\n' +
                             #'\t| 17.) EPG to EPG troubleshooting (alpha)\n' +
@@ -369,7 +369,7 @@ def main():
             cookie = refreshToken(apic, cookie)
 
             while True:
-                chosen = custom_raw_input('\x1b[u\x1b[46;1H Select a number: ')
+                chosen = custom_raw_input('\x1b[u\x1b[47;1H Select a number: ')
                 if chosen == '1':
                     try:
                         shut_noshut_interfaces.main(apic,cookie)
@@ -461,12 +461,20 @@ def main():
                         break
                 elif chosen == '23':
                     try:
-                        display_switch_to_leaf_structure.main(apic,cookie)
+                        show_interface_attributes.main(apic,cookie)
                         keyinterrupt = False
                     except KeyboardInterrupt as k:
                         print('\nExit to Main menu\n')
                         keyinterrupt = True
                         break
+                #elif chosen == '23':
+                #    try:
+                #        display_switch_to_leaf_structure.main(apic,cookie)
+                #        keyinterrupt = False
+                #    except KeyboardInterrupt as k:
+                #        print('\nExit to Main menu\n')
+                #        keyinterrupt = True
+                #        break
                 elif chosen == '27':
                     try:
                         clonevpcanddeploy.main(apic,cookie)
