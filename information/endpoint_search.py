@@ -607,8 +607,8 @@ def main(import_apic,import_cookie):
             # last 4 mac lookup
             logger.debug('Last 4 MAC lookup')
             endpoint = search.strip().lstrip().upper()
-            fullmac = last4_function(endpoint)
-            mac_path_function(fullmac)
+            endpoint = last4_function(endpoint)
+            mac_path_function(endpoint)
         else:
             logger.debug('Matched VM lookup')
             endpoint = search.strip().lstrip()

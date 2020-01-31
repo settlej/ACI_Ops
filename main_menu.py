@@ -403,7 +403,7 @@ def main():
                         print('\nExit to Main menu\n')
                         keyinterrupt = True
                         break		
-                if chosen == '112':
+                if chosen == '333':
                     try:
                         autodeploy.main(apic,cookie)
                         keyinterrupt = False

@@ -225,7 +225,7 @@ def display_interface_stats(epgresult, interface, result):
     else:
         link_status = 'down/down'
     if 'blacklist' in interfaceObject.usage:
-        print('\n {}   is Administratively Down'.format(interface.capitalize()))
+        print('\n {}   is \x1b[1;31;40mAdministratively Down\x1b[0m'.format(interface.capitalize()))
     else:
         if 'down' in link_status:
             print('\n {}\n   is admin {}, link-status is \x1b[1;31;40m{}\x1b[0m'.format(interface.capitalize(),interfaceObject.adminSt,link_status))
@@ -299,37 +299,37 @@ def display_interface_stats(epgresult, interface, result):
          #           print(interf['pcMode'])
          #           print(interf['operSt'])
     if interfaceObject.l1RsCoppIfPolCons:
-        print('     {}'.format(interfaceObject.l1RsCoppIfPolCons['tDn']))                 
+        print('     {}'.format(interfaceObject.l1RsCoppIfPolCons['tDn']))
     if interfaceObject.l1RsDwdmIfPolCons:
-        print('     {}'.format(interfaceObject.l1RsDwdmIfPolCons['tDn']))                 
+        print('     {}'.format(interfaceObject.l1RsDwdmIfPolCons['tDn']))
     if interfaceObject.l1RsFcIfPolCons:
-        print('     {}'.format(interfaceObject.l1RsFcIfPolCons['tDn']))                
+        print('     {}'.format(interfaceObject.l1RsFcIfPolCons['tDn']))
     if interfaceObject.l1RsHIfPolCons:
-        print('     {}'.format(interfaceObject.l1RsHIfPolCons['tDn']))                 
+        print('     {}'.format(interfaceObject.l1RsHIfPolCons['tDn']))
     if interfaceObject.l1RsL2IfPolCons:
-        print('     {}'.format(interfaceObject.l1RsL2IfPolCons['tDn']))                 
+        print('     {}'.format(interfaceObject.l1RsL2IfPolCons['tDn']))
     if interfaceObject.l1RsL2PortSecurityCons:
-        print('     {}'.format(interfaceObject.l1RsL2PortSecurityCons['tDn']))                 
+        print('     {}'.format(interfaceObject.l1RsL2PortSecurityCons['tDn']))
     if interfaceObject.l1RsL3IfPolCons:
-        print('     {}'.format(interfaceObject.l1RsL3IfPolCons['tDn']))                 
+        print('     {}'.format(interfaceObject.l1RsL3IfPolCons['tDn']))
     if interfaceObject.l1RsLldpIfPolCons:
-        print('     {}'.format(interfaceObject.l1RsLldpIfPolCons['tDn']))                 
+        print('     {}'.format(interfaceObject.l1RsLldpIfPolCons['tDn']))
     if interfaceObject.l1RsMacsecPolCons:
-        print('     {}'.format(interfaceObject.l1RsMacsecPolCons['tDn']))                 
+        print('     {}'.format(interfaceObject.l1RsMacsecPolCons['tDn']))
     if interfaceObject.l1RsMcpIfPolCons:
-        print('     {}'.format(interfaceObject.l1RsMcpIfPolCons['tDn']))                 
+        print('     {}'.format(interfaceObject.l1RsMcpIfPolCons['tDn']))
     if interfaceObject.l1RsMonPolIfPolCons:
-        print('     {}'.format(interfaceObject.l1RsMonPolIfPolCons['tDn']))                 
+        print('     {}'.format(interfaceObject.l1RsMonPolIfPolCons['tDn']))
     if interfaceObject.l1RsQosEgressDppIfPolCons:
-        print('     {}'.format(interfaceObject.l1RsQosEgressDppIfPolCons['tDn']))                 
+        print('     {}'.format(interfaceObject.l1RsQosEgressDppIfPolCons['tDn']))
     if interfaceObject.l1RsQosIngressDppIfPolCons:
-        print('     {}'.format(interfaceObject.l1RsQosIngressDppIfPolCons['tDn']))                 
+        print('     {}'.format(interfaceObject.l1RsQosIngressDppIfPolCons['tDn']))
     if interfaceObject.l1RsQosPfcIfPolCons:
-        print('     {}'.format(interfaceObject.l1RsQosPfcIfPolCons['tDn']))                 
+        print('     {}'.format(interfaceObject.l1RsQosPfcIfPolCons['tDn']))
     if interfaceObject.l1RsQosSdIfPolCons:
-        print('     {}'.format(interfaceObject.l1RsQosSdIfPolCons['tDn']))                 
+        print('     {}'.format(interfaceObject.l1RsQosSdIfPolCons['tDn']))
     if interfaceObject.l1RsStormctrlIfPolCons:
-        print('     {}'.format(interfaceObject.l1RsStormctrlIfPolCons['tDn']))                 
+        print('     {}'.format(interfaceObject.l1RsStormctrlIfPolCons['tDn']))
     if interfaceObject.l1RsStpIfPolCons:
         print('     {}'.format(interfaceObject.l1RsStpIfPolCons['tDn']))
     #epgresult = GetResponseData(epgurl, cookie)

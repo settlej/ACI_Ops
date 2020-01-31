@@ -302,7 +302,7 @@ class l1PhysIf():
         elif 1000 <= self.allerrors >= 101:
             return '\x1b[2;30;43m{:2}\x1b[0m'.format(self.shortnum)
         elif self.allerrors >= 1001:
-            return '\x1b[2;30;47m{:2}\x1b[0m'.format(self.shortnum)          
+            return '\x1b[1;37;41m{:2}\x1b[0m'.format(self.shortnum)          
         else:
             return '\x1b[1;37;42m{:2}\x1b[0m'.format(self.shortnum)
     def custom_matched_port_color(self, interfacelist):

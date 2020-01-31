@@ -139,11 +139,17 @@ def main(import_apic,import_cookie):
             #    counter -= 1
         print('\x1b[0m')
         while True:
-            ask = custom_raw_input('Confirm deployment?: [y|n]')
+            ask = custom_raw_input('Confirm deployment?: [y|n]:')
             if ask != '' and ask[0].lower() == 'y':
+                cancel = False
                 break
             else:
-                continue
+                cancel = True
+                break
+        if cancel:
+            print("\nCancelled!")
+            custom_raw_input('\n#Press Enter to continue...')
+            break
         pool = ThreadPool(10)
         #for x in sorted(vlanepgdeployment_list, key=lambda x:x[0]):
         #    import pdb; pdb.set_trace()
@@ -153,16 +159,20 @@ def main(import_apic,import_cookie):
         #        divideandconcurvlans_list.append((x[0],z))
         results = pool.map(lambda x : PostandGetResponseData(x[0], x[1], cookie), vlanepgdeployment_list)
         #import pdb; pdb.set_trace()
-        for x in results:
-            if x[1] is not None:
-                print("Error", x[0], x[1])
+
         #import pdb; pdb.set_trace()
         #results = pool.map(PostandGetResponseData, vlanepgdeployment_list[0], vlanepgdeployment_list[1], cookie)
         pool.close()
         pool.join()
+        for x in results:
+            if x[1] is not None:
+                print("Error", x[0], x[1])
         del(pool)
         pool = ThreadPool(10)
         results = pool.map(lambda x : PostandGetResponseData(x[0], x[1], cookie), descriptiondeployment_list)
         pool.close()
         pool.join()
-        import pdb; pdb.set_trace()
+        for x in results:
+            if x[1] is not None:
+                print("Error", x[0], x[1])
+        custom_raw_input('\n#Press Enter to continue...')

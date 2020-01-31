@@ -579,14 +579,18 @@ def main(import_apic,import_cookie):
             if action == 'a':
                 time.sleep(3)
                 continue
-            action = custom_raw_input("Options ('a' = auto refresh 3 sec, 'm' = manual refresh, 's' = int stats) default=[m]:")
-            if action == 'm':
+            action = custom_raw_input("Refresh? [Y]: ") or 'y'
+            if action.strip().lstrip() != '' and action[0].strip().lstrip().lower() == 'y':
                 continue
             elif action == 's':
                 interfacesearch = custom_raw_input('interface (xxx ethx/x) [example: 101 eth1/1]: ')
                 leaf, interfacepull = interfacesearch.split()
                 showinterface.single_interface_pull(apic,cookie, leaf, interfacepull)
                 cookie = refreshToken(apic, cookie)
+            elif action.strip().lstrip() != '' and action[0].strip().lstrip().lower() == 'n':
+                break
+            else:
+                continue
             
 def main_detail(import_apic,import_cookie):
     while True:
