@@ -197,14 +197,23 @@ def match_port_channels_to_interfaces(interfaces, leaf):
                 if pc.portmembers[0].tSKey == interface.id:
                     interface.add_portchannel(pc)
 
+class rowobj():
+    def __init__(self, args,headers):
+        for k,v in zip(headers,args):
+            #import pdb; pdb.set_trace()
+            self[k] = v
+    def __setitem__(self, k,v):
+        setattr(self, k, v)
+    def __getitem__(self,k):
+        return getattr(self,k)
+
 def print_interfaces_layout(leafallinterfacesdict,leafs):
     interface_output = ''
-    print('-'*160)
-    print('{:13}{:14}{:5}{:18}{:12}{:26}{:12}{:7}{:28}{}'.format('Port','Status', 'EPGs', 'SFP',  'In/Out Err', 'In/Out Packets', 'PcMode', 'PC #', 'PC/vPC Name','Description' ))
-    print('-'*160)
-    for leaf,leafinterlist in sorted(leafallinterfacesdict.items()):
+    topstringheaders = ('Port','Status', 'EPGs', 'SFP',  'In/Out Err', 'In/Out Packets', 'PcMode', 'PC #', 'PC/vPC Name','Description')
+    leaflist = []
+    for currentleaf,leafinterlist in sorted(leafallinterfacesdict.items()):
         interfaces = gather_l1PhysIf_info(leafinterlist)
-        match_port_channels_to_interfaces(interfaces, leaf)
+        match_port_channels_to_interfaces(interfaces, currentleaf)
         interfacelist = []
         interfacelist2 = []
         for inter in interfaces:
@@ -223,8 +232,10 @@ def print_interfaces_layout(leafallinterfacesdict,leafs):
         interfacenewlist = interfacelist + interfacelist2
         interfacelist = []
         interfacelist2 = []
-        currentleaf = '\x1b[2;30;47m{}\x1b[0m'.format(leaf)
-        interface_output += currentleaf + '\n'
+        
+        rowobj_headers = ('id','status','epgs_status','sfp','errors','packets','pcstatus','pcid','pc_name','descr')
+        rowlist = []
+        
         for column in interfacenewlist:
             if column.adminSt == 'up' and (column.children[4].operStQual == 'sfp-missing' or column.children[4].operStQual == 'link-failure'):
                 status = 'down/down'
@@ -259,12 +270,39 @@ def print_interfaces_layout(leafallinterfacesdict,leafs):
                 epgs_status = 'No'
             packets = column.children[0].rXNoErrors + '/' + column.children[0].tXNoErrors
             if column.pc_mbmr:
-                interface_output += ('{:13}{:14}{:5}{:18}{:12}{:26}{:12}{:7}{:28}{}\n'.format(column.id, status, epgs_status,
-                                           str(sfp) , errors, packets, pcstatus + ' ' + pcmode, column.pc_mbmr[0].id, column.pc_mbmr[0],column.descr))#column.pc_mbmr[0].children[0].operVlans))
+                #interface_output += ('{:13}{:14}{:5}{:18}{:12}{:26}{:12}{:7}{:28}{}\n'.format(column.id, status, epgs_status,
+                                           #str(sfp) , errors, packets, '{} {}'.format(pcstatus,pcmode), column.pc_mbmr[0].id, column.pc_mbmr[0],column.descr))#column.pc_mbmr[0].children[0].operVlans))
+                rowlist.append((column.id, status, epgs_status, str(sfp) , errors, packets, '{} {}'.format(pcstatus,pcmode),
+                             column.pc_mbmr[0].id, column.pc_mbmr[0],column.descr))
             else: 
-                interface_output += ('{:13}{:14}{:5}{:18}{:12}{:26}{:12}{:7}{:28}{}\n'.format(column.id, status, epgs_status,
-                                           str(sfp),errors, packets , '','','',column.descr))
-    print(interface_output)
+                rowlist.append((column.id, status, epgs_status,str(sfp),errors, packets , '','','',column.descr))
+                #interface_output += ('{:13}{:14}{:5}{:18}{:12}{:26}{:12}{:7}{:28}{}\n'.format(column.id, status, epgs_status,
+                                          # str(sfp),errors, packets , '','','',column.descr))
+        leaflist.append((currentleaf, rowlist))
+
+    allsizes = []
+    for leaf in leaflist:
+        allsizes.append(get_column_sizes(leaf[1], minimum=5,baseminimum=topstringheaders))
+    allsizes = zip(*allsizes)
+    sizes = map(max, allsizes)
+    topstring = ' {:{column0}}    {:{column1}}  {:{column2}}  {:{column3}}  {:{column4}}  {:{column5}}  {:{column6}}  {:{column7}}  {:{column8}}  {:{column9}}'.format(
+        *topstringheaders,column0=sizes[0],column1=sizes[1],column2=sizes[2],column3=sizes[3],
+            column4=sizes[4],column5=sizes[5],column6=sizes[6],column7=sizes[7],column8=sizes[8],column9=sizes[9])
+
+    rowstring = ''
+    for leaf in leaflist:
+        print(' ' + '-' * (sum(sizes) + 21))
+        print(topstring)
+        print(' ' + '-' * (sum(sizes) + 21))
+        print(' \x1b[2;30;47mleaf '+ leaf[0] + '\x1b[0m')
+        for row in leaf[1]:
+            rowstring += (' {:{column0}}    {:{column1}}  {:{column2}}  {:{column3}}  {:{column4}}  {:{column5}}  {:{column6}}  {:{column7}}  {:{column8}}  {:{column9}}\n').format(
+                row[0],row[1],row[2],row[3],row[4],row[5],row[6],row[7],row[8],row[9],column0=sizes[0],column1=sizes[1],column2=sizes[2],column3=sizes[3],
+                column4=sizes[4],column5=sizes[5],column6=sizes[6],column7=sizes[7],column8=sizes[8],column9=sizes[9])
+        print(rowstring)
+        rowstring = ''
+        #import pdb; pdb.set_trace()
+        print(interface_output)
 
 def main(import_apic,import_cookie):
     while True:

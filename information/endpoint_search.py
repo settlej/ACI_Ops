@@ -300,9 +300,14 @@ def eventhistory(address):
     if len(address) == 17:
         url = """https://{apic}/api/node/class/eventRecord.json?query-target-filter=and(eq(eventRecord.code,"E4209236"))&query-target-filter=and(wcard(eventRecord.dn,"cep-{address}"))&order-by=eventRecord.created|desc&page=0&page-size=30""".format(address=address,apic=apic)
         logger.info(url)
-    elif len(address) >= 7 and len(address) <= 15 :
+    elif len(address) >= 7 and len(address) <= 15:
         url = """https://{apic}/api/node/class/eventRecord.json?query-target-filter=and(eq(eventRecord.code,"E4209236"))&query-target-filter=and(wcard(eventRecord.descr,"{address}$"))&order-by=eventRecord.created|desc&page=0&page-size=30""".format(address=address,apic=apic)
         logger.info(url)
+    elif re.match(r"^[0-9a-fA-F]{2}:[0-9a-fA-F]{2}$", address.strip().lstrip()):
+        #print("\nLast 4 MAC Event Log search isn't supported at this time.")
+        url = """https://{apic}/api/node/class/eventRecord.json?query-target-filter=and(wcard(eventRecord.affected,"{address}\/"))&order-by=eventRecord.created|desc&page=0&page-size=30""".format(address=address,apic=apic)
+        logger.info(url)
+        #return
     result, totalcount = GetResponseData(url, cookie, return_count=True)
     print('\n')
     if totalcount == '0':
@@ -403,7 +408,7 @@ def vm_search_function(vm_name):
     if totalcount == '0':
         print('\n')
         print("{:26}\t{:15}\t{:18}\t{}".format("Date", "encap-vlan", "Ip Address", "Mac Address"))
-        print('-'*97)
+        print('-'*118)
         print('\x1b[41;1mNo "LIVE Endpoint" VM found...check event history\x1b[0m\n')
         print('\n')
     else:
@@ -462,8 +467,8 @@ def mac_path_function(mac, compVM=None):
         logger.debug(str(result))
         for vminterface in compVM.compVNiclist:
             if vminterface.mac == mac:
-                print("{:26}\t{:15}\t{:18}\t{}".format("Date", "encap-vlan", "Ip Address", "Mac Address"))
-                print('-'*97)
+                print("{:26}\t{:15}\t{:18}\t{:20}\t{}".format("Date", "encap-vlan", "Ip Address", "Mac Address", "Path"))
+                print('-'*118)
                 print('\x1b[41;1mMAC not found on Fabric....\x1b[0m\n')
                 print("Nic not using portgroup deployed by ACI\n")
                 print("Helpful info:\n\tHost: {}\t VM Status: {}\tvnic_status: {}\tvnic_ip: {}".format(result[0]['compHv']['attributes']['name'],
@@ -471,10 +476,31 @@ def mac_path_function(mac, compVM=None):
         print('\n')
     elif totalcount == '0':
         print('\n')
-        print("{:26}\t{:15}\t{:18}\t{}".format("Date", "encap-vlan", "Ip Address", "Mac Address"))
-        print('-'*97)
-        print('\x1b[41;1mNo "LIVE Endpoint" MAC found...check event history\x1b[0m\n')
+        print("{:26}\t{:15}\t{:18}\t{:20}\t{}".format("Date", "encap-vlan", "Ip Address", "Mac Address", "Path"))
+        print('-'*118)
+        print('\x1b[41;1mNo "LIVE Endpoint" MAC found\x1b[0m\n')
         print('\n')
+        print('[History]')
+        url = """https://{apic}/api/node/class/epRecord.json?query-target-filter=wcard(epRecord.affected,"{}$")&order-by=epRecord.created|desc&page=0&page-size=32""".format(mac,apic=apic)
+        logger.info(url)
+        result, historytotalcount = GetResponseData(url, cookie, return_count=True)
+        if int(historytotalcount) > 0:
+            current_epg = '|'.join(result[0]['epRecord']['attributes']['affected'].split('/')[1:-1]).replace('tn-','').replace('ap-','').replace('epg-','')
+            print("{:^115}".format('EPG = \x1b[1;33;40m ' + current_epg + ' \x1b[0m'))
+            for entry in result:
+                if current_epg != '|'.join(entry['epRecord']['attributes']['affected'].split('/')[1:-1]).replace('tn-','').replace('ap-','').replace('epg-',''):
+                    current_epg = '|'.join(entry['epRecord']['attributes']['affected'].split('/')[1:-1]).replace('tn-','').replace('ap-','').replace('epg-','')
+                    print(current_epg)
+                date = entry['epRecord']['attributes']['created'][:-6]
+                encap = entry['epRecord']['attributes']['encap']
+                path =  entry['epRecord']['attributes']['path']
+                path = readable_dnpath(path)
+                ip = entry['epRecord']['attributes']['ip']
+                mac = entry['epRecord']['attributes']['affected'].split('/')[-1][4:]
+                print("{:26}\t{:15}\t{:18}\t{:20}\t{}".format(date, encap, ip, mac, path))
+        else:
+            print("\x1b[41;1mNo History found...check Event History\x1b[0m")
+
     else:
         fvCEplist = gather_fvCEp_fullinfo(result)
         for fvCEp in fvCEplist:
@@ -525,10 +551,19 @@ def ip_path_function(ipaddr):
         arpquerymatch = True
     if totalcount2 == '0' and totalcount3 == '0' :
         print('\n')
-        print("{:26}\t{:15}\t{:18}\t{}".format("Date", "encap-vlan", "Ip Address", "Mac Address"))
-        print('-'*97)
-        print('\x1b[41;1mNo "LIVE Endpoint" IP found...check event history\x1b[0m\n')
+        print("{:26}\t{:15}\t{:18}\t{:20}\t{}".format("Date", "encap-vlan", "Ip Address", "Mac Address", "Path"))
+        print('-'*118)
+        print('\x1b[41;1mNo "LIVE Endpoint" IP found\x1b[0m\n')
         print('\n')
+        print('[History]')
+        url = """https://{apic}/api/node/class/epRecord.json?query-target-filter=eq(epRecord.ip,"{}")&order-by=epRecord.created|desc&page=0&page-size=32""".format(ipaddr,apic=apic)
+        logger.info(url)
+        result, historytotalcount = GetResponseData(url, cookie, return_count=True)
+        if int(historytotalcount) > 0:
+            for entry in result:
+                print(entry['epRecord']['attributes']['encap'], entry['epRecord']['attributes']['ip'], entry['epRecord']['attributes']['path'], entry['epRecord']['attributes']['affected'].split('/')[-1])
+        else:
+            print("\x1b[41;1mNo History found...check Event History\x1b[0m")
     else:
         if primaryquerymatch:
             macaddr = result[0]['fvIp']['attributes']['dn'].split('/')[-2].replace('cep-','')
@@ -551,7 +586,7 @@ def ip_path_function(ipaddr):
                 logger.info(url)
                 result, totalcount = GetResponseData(url, cookie, return_count=True)
                 completefvCEplist = gather_fvCEp_fullinfo(result)
-                import pdb; pdb.set_trace()
+                #import pdb; pdb.set_trace()
                 #Display current endpoint info
                 find_and_display_current_location_info(completefvCEplist[0], totalcount)
         
@@ -559,7 +594,8 @@ def ip_path_function(ipaddr):
         display_live_history_info(completefvCEplist[0], totalcount)
 
 def last4_function(endpoint):
-    url = """https://{apic}/api/node/class/fvCEp.json?query-target-filter=wcard(fvCEp.mac,"{last4}")""".format(apic=apic,last4=endpoint)
+    last4 = endpoint
+    url = """https://{apic}/api/node/class/fvCEp.json?query-target-filter=wcard(fvCEp.mac,"{last4}$")""".format(apic=apic,last4=last4)
     logger.info(url)
     result = GetResponseData(url, cookie)
     if len(result) > 1:
@@ -580,7 +616,7 @@ def last4_function(endpoint):
     elif len(result) == 1:
         return result[0]['fvCEp']['attributes']['name']
     else:
-        return None
+        return last4
 
 def main(import_apic,import_cookie):
     global apic
@@ -614,6 +650,7 @@ def main(import_apic,import_cookie):
             endpoint = search.strip().lstrip()
             endpoint = vm_search_function(endpoint)
         while True:
+
             history = custom_raw_input("\nWould you like to search event logs for {}? [y|n=default]: ".format(endpoint)) or 'n'
             if history != '' and history[0].lower() == 'y':
                 eventhistory(endpoint)

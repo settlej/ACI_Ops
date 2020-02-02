@@ -323,105 +323,55 @@ def goodspacing(column):
     elif column.fex == '':
         return column.leaf + ' ' + str(column.name)
 
-def get_column_sizes(objlist, args, minimum=5, baseminimum=[]):
-    templist = []
-    for num,column in enumerate(args):
-        #print(num,column)
-        #import pdb; pdb.set_trace()
-        nestedlist = False
-        c_objlist = filter(lambda x: hasattr(x, column), objlist)
-        if c_objlist == [] or c_objlist == None:
-            templist.append(len(str(column)))    
-
-        else:
-            currentcolumnmaxobj = max(c_objlist, key=lambda x: len(str(getattr(x, column))))
-           # print(getattr(currentcolumnmaxobj,column))
-            if type(getattr(currentcolumnmaxobj, column)) == list:
-                currentcolumnmaxobj = max(c_objlist, key=lambda x: len(','.join(str(getattr(x, column)))))
-                insidelistmax = len(','.join(getattr(currentcolumnmaxobj,column)))
-                #print(','.join(getattr(currentcolumnmaxobj,column)))
-                nestedlist = True
-            if nestedlist:
-                if insidelistmax < 1:
-                    if baseminimum == []:
-                        templist.append(len(baseminimum[num]))
-                    else:
-                        templist.append(len(baseminimum[num]))
-                else:
-                    templist.append(insidelistmax)
+def get_column_sizes(rowlist, objcolumnwidthfind=None, minimum=5, baseminimum=[]):
+    sizelist = []
+    if objcolumnwidthfind:
+        for num,column in enumerate(objcolumnwidthfind):
+            nestedlist = False
+            c_rowlist = filter(lambda x: hasattr(x, column), rowlist)
+            if c_rowlist == [] or c_rowlist == None:
+                sizelist.append(len(str(column)))    
+    
             else:
-                if len(str(getattr(currentcolumnmaxobj, column))) < 1:
-                    if baseminimum == []:
-                        templist.append(minimum)
+                currentcolumnmaxobj = max(c_rowlist, key=lambda x: len(str(getattr(x, column))))
+               # print(getattr(currentcolumnmaxobj,column))
+                if type(getattr(currentcolumnmaxobj, column)) == list:
+                    currentcolumnmaxobj = max(c_rowlist, key=lambda x: len(','.join(str(getattr(x, column)))))
+                    insidelistmax = len(','.join(getattr(currentcolumnmaxobj,column)))
+                    #print(','.join(getattr(currentcolumnmaxobj,column)))
+                    nestedlist = True
+                if nestedlist:
+                    if insidelistmax < 1:
+                        if baseminimum == []:
+                            sizelist.append(len(baseminimum[num]))
+                        else:
+                            sizelist.append(len(baseminimum[num]))
                     else:
-                        templist.append(len(baseminimum[num]))
+                        sizelist.append(insidelistmax)
                 else:
-                    if baseminimum == [] and len(str(getattr(currentcolumnmaxobj, column))) < minimum:
-                        templist.append(minimum)
-                    elif baseminimum != [] and len(str(getattr(currentcolumnmaxobj, column))) < len(baseminimum[num]):
-                        templist.append(len(baseminimum[num]))
-                    elif baseminimum != [] and len(str(getattr(currentcolumnmaxobj, column))) > len(baseminimum[num]):
-                        templist.append(len(str(getattr(currentcolumnmaxobj, column))))
+                    if len(str(getattr(currentcolumnmaxobj, column))) < 1:
+                        if baseminimum == []:
+                            sizelist.append(minimum)
+                        else:
+                            sizelist.append(len(baseminimum[num]))
                     else:
-                        templist.append(len(str(getattr(currentcolumnmaxobj, column))))
-
-
-
-               # elif len(str(getattr(currentcolumnmaxobj, column))) < len(baseminimum[num]):
-               # else:
-               #     templist.append(len(str(getattr(currentcolumnmaxobj, column))))
-    return templist
-
-def get_column_sizes2(objlist, args, minimum=5):
-    templist = []
-    for column in args:
-        #import pdb; pdb.set_trace()
-        nestedlist = False
-        c_objlist = filter(lambda x: hasattr(x, column), objlist)
-        if c_objlist == [] or c_objlist == None:
-            templist.append(len(str(column)))    
-            print(str(column))
-
-        else:
-            import pdb; pdb.set_trace()
-            currentcolumnmaxobj = max(c_objlist, key=lambda x: len(str(getattr(x, column))))
-            #print(getattr(currentcolumnmaxobj,column))
-            if type(getattr(currentcolumnmaxobj, column)) == list:
-                currentcolumnmaxobj = max(c_objlist, key=lambda x: len(','.join(str(getattr(x, column)))))
-                #import pdb; pdb.set_trace()
-                #rowlistmax = 0
-                #for row in currentcolumnmaxobj.ip:
-                #    import pdb; pdb.set_trace()
-                #    currentlistmax = len(row)
-                #    if currentlistmax == rowlistmax:
-                #        continue
-                #    elif currentlistmax > rowlistmax:
-                #        rowlistmax = len(row)
-                #    elif currentlistmax < rowlistmax:
-                #        rowlistmax = len(row)
-                #    else:
-                #        rowlistmax = len(row)
-                insidelistmax = len(','.join(currentcolumnmaxobj.ip))
-                #for insideobj in getattr(currentcolumnmaxobj, column):
-                #insidelistmaxobj = max(columnlist, key=lambda x: len(str(x)))
-                #import pdb; pdb.set_trace()
-                nestedlist = True
-            if nestedlist:
-                if insidelistmax < 1:
-                    templist.append(len(str(column)))
-                    #print(str(column))
-                else:
-                    templist.append(insidelistmax)
-                    #print(str(column))
-                #templist.append((column, insidelistmax))
-            else:
-                if len(str(getattr(currentcolumnmaxobj, column))) < 1:
-                    templist.append(len(str(column)))
-                    #print(str(column))
-                else:
-                    templist.append(len(str(getattr(currentcolumnmaxobj, column))))
-                    #print(str(column))
-    return templist
+                        if baseminimum == [] and len(str(getattr(currentcolumnmaxobj, column))) < minimum:
+                            sizelist.append(minimum)
+                        elif baseminimum != [] and len(str(getattr(currentcolumnmaxobj, column))) < len(baseminimum[num]):
+                            sizelist.append(len(baseminimum[num]))
+                        elif baseminimum != [] and len(str(getattr(currentcolumnmaxobj, column))) > len(baseminimum[num]):
+                            sizelist.append(len(str(getattr(currentcolumnmaxobj, column))))
+                        else:
+                            sizelist.append(len(str(getattr(currentcolumnmaxobj, column))))
+        return sizelist
+    else:
+        temprowlist = list(rowlist[:])
+        temprowlist.append(baseminimum)
+        columns = zip(*temprowlist)
+        del(temprowlist)
+        for column in columns:
+            sizelist.append(len(str(max(column, key=lambda x:len(str(x))))))
+        return sizelist
 
 
 def display_and_select_epgs(choseninterfaceobjectlist, allepglist):
@@ -508,23 +458,23 @@ def physical_interface_selection(apic, cookie, chosenleafs, provideleaf=False):
     for column1,column2 in finalgrouped:
         a = column1.number
         if len(goodspacing(column1) + '  ') >= 22:
-            b = goodspacing(column1) + '  ' + '\x1b[1;33;40m' + column1.descr[:18] + '\x1b[0m'
+            b = goodspacing(column1) + '  ' + '\x1b[1;33;40m' + column1.descr[:24] + '\x1b[0m'
         else:
-            b = goodspacing(column1) + '  ' + '\x1b[1;33;40m' + column1.descr[:25] + '\x1b[0m'
+            b = goodspacing(column1) + '  ' + '\x1b[1;33;40m' + column1.descr[:32] + '\x1b[0m'
         c = column2.number
         if len(goodspacing(column2) + '  ') >= 22:
-            d = goodspacing(column2) + '  ' + '\x1b[1;33;40m' + column2.descr[:18] + '\x1b[0m'
+            d = goodspacing(column2) + '  ' + '\x1b[1;33;40m' + column2.descr[:24] + '\x1b[0m'
         else:
-            d = goodspacing(column2) + '  ' + '\x1b[1;33;40m' + column2.descr[:25] + '\x1b[0m'
+            d = goodspacing(column2) + '  ' + '\x1b[1;33;40m' + column2.descr[:32] + '\x1b[0m'
        # if column3 == '' or column3 == None:
        #     e = ''
         f = ''
        # else:
        #     e = column3.number
        #     if len(goodspacing(column3) + '  ') >= 22:
-       #         f = goodspacing(column3) + '  ' + '\x1b[1;33;40m' + column3.descr[:18] + '\x1b[0m'
+       #         f = goodspacing(column3) + '  ' + '\x1b[1;33;40m' + column3.descr[:24] + '\x1b[0m'
        #     else:
-       #         f = goodspacing(column3) + '  ' + '\x1b[1;33;40m' + column3.descr[:25] + '\x1b[0m'
+       #         f = goodspacing(column3) + '  ' + '\x1b[1;33;40m' + column3.descr[:32] + '\x1b[0m'
         if f != '':
             print('{:4}.) {:65} {}.) {:65} {}.) {}'.format(a,b,c,d,e,f))
         else:
