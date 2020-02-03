@@ -365,7 +365,8 @@ def get_column_sizes(rowlist, objcolumnwidthfind=None, minimum=5, baseminimum=[]
                             sizelist.append(len(str(getattr(currentcolumnmaxobj, column))))
         return sizelist
     else:
-        temprowlist = list(rowlist[:])
+        temprowlist = rowlist[:]
+       # temprowlist = list(rowlist[:])
         temprowlist.append(baseminimum)
         columns = zip(*temprowlist)
         del(temprowlist)

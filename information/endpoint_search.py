@@ -490,7 +490,7 @@ def mac_path_function(mac, compVM=None):
             for entry in result:
                 if current_epg != '|'.join(entry['epRecord']['attributes']['affected'].split('/')[1:-1]).replace('tn-','').replace('ap-','').replace('epg-',''):
                     current_epg = '|'.join(entry['epRecord']['attributes']['affected'].split('/')[1:-1]).replace('tn-','').replace('ap-','').replace('epg-','')
-                    print(current_epg)
+                    print("{:^115}".format('EPG = \x1b[1;33;40m ' + current_epg + ' \x1b[0m'))
                 date = entry['epRecord']['attributes']['created'][:-6]
                 encap = entry['epRecord']['attributes']['encap']
                 path =  entry['epRecord']['attributes']['path']
@@ -560,8 +560,19 @@ def ip_path_function(ipaddr):
         logger.info(url)
         result, historytotalcount = GetResponseData(url, cookie, return_count=True)
         if int(historytotalcount) > 0:
+            current_epg = '|'.join(result[0]['epRecord']['attributes']['affected'].split('/')[1:-1]).replace('tn-','').replace('ap-','').replace('epg-','')
+            print("{:^115}".format('EPG = \x1b[1;33;40m ' + current_epg + ' \x1b[0m'))
             for entry in result:
-                print(entry['epRecord']['attributes']['encap'], entry['epRecord']['attributes']['ip'], entry['epRecord']['attributes']['path'], entry['epRecord']['attributes']['affected'].split('/')[-1])
+                if current_epg != '|'.join(entry['epRecord']['attributes']['affected'].split('/')[1:-1]).replace('tn-','').replace('ap-','').replace('epg-',''):
+                    current_epg = '|'.join(entry['epRecord']['attributes']['affected'].split('/')[1:-1]).replace('tn-','').replace('ap-','').replace('epg-','')
+                    print("{:^115}".format('EPG = \x1b[1;33;40m ' + current_epg + ' \x1b[0m'))
+                date = entry['epRecord']['attributes']['created'][:-6]
+                encap = entry['epRecord']['attributes']['encap']
+                path =  entry['epRecord']['attributes']['path']
+                path = readable_dnpath(path)
+                ip = entry['epRecord']['attributes']['ip']
+                mac = entry['epRecord']['attributes']['affected'].split('/')[-1][4:]
+                print("{:26}\t{:15}\t{:18}\t{:20}\t{}".format(date, encap, ip, mac, path))
         else:
             print("\x1b[41;1mNo History found...check Event History\x1b[0m")
     else:

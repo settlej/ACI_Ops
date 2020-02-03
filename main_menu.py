@@ -27,6 +27,7 @@ import interfaces.autodeploy as autodeploy
 import interfaces.portchannel_to_phy_interfaces as portchannel_to_phy_interfaces
 import interfaces.short_vlan_epg_to_ports as short_vlan_epg_to_ports
 import interfaces.show_interface_attributes as show_interface_attributes
+import interfaces.configure_and_deploy as configure_and_deploy
 import information.switchandapicinfo as switchandapicinfo
 import information.endpoint_per_leaf as endpoint_per_leaf
 import information.top_interface_problems as top_interface_problems
@@ -380,13 +381,12 @@ def main():
                         break
                 if chosen == '444':
                     try:
-                        show_interface_attributes.main(apic,cookie)
+                        configure_and_deploy.main(apic,cookie)
                         keyinterrupt = False
                     except KeyboardInterrupt as k:
                         print('\nExit to Main menu\n')
                         keyinterrupt = True
                         break
-
                 if chosen == '24':
                     try:
                         top_interface_problems.main(apic,cookie)
@@ -467,14 +467,14 @@ def main():
                         print('\nExit to Main menu\n')
                         keyinterrupt = True
                         break
-                #elif chosen == '23':
-                #    try:
-                #        display_switch_to_leaf_structure.main(apic,cookie)
-                #        keyinterrupt = False
-                #    except KeyboardInterrupt as k:
-                #        print('\nExit to Main menu\n')
-                #        keyinterrupt = True
-                #        break
+                elif chosen == '555':
+                    try:
+                        display_switch_to_leaf_structure.main(apic,cookie)
+                        keyinterrupt = False
+                    except KeyboardInterrupt as k:
+                        print('\nExit to Main menu\n')
+                        keyinterrupt = True
+                        break
                 elif chosen == '27':
                     try:
                         clonevpcanddeploy.main(apic,cookie)
