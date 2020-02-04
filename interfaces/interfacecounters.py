@@ -298,7 +298,7 @@ def display_interface_stats(epgresult, interface, result):
             print('   \x1b[1;31;40m{}\x1b[0m'.format('No Domains found'))
     print('\n   Policies:')
     if interfaceObject.l1RsAttEntityPCons:
-        print('     \x1b[1;33;40m{}\x1b[0m'.format(interfaceObject.l1RsAttEntityPCons['tDn']).replace('uni/infra/','').replace('uni/fabric/',''))
+        print('     \x1b[1;33;40m{}\x1b[0m'.format(interfaceObject.l1RsAttEntityPCons['tDn']))
     else:
         print('     \x1b[1;31;40m{}\x1b[0m'.format('AAEP Missing'))
     if interfaceObject.l1RsCdpIfPolCons:

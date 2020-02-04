@@ -39,7 +39,7 @@ import faults_and_logs.most_recent_event_changes as most_recent_event_changes
 import faults_and_logs.alleventsbetweendates as alleventsbetweendates
 import faults_and_logs.alleventsbetweendates_fulldetail as alleventsbetweendates_fulldetail
 import information.endpoint_search as ipendpoint_search
-#import information.routetranslation as epg_troubleshooting
+import information.routetranslation as epg_troubleshooting
 #import information.routetranslation as routetranslation
 #import information.routetrace as check_routing
 import information.show_static_routes as show_static_routes
@@ -588,6 +588,14 @@ def main():
                         print('\nExit to Main menu\n')
                         keyinterrupt = True
                         break		
+                elif chosen == '111':
+                    try:
+                        epg_troubleshooting.main(apic,cookie)
+                        keyinterrupt = False
+                    except KeyboardInterrupt as k:
+                        print('\nExit to Main menu\n')
+                        keyinterrupt = True
+                        break
                 #elif chosen == '17':
                 # 
                 #                 # break   
