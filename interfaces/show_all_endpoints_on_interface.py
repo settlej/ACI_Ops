@@ -417,6 +417,7 @@ def main(import_apic,import_cookie):
                             if topology in desiredlist:
                                 filteredlist.append(endp)
                         del endpointlist
+                        #import pdb; pdb.set_trace()
                         columnwidthfind = ('ethname','addr','foundvlan','encap','ifId','ip')
                         sizes = get_column_sizes(filteredlist, columnwidthfind, minimum=5)
                         print('{:{inter}}  {:{mac}}  {:{epg}}  {:{encap}}  {:{po}}  {:{ip}}'.format('Interface', 'MAC', 'EPG', 'Encap', 'Po #', 'IP',inter=sizes[0]+4,mac=sizes[1],epg=sizes[2],encap=sizes[3],po=sizes[4],ip=sizes[5]))
@@ -455,7 +456,7 @@ def main(import_apic,import_cookie):
                             print('ARP Entries:')
                             print('------------')
                             columnwidthfind = ('ip','mac','tenant_vrf','ifId','physIfId')
-                            sizes = get_column_sizes(arpfilteredlist, columnwidthfind, minimum=5)
+                            sizes = get_column_sizes(arpfilteredlist, columnwidthfind, minimum=6)
                             print('\t{:{ip}}   {:{mac}}   {:{domain}}   {:{where}}   {:{discovered}}'.format('IP','MAC', 'Domain', 'Where', 'Discovered on Interface',ip=sizes[0],mac=sizes[1],domain=sizes[2],where=sizes[3],discovered=sizes[4]))
                             print('\t{:-<{ip}}   {:-<{mac}}   {:-<{domain}}   {:-<{where}}   {:-<{discovered}}'.format('','', '', '', '',ip=sizes[0],mac=sizes[1],domain=sizes[2],where=sizes[3],discovered=sizes[4]))
                             for arp in arpfilteredlist:

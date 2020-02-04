@@ -150,58 +150,100 @@ def interface_epg_pull(apic,cookie, epgvlanlist, selectedleaf):
     #fex_interfaces = [x for x in interfacewith_allvlans if x[0].tDn.count('/') == 7 and 'eth' in x[0].tDn]
     #po_interfaces = [x for x in interfacewith_allvlans if not 'eth' in x[0].tDn]
     ##import pdb; pdb.set_trace()
+    url = """https://{apic}/api/node/class/topology/pod-1/node-{leaf}/pcAggrIf.json""".format(apic=apic,leaf=leaf[0])
+    #import pdb; pdb.set_trace()
+    result = GetResponseData(url,cookie)
+    podict = {}
+    for pointerface in result:
+        podict[pointerface['pcAggrIf']['attributes']['id']] = pointerface['pcAggrIf']['attributes']['name']
     eth_interfaces = {x:y for x,y in finaldict.items() if x.count('/') != 7 and 'eth' in x}
     fex_interfaces = {x:y for x,y in finaldict.items() if x.count('/') == 7 and 'eth' in x}
     po_interfaces = {x:y for x,y in finaldict.items() if not 'eth' in x}
-    print('  {:17}  {:10} | {:^8} | {}'.format('Interface','Vlan/Vxlan','Type','EPG')) 
-    print('  {:-<17}--{:-<10}-|-{:-^8}-|-{:-<20}'.format('','','',''))
+    #import pdb; pdb.set_trace()
+
+    epglist = []
+    interfacecolumn = []
+    encaplist =[]
     for k,v in sorted(eth_interfaces.items(), key=lambda x: int(x[0].split('/')[-1][:-1])):
         leftlocation = k.find('[')
-        print('  {:17}'.format(k[leftlocation+1:-1]), end='')
+        interfacecolumn.append(k[leftlocation+1:-1]) 
+       # print('  {:16}|'.format(k[leftlocation+1:-1]), end='')
+        for num,m in enumerate(v):
+            encaplist.append(m[1].encap)
+            epglist.append(m[1])
+    for k,v in sorted(fex_interfaces.items(), key=lambda x: int(x[0].split('/')[-1][:-1])):
+        leftlocation = k.find('[')
+        interfacecolumn.append(k[leftlocation+1:-1])
+        #print('  {:16}|'.format(k[leftlocation+1:-1]), end='')
+        for num,m in enumerate(v):
+            encaplist.append(m[1].encap)
+            epglist.append(m[1])
+    for k,v in sorted(po_interfaces.items(), key=lambda x: int(x[0].split('[po')[-1][:-1])):
+        leftlocation = k.find('[')
+        po_name = podict[k[leftlocation+1:-1]]
+        interfacecolumn.append(po_name)
+       # print('  {:16}|'.format(po_name), end='')
+        for num,m in enumerate(v):
+            encaplist.append(m[1].encap)
+            epglist.append(m[1])
+
+    headers = ('Interface','Vlan/Vxlan','Type','EPG')
+    columns = (interfacecolumn,encaplist,epglist)
+    columns = filter(None, columns)
+    sizes = get_column_sizes(list(columns), minimum=5, baseminimum=headers,alreadysorted=True)
+    print('  {:{interfname}} | {:{vlansize}} | {:^8} | {:{epgsize}}'.format('Interface','Vlan/Vxlan','Type','EPG',interfname=sizes[0],vlansize=sizes[1],epgsize=sizes[-1])) 
+    print('  {:-<{interfname}}-|-{:-<{vlansize}}-|-{:-^8}-|-{:-<{epgsize}}'.format('','','','',interfname=sizes[0],vlansize=sizes[1],epgsize=sizes[-1]))
+    for k,v in sorted(eth_interfaces.items(), key=lambda x: int(x[0].split('/')[-1][:-1])):
+        leftlocation = k.find('[')
+        print('  {:{interfname}} |'.format(k[leftlocation+1:-1], interfname=sizes[0]), end='')
         for num,m in enumerate(v):
             if num == 0:
                 if m[0].type == 'regular':
-                    print('  {:10} | {:^8} | {}'.format(m[1].encap, 'tagged', m[1]))
+                    print(' {:{vlansize}} | {:^8} | {}'.format(m[1].encap, 'tagged', m[1],vlansize=sizes[1]))
                 if m[0].type == 'native':
-                    print('  {:10} | {:^8} | {}'.format(m[1].encap, 'UNTAGGED', m[1]))
+                    print(' {:{vlansize}} | {:^8} | {}'.format(m[1].encap, 'UNTAGGED', m[1],vlansize=sizes[1]))
             else:
                 if m[0].type == 'regular':
-                    print('  {:17}  {:10} | {:^8} | {}'.format('',m[1].encap, 'tagged', m[1]))
+                    print('  {:{interfname}}   {:{vlansize}} | {:^8} | {}'.format('',m[1].encap, 'tagged', m[1],interfname=sizes[0],vlansize=sizes[1]))
                 if m[0].type == 'native':
-                    print('  {:17}  {:10} | {:^8} | {}'.format('',m[1].encap, 'UNTAGGED', m[1]))
-        print('')
+                    print('  {:{interfname}}   {:{vlansize}} | {:^8} | {}'.format('',m[1].encap, 'UNTAGGED', m[1],interfname=sizes[0],vlansize=sizes[1]))
+
+        #print('')
 
     for k,v in sorted(fex_interfaces.items(), key=lambda x: int(x[0].split('/')[-1][:-1])):
         leftlocation = k.find('[')
-        print('  {:17}'.format(k[leftlocation+1:-1]), end='')
+        print('  {:{interfname}} |'.format(k[leftlocation+1:-1], interfname=sizes[0]), end='')
         for num,m in enumerate(v):
             if num == 0:
                 if m[0].type == 'regular':
-                    print('  {:10} | {:^8} | {}'.format(m[1].encap, 'tagged', m[1]))
+                    print(' {:{vlansize}} | {:^8} | {}'.format(m[1].encap, 'tagged', m[1],vlansize=sizes[1]))
                 if m[0].type == 'native':
-                    print('  {:10} | {:^8} | {}'.format(m[1].encap, 'UNTAGGED', m[1]))
+                    print(' {:{vlansize}} | {:^8} | {}'.format(m[1].encap, 'UNTAGGED', m[1],vlansize=sizes[1]))
             else:
                 if m[0].type == 'regular':
-                    print('  {:17}  {:10} | {:^8} | {}'.format('',m[1].encap, 'tagged', m[1]))
+                    print('  {:{interfname}}   {:{vlansize}} | {:^8} | {}'.format('',m[1].encap, 'tagged', m[1],interfname=sizes[0],vlansize=sizes[1]))
                 if m[0].type == 'native':
-                    print('  {:17}  {:10} | {:^8} | {}'.format('',m[1].encap, 'UNTAGGED', m[1]))
-        print("")
+                    print('  {:{interfname}}   {:{vlansize}} | {:^8} | {}'.format('',m[1].encap, 'UNTAGGED', m[1],interfname=sizes[0],vlansize=sizes[1]))
 
+        #print("")
     for k,v in sorted(po_interfaces.items(), key=lambda x: int(x[0].split('[po')[-1][:-1])):
         leftlocation = k.find('[')
-        print('  {:17}'.format(k[leftlocation+1:-1]), end='')
+        po_name = podict[k[leftlocation+1:-1]]
+        print('  {:{interfname}} |'.format(po_name, interfname=sizes[0]), end='')
         for num,m in enumerate(v):
             if num == 0:
                 if m[0].type == 'regular':
-                    print('  {:10} | {:^8} | {}'.format(m[1].encap, 'tagged', m[1]))
+                    print(' {:{vlansize}} | {:^8} | {}'.format(m[1].encap, 'tagged', m[1],vlansize=sizes[1]))
                 if m[0].type == 'native':
-                    print('  {:10} | {:^8} | {}'.format(m[1].encap, 'UNTAGGED', m[1]))
+                    print(' {:{vlansize}} | {:^8} | {}'.format(m[1].encap, 'UNTAGGED', m[1],vlansize=sizes[1]))
             else:
                 if m[0].type == 'regular':
-                    print('  {:17}  {:10} | {:^8} | {}'.format('',m[1].encap, 'tagged', m[1]))
+                    print('  {:{interfname}}   {:{vlansize}} | {:^8} | {}'.format('',m[1].encap, 'tagged', m[1],interfname=sizes[0],vlansize=sizes[1]))
                 if m[0].type == 'native':
-                    print('  {:17}  {:10} | {:^8} | {}'.format('',m[1].encap, 'UNTAGGED', m[1]))
-        print('')
+                    print('  {:{interfname}}   {:{vlansize}} | {:^8} | {}'.format('',m[1].encap, 'UNTAGGED', m[1],interfname=sizes[0],vlansize=sizes[1]))
+
+
+       # print('')
 
 def main(import_apic,import_cookie):
     global apic
@@ -223,7 +265,7 @@ def main(import_apic,import_cookie):
         leaf = chosenleafs
         vlanlist = pull_vlan_info_for_leaf(apic, cookie, leaf)
         epgvlanlist = [x.dn for x in vlanlist]
-        interface_epg_pull(apic, leaf, vlanlist, leaf)
+        interface_epg_pull(apic,cookie, vlanlist, leaf)
         custom_raw_input('Continue...')
 
 

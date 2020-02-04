@@ -592,7 +592,7 @@ def displaypolicycolumns(grouplist):
                 num=sizes[0],policygroup=sizes[1],aaep=sizes[2],cdp=sizes[3],ll=sizes[5],lldp=sizes[6],mon=sizes[7])
     print(topstring)
     print('   {:{num}} {:-<{policygroup}} | {:-<{aaep}} | {:-<{cdp}} | {:-<{ll}} | {:-<{lldp}} | {:-<{mon}} |'.format(
-        '','','','','','','','','','','',num=sizes[0],policygroup=sizes[1],aaep=sizes[2],cdp=sizes[3],ll=sizes[5],lldp=sizes[6],mon=sizes[7]))
+        '','','','','','','',num=sizes[0],policygroup=sizes[1],aaep=sizes[2],cdp=sizes[3],ll=sizes[5],lldp=sizes[6],mon=sizes[7]))
     rowstring =''
     for num,row in enumerate(grouplist,1):
         if rowstring == '':
@@ -637,7 +637,7 @@ def main(import_apic,import_cookie):
         displaypolicycolumns(physpolicygroupslist)
         while True:
             requestedpolicynum = custom_raw_input("\nWhat Policy Group for new interface. [single number]: ")
-            if requestedpolicynum.isdigit() and int(requestedpolicynum) < len(physpolicygroupslist) and int(requestedpolicynum) > 0:
+            if requestedpolicynum.isdigit() and int(requestedpolicynum) <= len(physpolicygroupslist) and int(requestedpolicynum) > 0:
                 break
             else:
                 print('Invalid option...')

@@ -209,7 +209,7 @@ class rowobj():
 
 def print_interfaces_layout(leafallinterfacesdict,leafs):
     interface_output = ''
-    topstringheaders = ('Port','Status', 'EPGs', 'SFP',  'In/Out Err', 'In/Out Packets', 'PcMode', 'PC #', 'PC/vPC Name','Description')
+    topstringheaders = ('Port','Status', 'EPGs', 'SFP',  'In/Out_Err', 'In/Out_Packets', 'PcMode', 'PC #', 'PC/vPC_Name','Description')
     leaflist = []
     for currentleaf,leafinterlist in sorted(leafallinterfacesdict.items()):
         interfaces = gather_l1PhysIf_info(leafinterlist)

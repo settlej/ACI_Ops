@@ -124,24 +124,37 @@ def main(import_apic,import_cookie):
         #chosendestinterfaceobject, leaf = physical_selection(all_leaflist, apic, cookie, provideleaf=True)
         #import pdb; pdb.set_trace()
         interface =  chosendestinterfaceobject[0].name
-        epgurl = """https://{apic}/api/node-{leaf}/mo/sys/phys-[{interface}].json?rsp-subtree-include=full-deployment&target-node=all&target-path=l1EthIfToEPg""".format(interface=str(interface),leaf=str(leaf[0]),apic=apic)
-        #url = """https://{apic}/api/node/mo/{path}.json?rsp-subtree-include=full-deployment&target-node=all&target-path=l1EthIfToEPg""".format(apic=apic,path=str(chosendestinterfaceobject[0]))
-        logger.info(epgurl)
-        epgresult = GetResponseData(epgurl, cookie)
-        logger.debug(epgresult)
-        url = """https://{apic}/api/node-{leaf}/mo/sys/phys-[{interface}].json?""".format(interface=str(interface),leaf=str(leaf[0]),apic=apic) \
-                  + """query-target=subtree&rsp-subtree-include=stats&target-subtree-class=rmonIfOut,l1PhysIf,""" \
-                  + """rmonIfIn,rmonEtherStats,ethpmPhysIf,l1RsAttEntityPCons,"""\
-                  + """l1RsCdpIfPolCons,l1RtMbrIfs,pcAggrMbrIf,fvDomDef,eqptIngrTotal5min,eqptEgrTotal5min,""" \
-                  + """l1RsQosEgressDppIfPolCons,l1RsLldpIfPolCons,l1RsMonPolIfPolCons,l1RsStpIfPolCons,l1RsQosIngressDppIfPolCons,""" \
-                  + """l1RsL2PortSecurityCons,l1RsStormctrlIfPolCons,l1RsL3IfPolCons,l1RsMacsecPolCons,l1RsDwdmIfPolCons,l1RsMcpIfPolCons,"""\
-                  + """l1RsL2IfPolCons,l1RsFcIfPolCons,l1RsQosSdIfPolCons,l1RsCoppIfPolCons,l1RsHIfPolCons,l1RsQosPfcIfPolCons,l1RsStpIfPolCons"""
-
-        logger.info(url)
-        result = GetResponseData(url, cookie)
-        clear_screen() 
+        #epgurl = """https://{apic}/api/node-{leaf}/mo/sys/phys-[{interface}].json?rsp-subtree-include=full-deployment&target-node=all&target-path=l1EthIfToEPg""".format(interface=str(interface),leaf=str(leaf[0]),apic=apic)
+        ##url = """https://{apic}/api/node/mo/{path}.json?rsp-subtree-include=full-deployment&target-node=all&target-path=l1EthIfToEPg""".format(apic=apic,path=str(chosendestinterfaceobject[0]))
+        #logger.info(epgurl)
+        #epgresult = GetResponseData(epgurl, cookie)
+        #logger.debug(epgresult)
+        #url = """https://{apic}/api/node-{leaf}/mo/sys/phys-[{interface}].json?""".format(interface=str(interface),leaf=str(leaf[0]),apic=apic) \
+        #              + """query-target=subtree&rsp-subtree-include=stats&target-subtree-class=rmonIfOut,l1PhysIf,""" \
+        #              + """rmonIfIn,rmonEtherStats,ethpmPhysIf,l1RsAttEntityPCons,"""\
+        #              + """l1RsCdpIfPolCons,l1RtMbrIfs,pcAggrMbrIf,fvDomDef,eqptIngrTotal5min,eqptEgrTotal5min,""" \
+        #              + """l1RsQosEgressDppIfPolCons,l1RsLldpIfPolCons,l1RsMonPolIfPolCons,l1RsStpIfPolCons,l1RsQosIngressDppIfPolCons,""" \
+        #              + """l1RsL2PortSecurityCons,l1RsStormctrlIfPolCons,l1RsL3IfPolCons,l1RsMacsecPolCons,l1RsDwdmIfPolCons,l1RsMcpIfPolCons,"""\
+        #              + """l1RsL2IfPolCons,l1RsFcIfPolCons,l1RsQosSdIfPolCons,l1RsCoppIfPolCons,l1RsHIfPolCons,l1RsQosPfcIfPolCons,l1RsStpIfPolCons"""
         while True:   
+            clear_screen() 
+            epgurl = """https://{apic}/api/node-{leaf}/mo/sys/phys-[{interface}].json?rsp-subtree-include=full-deployment&target-node=all&target-path=l1EthIfToEPg""".format(interface=str(interface),leaf=str(leaf[0]),apic=apic)
+            #url = """https://{apic}/api/node/mo/{path}.json?rsp-subtree-include=full-deployment&target-node=all&target-path=l1EthIfToEPg""".format(apic=apic,path=str(chosendestinterfaceobject[0]))
+            logger.info(epgurl)
+            epgresult = GetResponseData(epgurl, cookie)
+            logger.debug(epgresult)
+            url = """https://{apic}/api/node-{leaf}/mo/sys/phys-[{interface}].json?""".format(interface=str(interface),leaf=str(leaf[0]),apic=apic) \
+                          + """query-target=subtree&rsp-subtree-include=stats&target-subtree-class=rmonIfOut,l1PhysIf,""" \
+                          + """rmonIfIn,rmonEtherStats,ethpmPhysIf,l1RsAttEntityPCons,"""\
+                          + """l1RsCdpIfPolCons,l1RtMbrIfs,pcAggrMbrIf,fvDomDef,eqptIngrTotal5min,eqptEgrTotal5min,""" \
+                          + """l1RsQosEgressDppIfPolCons,l1RsLldpIfPolCons,l1RsMonPolIfPolCons,l1RsStpIfPolCons,l1RsQosIngressDppIfPolCons,""" \
+                          + """l1RsL2PortSecurityCons,l1RsStormctrlIfPolCons,l1RsL3IfPolCons,l1RsMacsecPolCons,l1RsDwdmIfPolCons,l1RsMcpIfPolCons,"""\
+                          + """l1RsL2IfPolCons,l1RsFcIfPolCons,l1RsQosSdIfPolCons,l1RsCoppIfPolCons,l1RsHIfPolCons,l1RsQosPfcIfPolCons,l1RsStpIfPolCons"""
+            result = GetResponseData(url, cookie)
+            logger.info(url)
+            #import pdb; pdb.set_trace()
             display_interface_stats(epgresult,interface, result)
+
             refresh = custom_raw_input('\nRefresh [Y]: ') or 'Y'
             if refresh.strip().lstrip().upper() == 'Y':
                 clear_screen()
@@ -225,7 +238,7 @@ def display_interface_stats(epgresult, interface, result):
     else:
         link_status = 'down/down'
     if 'blacklist' in interfaceObject.usage:
-        print('\n {}   is \x1b[1;31;40mAdministratively Down\x1b[0m'.format(interface.capitalize()))
+        print('\n {}\n   is \x1b[1;31;40mAdministratively Down\x1b[0m'.format(interface.capitalize()))
     else:
         if 'down' in link_status:
             print('\n {}\n   is admin {}, link-status is \x1b[1;31;40m{}\x1b[0m'.format(interface.capitalize(),interfaceObject.adminSt,link_status))
@@ -266,8 +279,8 @@ def display_interface_stats(epgresult, interface, result):
     print('   TX')
     print('       output packets \x1b[1;33;40m{}\x1b[0m, bytes {}, broadcasts {}, mutlicasts {}'.format(interfaceObject.rmonEtherStats['tXNoErrors'],interfaceObject.rmonIfOut['octets'],interfaceObject.rmonIfOut['broadcastPkts'],interfaceObject.rmonIfOut['multicastPkts']))
     print('       output errors {}, collisions {}, jabbers {}, drops {}'.format(interfaceObject.rmonIfOut['errors'],interfaceObject.rmonEtherStats['collisions'],interfaceObject.rmonEtherStats['jabbers'],interfaceObject.rmonEtherStats['dropEvents']))
-    print('')
-    print('   EPGs configured: {}'.format(interfaceObject.switchingSt))
+    #print('')
+   # print('   EPGs configured: {}'.format(interfaceObject.switchingSt))
     #if interfaceObject.switchingSt == 'enabled':
     print('')
     print('   {:10}{:15}{}'.format('Tenant','APP','EPG'))
@@ -283,13 +296,13 @@ def display_interface_stats(epgresult, interface, result):
                 print('   {}'.format(interf['domPKey']))
         else:
             print('   \x1b[1;31;40m{}\x1b[0m'.format('No Domains found'))
-    print('\n   Profiles:')
+    print('\n   Policies:')
     if interfaceObject.l1RsAttEntityPCons:
-        print('     \x1b[1;33;40m{}\x1b[0m'.format(interfaceObject.l1RsAttEntityPCons['tDn']))
+        print('     \x1b[1;33;40m{}\x1b[0m'.format(interfaceObject.l1RsAttEntityPCons['tDn']).replace('uni/infra/','').replace('uni/fabric/',''))
     else:
         print('     \x1b[1;31;40m{}\x1b[0m'.format('AAEP Missing'))
     if interfaceObject.l1RsCdpIfPolCons:
-        print('     {}'.format(interfaceObject.l1RsCdpIfPolCons['tDn']))
+        print('     {}'.format(interfaceObject.l1RsCdpIfPolCons['tDn']).replace('uni/infra/','').replace('uni/fabric/',''))
             #if interfaceObject.l1RtMbrIfs:
             #    for interf in interfaceObject.l1RtMbrIfs:
             #        print(interf['tDn'])
@@ -298,40 +311,49 @@ def display_interface_stats(epgresult, interface, result):
          #       for interf in interfaceObject.pcAggrMbrIf:
          #           print(interf['pcMode'])
          #           print(interf['operSt'])
+    policylist = []
     if interfaceObject.l1RsCoppIfPolCons:
-        print('     {}'.format(interfaceObject.l1RsCoppIfPolCons['tDn']))
+        policylist.append('{}'.format(interfaceObject.l1RsCoppIfPolCons['tDn']))
     if interfaceObject.l1RsDwdmIfPolCons:
-        print('     {}'.format(interfaceObject.l1RsDwdmIfPolCons['tDn']))
+        policylist.append('{}'.format(interfaceObject.l1RsDwdmIfPolCons['tDn']))
     if interfaceObject.l1RsFcIfPolCons:
-        print('     {}'.format(interfaceObject.l1RsFcIfPolCons['tDn']))
+        policylist.append('{}'.format(interfaceObject.l1RsFcIfPolCons['tDn']))
     if interfaceObject.l1RsHIfPolCons:
-        print('     {}'.format(interfaceObject.l1RsHIfPolCons['tDn']))
+        policylist.append('{}'.format(interfaceObject.l1RsHIfPolCons['tDn']))
     if interfaceObject.l1RsL2IfPolCons:
-        print('     {}'.format(interfaceObject.l1RsL2IfPolCons['tDn']))
+        policylist.append('{}'.format(interfaceObject.l1RsL2IfPolCons['tDn']))
     if interfaceObject.l1RsL2PortSecurityCons:
-        print('     {}'.format(interfaceObject.l1RsL2PortSecurityCons['tDn']))
+        policylist.append('{}'.format(interfaceObject.l1RsL2PortSecurityCons['tDn']))
     if interfaceObject.l1RsL3IfPolCons:
-        print('     {}'.format(interfaceObject.l1RsL3IfPolCons['tDn']))
+        policylist.append('{}'.format(interfaceObject.l1RsL3IfPolCons['tDn']))
     if interfaceObject.l1RsLldpIfPolCons:
-        print('     {}'.format(interfaceObject.l1RsLldpIfPolCons['tDn']))
+        policylist.append('{}'.format(interfaceObject.l1RsLldpIfPolCons['tDn']))
     if interfaceObject.l1RsMacsecPolCons:
-        print('     {}'.format(interfaceObject.l1RsMacsecPolCons['tDn']))
+        policylist.append('{}'.format(interfaceObject.l1RsMacsecPolCons['tDn']))
     if interfaceObject.l1RsMcpIfPolCons:
-        print('     {}'.format(interfaceObject.l1RsMcpIfPolCons['tDn']))
+        policylist.append('{}'.format(interfaceObject.l1RsMcpIfPolCons['tDn']))
     if interfaceObject.l1RsMonPolIfPolCons:
-        print('     {}'.format(interfaceObject.l1RsMonPolIfPolCons['tDn']))
+        policylist.append('{}'.format(interfaceObject.l1RsMonPolIfPolCons['tDn']))
     if interfaceObject.l1RsQosEgressDppIfPolCons:
-        print('     {}'.format(interfaceObject.l1RsQosEgressDppIfPolCons['tDn']))
+        policylist.append('{}'.format(interfaceObject.l1RsQosEgressDppIfPolCons['tDn']))
     if interfaceObject.l1RsQosIngressDppIfPolCons:
-        print('     {}'.format(interfaceObject.l1RsQosIngressDppIfPolCons['tDn']))
+        policylist.append('{}'.format(interfaceObject.l1RsQosIngressDppIfPolCons['tDn']))
     if interfaceObject.l1RsQosPfcIfPolCons:
-        print('     {}'.format(interfaceObject.l1RsQosPfcIfPolCons['tDn']))
+        policylist.append('{}'.format(interfaceObject.l1RsQosPfcIfPolCons['tDn']))
     if interfaceObject.l1RsQosSdIfPolCons:
-        print('     {}'.format(interfaceObject.l1RsQosSdIfPolCons['tDn']))
+        policylist.append('{}'.format(interfaceObject.l1RsQosSdIfPolCons['tDn']))
     if interfaceObject.l1RsStormctrlIfPolCons:
-        print('     {}'.format(interfaceObject.l1RsStormctrlIfPolCons['tDn']))
+        policylist.append('{}'.format(interfaceObject.l1RsStormctrlIfPolCons['tDn']))
     if interfaceObject.l1RsStpIfPolCons:
-        print('     {}'.format(interfaceObject.l1RsStpIfPolCons['tDn']))
+        policylist.append('{}'.format(interfaceObject.l1RsStpIfPolCons['tDn']))
+    listlen = len(policylist) / 2
+    if len(policylist) % 2 != 0:
+        listlen += 1
+    firstgrouped = [x for x in grouper(policylist,listlen)]
+    finalgrouped = zip(*firstgrouped)
+    for line in finalgrouped:
+        print('     {:35} {:30}'.format(line[0].replace('uni/infra/','').replace('uni/fabric/',''),line[1].replace('uni/infra/','').replace('uni/fabric/','')))
+    #import pdb; pdb.set_trace()
     #epgresult = GetResponseData(epgurl, cookie)
     #result = GetResponseData(url, cookie)
 
@@ -346,19 +368,19 @@ def single_interface_pull(import_apic,import_cookie, selectedleaf, interfacepull
         leaf = selectedleaf
         interface = interfacepull
         #str(chosendestinterfaceobject[0]).replace('paths','nodes')
-        epgurl = """https://{apic}/api/node-{leaf}/mo/sys/phys-[{interface}].json?rsp-subtree-include=full-deployment&target-node=all&target-path=l1EthIfToEPg""".format(interface=str(interface),leaf=str(leaf),apic=apic)
-        #url = """https://{apic}/api/node/mo/{path}.json?rsp-subtree-include=full-deployment&target-node=all&target-path=l1EthIfToEPg""".format(apic=apic,path=str(chosendestinterfaceobject[0]))
-        logger.info(epgurl)
-        epgresult = GetResponseData(epgurl, cookie)
-            
-        url = """https://{apic}/api/node-{leaf}/mo/sys/phys-[{interface}].json?""".format(interface=str(interface),leaf=str(leaf),apic=apic) \
-                  + """query-target=subtree&rsp-subtree-include=stats&target-subtree-class=rmonIfOut,l1PhysIf,""" \
-                  + """rmonIfIn,rmonEtherStats,ethpmPhysIf,l1RsAttEntityPCons,"""\
-                  + """l1RsCdpIfPolCons,l1RtMbrIfs,pcAggrMbrIf,fvDomDef,eqptIngrTotal5min,eqptEgrTotal5min"""
-        logger.info(url)
-           # query-target=subtree&rsp-subtree-include=stats&target-subtree-class=rmonIfOut,l1PhysIf,rmonIfIn,rmonEtherStats,ethpmPhysIf,l1RsAttEntityPCons,l1RsCdpIfPolCons,l1RtMbrIfs,pcAggrMbrIf,fvDomDef,eqptIngrTotal5min,eqptEgrTotal5min
-        result = GetResponseData(url, cookie)
         while True:   
+            epgurl = """https://{apic}/api/node-{leaf}/mo/sys/phys-[{interface}].json?rsp-subtree-include=full-deployment&target-node=all&target-path=l1EthIfToEPg""".format(interface=str(interface),leaf=str(leaf),apic=apic)
+            #url = """https://{apic}/api/node/mo/{path}.json?rsp-subtree-include=full-deployment&target-node=all&target-path=l1EthIfToEPg""".format(apic=apic,path=str(chosendestinterfaceobject[0]))
+            logger.info(epgurl)
+            epgresult = GetResponseData(epgurl, cookie)
+
+            url = """https://{apic}/api/node-{leaf}/mo/sys/phys-[{interface}].json?""".format(interface=str(interface),leaf=str(leaf),apic=apic) \
+                      + """query-target=subtree&rsp-subtree-include=stats&target-subtree-class=rmonIfOut,l1PhysIf,""" \
+                      + """rmonIfIn,rmonEtherStats,ethpmPhysIf,l1RsAttEntityPCons,"""\
+                      + """l1RsCdpIfPolCons,l1RtMbrIfs,pcAggrMbrIf,fvDomDef,eqptIngrTotal5min,eqptEgrTotal5min"""
+            logger.info(url)
+               # query-target=subtree&rsp-subtree-include=stats&target-subtree-class=rmonIfOut,l1PhysIf,rmonIfIn,rmonEtherStats,ethpmPhysIf,l1RsAttEntityPCons,l1RsCdpIfPolCons,l1RtMbrIfs,pcAggrMbrIf,fvDomDef,eqptIngrTotal5min,eqptEgrTotal5min
+            result = GetResponseData(url, cookie)
             interfaceObject = l1PhysIf(interface)
             for x in result:
                 if x.get('rmonIfIn'):

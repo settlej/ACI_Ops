@@ -90,7 +90,7 @@ def refreshToken(apic,icookie):
     cookies = 'APIC-cookie=' + icookie
     request = urllib2.Request(url)
     request.add_header("Cookie", cookies)
-    response = urllib2.urlopen(request, timeout=6)
+    response = urllib2.urlopen(request, timeout=45)
     result = json.loads(response.read())
     return result["imdata"][0]["aaaLogin"]["attributes"]["token"]
 
@@ -112,7 +112,7 @@ def refreshToken(apic,icookie):
 #############################################################################################################################################
 
 
-def GetRequest(url, icookie, timeout=24):
+def GetRequest(url, icookie, timeout=45):
     # Function to Perform HTTP Get REST calls and return server recieved data in an http object
     method = "GET"
     # icookie comes from the GetResponseData fuction that references 'cookie' which is a global variable from reading /.aci/.sessions/.token
@@ -323,14 +323,25 @@ def goodspacing(column):
     elif column.fex == '':
         return column.leaf + ' ' + str(column.name)
 
-def get_column_sizes(rowlist, objcolumnwidthfind=None, minimum=5, baseminimum=[]):
+def get_column_sizes(rowlist, objcolumnwidthfind=None, minimum=5, baseminimum=[],alreadysorted=False):
     sizelist = []
+    if alreadysorted:
+        for num,column in enumerate(rowlist):
+            maxfound = len(str(max(column, key=lambda x:len(str(x)))))
+            if maxfound >= len(baseminimum[num]):
+                sizelist.append(maxfound)
+            else:
+                sizelist.append(len(baseminimum[num]))
+        return sizelist
     if objcolumnwidthfind:
         for num,column in enumerate(objcolumnwidthfind):
             nestedlist = False
             c_rowlist = filter(lambda x: hasattr(x, column), rowlist)
             if c_rowlist == [] or c_rowlist == None:
-                sizelist.append(len(str(column)))    
+                try:
+                    sizelist.append(len(str(column)))    
+                except:
+                    sizelist.append(minimum)
     
             else:
                 currentcolumnmaxobj = max(c_rowlist, key=lambda x: len(str(getattr(x, column))))
@@ -343,9 +354,9 @@ def get_column_sizes(rowlist, objcolumnwidthfind=None, minimum=5, baseminimum=[]
                 if nestedlist:
                     if insidelistmax < 1:
                         if baseminimum == []:
-                            sizelist.append(len(baseminimum[num]))
+                            sizelist.append(minimum)
                         else:
-                            sizelist.append(len(baseminimum[num]))
+                            sizelist.append(minimum)
                     else:
                         sizelist.append(insidelistmax)
                 else:

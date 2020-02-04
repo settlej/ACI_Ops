@@ -240,7 +240,7 @@ def main(import_apic,import_cookie):
         direction= 'Source'
         print("\nSelect \x1b[1;33;40m{}\x1b[0m interface by number: \n".format(direction))
         source_returnedlist = physical_interface_selection(apic, cookie, chosenleafs, provideleaf=False)
-        import pdb; pdb.set_trace()
+        #import pdb; pdb.set_trace()
         direction = 'Destination'
         print("\nSelect \x1b[1;33;40m{}\x1b[0m interface by number: \n".format(direction))
         dest_returnedlist = physical_interface_selection(apic, cookie, chosenleafs, provideleaf=False)

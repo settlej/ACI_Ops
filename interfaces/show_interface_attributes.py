@@ -602,9 +602,8 @@ def main(import_apic,import_cookie):
         cookie = import_cookie
         apic = import_apic
         clear_screen()
-        location_banner('Show interface status')
+        location_banner('Show Profiles --> interfaces')
         leafs = leaf_selection(get_All_leafs(apic, cookie))
         leafallinterfacesdict = pull_leaf_interfaces(leafs)
         print_attribute_layout(leafallinterfacesdict,leafs)
-
         custom_raw_input('\n#Press enter to continue...')

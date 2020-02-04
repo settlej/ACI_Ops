@@ -330,7 +330,7 @@ def portchannel_clone_and_deploy(apic, cookie, currentleafifselector, leafselect
                 while True:
                     selected = custom_raw_input("\nSelect interface 'desired' location: ")
                     selected = selected.strip().lstrip()
-                    if selected.isdigit() and int(selected) > 0 and int(selected) <= len(profilelist):
+                    if selected.isdigit() and int(selected) > 0 and int(selected) <= len(profilelist)+1:
                         break
                     else:
                         print("\nInvalid selection, Please try again...")
