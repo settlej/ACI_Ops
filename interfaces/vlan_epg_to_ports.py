@@ -261,12 +261,13 @@ def main(import_apic,import_cookie):
         print('\nSelect leaf(s): ')
         print('\r')
         chosenleafs = physical_leaf_selection(all_leaflist, apic, cookie)
-        switchpreviewutil.main(apic,cookie,chosenleafs, purpose='port_switching')
-        leaf = chosenleafs
-        vlanlist = pull_vlan_info_for_leaf(apic, cookie, leaf)
-        epgvlanlist = [x.dn for x in vlanlist]
-        interface_epg_pull(apic,cookie, vlanlist, leaf)
-        custom_raw_input('Continue...')
+        for leaf in chosenleafs:
+
+            switchpreviewutil.main(apic,cookie,[leaf], purpose='port_switching')
+            vlanlist = pull_vlan_info_for_leaf(apic, cookie, leaf)
+            epgvlanlist = [x.dn for x in vlanlist]
+            interface_epg_pull(apic,cookie, vlanlist, leaf)
+            custom_raw_input('Continue...')
 
 
 

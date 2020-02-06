@@ -601,8 +601,34 @@ def parseandreturnsingelist(liststring, collectionlist=None):
     except ValueError as v:
         print('\n\x1b[1;37;41mInvalid format and/or range...Try again\x1b[0m\n')
         return 'invalid'
+#class vlanCktEp():
+#    def __init__(self, **kwargs):
+#        self.__dict__.update(kwargs)
+#    def __repr__(self):
+#        if self.name != '':
+#            return self.name
+#        else:
+#            return self.epgDn
+
+class vlanCktEp():
+    def __init__(self, **kwargs):
+        self.__dict__.update(kwargs)
+        self.tenant = self.epgDn.split('/')[1].replace('tn-','')
+        self.app = lambda x : '/'.join(self.epgDn.split('/')[2:]) if 'LDevInst' in self.epgDn.split('/')[2] else self.epgDn.split('/')[2].replace('ap-','')
+        self.epg = '/'.join(self.epgDn.split('/')[3:]).replace('epg-','')
+    def __repr__(self):
+        if self.name != '':
+            return self.name
+        else:
+            return self.epgDn
 
 
+def pull_vlan_info_for_leaf(apic, cookie, leaf):
+    url = """https://{apic}/api/node/class/topology/pod-1/node-{leaf}/vlanCktEp.json""".format(apic=apic, leaf=leaf)
+    logger.info(url)
+    result = GetResponseData(url, cookie)
+    vlanlist = [vlanCktEp(**x['vlanCktEp']['attributes']) for x in result]
+    return vlanlist
 
 def get_All_EGPs(apic, cookie, return_count=False):
     url = """https://{apic}/api/node/class/fvAEPg.json""".format(apic=apic)
