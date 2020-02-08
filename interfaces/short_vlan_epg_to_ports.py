@@ -62,17 +62,6 @@ class epgobj():
     def __repr__(self):
         return self.epg
 
-class vlanCktEp():
-    def __init__(self, **kwargs):
-        self.__dict__.update(kwargs)
-        self.tenant = self.epgDn.split('/')[1].replace('tn-','')
-        self.app = lambda x : '/'.join(self.epgDn.split('/')[2:]) if 'LDevInst' in self.epgDn.split('/')[2] else self.epgDn.split('/')[2].replace('ap-','')
-        self.epg = '/'.join(self.epgDn.split('/')[3:]).replace('epg-','')
-    def __repr__(self):
-        if self.name != '':
-            return self.name
-        else:
-            return self.epgDn
 class l2BD():
     def __init__(self, **kwargs):
         self.__dict__.update(kwargs)
@@ -362,7 +351,7 @@ def display_vlan_operations(leafs):
             switchpreviewutil.main(apic,cookie,[leaf], purpose='port_switching')
             print('\n')
             bdlist = pull_bd_info_for_leaf(apic, cookie, leaf)
-            import pdb; pdb.set_trace()
+            #import pdb; pdb.set_trace()
             vlanlist = pull_vlan_info_for_leaf(apic, cookie, leaf)
             bdandvlanlist = bdlist + vlanlist
             finalbdandvlanlistforsorting = []
