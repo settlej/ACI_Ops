@@ -357,7 +357,7 @@ def main():
                             '\t ---------------------------------------------------\n' +
                             '\t| 25.) Configure Local Span\n' + 
                             '\t| 26.) Capture server traffic ERSPAN to server (Beta)\n' + 
-                            '\t| 27.) Clone VPC/PC and deploy\n' + 
+                            '\t| 27.) Clone VPC/PC and deploy (Beta)\n' + 
                             #'\t| 20.) Create EPGs (Not Available)\n' +
                             '\t ---------------------------------------------------\x1b[0m')
             print('\x1b[7')
