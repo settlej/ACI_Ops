@@ -416,7 +416,16 @@ def main(import_apic,import_cookie):
                 print('{:{inter}}  {:{mac}}  {:{epg}}  {:{encap}}  {:{po}}  {:{ip}}'.format('Interface', 'MAC', 'EPG', 'Encap', 'Po #', 'IP',inter=sizes[0]+4,mac=sizes[1],epg=sizes[2],encap=sizes[3],po=sizes[4],ip=sizes[5]))
                 print('{:-<{inter}}  {:-<{mac}}  {:-<{epg}}  {:-<{encap}}  {:-<{po}}  {:-<{ip}}'.format('', '', '', '', '', '',inter=sizes[0]+4,mac=sizes[1],epg=sizes[2],encap=sizes[3],po=sizes[4],ip=sizes[5]))
                 #import pdb; pdb.set_trace()
-                for ep in sorted(filteredlist, key=lambda x : int(x.shortname)):
+                fexlist = filter(lambda x: x.shortname.count('/') == 2, filteredlist)
+                nofexlist = filter(lambda x: x.shortname.count('/') == 1, filteredlist)
+                for ep in sorted(nofexlist, key=lambda x : int(x.shortname)):
+                    if 'po' in ep.ifId:
+                        macsfound += 1
+                        print('{:{inter}}  {:{mac}}  {:{epg}}  {:{encap}}  {:{po}}  {:{ip}}'.format(ep.ethname,ep.addr,ep.foundvlan,ep.encap,ep.ifId,','.join(ep.ip),inter=sizes[0]+4,mac=sizes[1],epg=sizes[2],encap=sizes[3],po=sizes[4],ip=sizes[5]))
+                    else:
+                        macsfound += 1
+                        print('{:{inter}}  {:{mac}}  {:{epg}}  {:{encap}}  {:{po}}  {:{ip}}'.format(ep.ethname,ep.addr,ep.foundvlan,ep.encap,'',','.join(ep.ip),inter=sizes[0]+4,mac=sizes[1],epg=sizes[2],encap=sizes[3],po=sizes[4],ip=sizes[5]))
+                for ep in sorted(fexlist, key=lambda x: (  int(x[0].split('/')[-3][-3:]),int(x[0].split('/')[-2]),int(x[0].split('/')[-1][:-1]) )):
                     if 'po' in ep.ifId:
                         macsfound += 1
                         print('{:{inter}}  {:{mac}}  {:{epg}}  {:{encap}}  {:{po}}  {:{ip}}'.format(ep.ethname,ep.addr,ep.foundvlan,ep.encap,ep.ifId,','.join(ep.ip),inter=sizes[0]+4,mac=sizes[1],epg=sizes[2],encap=sizes[3],po=sizes[4],ip=sizes[5]))

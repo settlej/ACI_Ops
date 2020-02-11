@@ -209,8 +209,8 @@ def interface_epg_pull(apic,cookie, epgvlanlist, selectedleaf):
                     print('  {:{interfname}}   {:{vlansize}} | {:^8} | {}'.format('',m[1].encap, 'UNTAGGED', m[1],interfname=sizes[0],vlansize=sizes[1]))
 
         #print('')
-
-    for k,v in sorted(fex_interfaces.items(), key=lambda x: int(x[0].split('/')[-1][:-1])):
+    #import pdb; pdb.set_trace()
+    for k,v in sorted(fex_interfaces.items(), key=lambda x: (  int(x[0].split('/')[-3][-3:]),int(x[0].split('/')[-2]),int(x[0].split('/')[-1][:-1]) )  ):
         leftlocation = k.find('[')
         print('  {:{interfname}} |'.format(k[leftlocation+1:-1], interfname=sizes[0]), end='')
         for num,m in enumerate(v):
