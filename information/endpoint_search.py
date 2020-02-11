@@ -297,6 +297,8 @@ def gather_compVM_info(result):
 
 def eventhistory(address):
     #event record code E4209236 is "ip detached event"
+    #if address == None:
+    #    totalcount == ''
     if len(address) == 17:
         url = """https://{apic}/api/node/class/eventRecord.json?query-target-filter=and(eq(eventRecord.code,"E4209236"))&query-target-filter=and(wcard(eventRecord.dn,"cep-{address}"))&order-by=eventRecord.created|desc&page=0&page-size=30""".format(address=address,apic=apic)
         logger.info(url)

@@ -416,8 +416,8 @@ def main(import_apic,import_cookie):
                 print('{:{inter}}  {:{mac}}  {:{epg}}  {:{encap}}  {:{po}}  {:{ip}}'.format('Interface', 'MAC', 'EPG', 'Encap', 'Po #', 'IP',inter=sizes[0]+4,mac=sizes[1],epg=sizes[2],encap=sizes[3],po=sizes[4],ip=sizes[5]))
                 print('{:-<{inter}}  {:-<{mac}}  {:-<{epg}}  {:-<{encap}}  {:-<{po}}  {:-<{ip}}'.format('', '', '', '', '', '',inter=sizes[0]+4,mac=sizes[1],epg=sizes[2],encap=sizes[3],po=sizes[4],ip=sizes[5]))
                 #import pdb; pdb.set_trace()
-                fexlist = filter(lambda x: x.shortname.count('/') == 2, filteredlist)
-                nofexlist = filter(lambda x: x.shortname.count('/') == 1, filteredlist)
+                fexlist = filter(lambda x: x.ethname.count('/') == 2, filteredlist)
+                nofexlist = filter(lambda x: x.ethname.count('/') == 1, filteredlist)
                 for ep in sorted(nofexlist, key=lambda x : int(x.shortname)):
                     if 'po' in ep.ifId:
                         macsfound += 1

@@ -212,8 +212,9 @@ def pull_leaf_state_interfaces(leaf, apic, q):
         result = GetResponseData(url, cookie)
         logger.info('complete')
         q.put((leaf, result))
-    except HTTPError:
-        raise KeyboardInterrupt
+    except urllib2.HTTPError:
+        logger.info('failed')
+        q.put(('Failure','HTTPError'))
 
 def main(import_apic,import_cookie, leafs, interfacelist=None, purpose='port_status'):
     #while True:
@@ -236,6 +237,8 @@ def main(import_apic,import_cookie, leafs, interfacelist=None, purpose='port_sta
             thread.join()
             resultlist.append(q.get())
         for result in resultlist:
+            if result[0] == 'Failure':
+                raise KeyboardInterrupt
             leafdictwithresults[result[0]] = result[1]
     #leafallinterfacesdict = pull_leaf_interfaces(leafs
         nodeinterfacegrouping = parse_interfaces_state_layout(leafdictwithresults,leafs)
