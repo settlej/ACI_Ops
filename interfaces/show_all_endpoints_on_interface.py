@@ -425,7 +425,7 @@ def main(import_apic,import_cookie):
                     else:
                         macsfound += 1
                         print('{:{inter}}  {:{mac}}  {:{epg}}  {:{encap}}  {:{po}}  {:{ip}}'.format(ep.ethname,ep.addr,ep.foundvlan,ep.encap,'',','.join(ep.ip),inter=sizes[0]+4,mac=sizes[1],epg=sizes[2],encap=sizes[3],po=sizes[4],ip=sizes[5]))
-                for ep in sorted(fexlist, key=lambda x: (  int(x[0].split('/')[-3][-3:]),int(x[0].split('/')[-2]),int(x[0].split('/')[-1][:-1]) )):
+                for ep in sorted(fexlist, key=lambda x: (  int(x.ifId.split('/')[-3][-3:]),int(x.ifId.split('/')[-2]),int(x.ifId.split('/')[-1]) )):
                     if 'po' in ep.ifId:
                         macsfound += 1
                         print('{:{inter}}  {:{mac}}  {:{epg}}  {:{encap}}  {:{po}}  {:{ip}}'.format(ep.ethname,ep.addr,ep.foundvlan,ep.encap,ep.ifId,','.join(ep.ip),inter=sizes[0]+4,mac=sizes[1],epg=sizes[2],encap=sizes[3],po=sizes[4],ip=sizes[5]))
