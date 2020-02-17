@@ -22,7 +22,9 @@ from collections import namedtuple
 import interfaces.switchpreviewutil as switchpreviewutil
 from localutils.custom_utils import *
 import logging
-import fabric_access
+from multiprocessing.dummy import Pool as ThreadPool
+
+#import fabric_access
 
 # Create a custom logger
 # Allows logging to state detailed info such as module where code is running and 
@@ -42,7 +44,7 @@ f_handler.setLevel(logging.DEBUG)
 # Create formatters and add it to handlers.  This creates custom logging format such as timestamp,
 # module running, function, debug level, and custom text info (message) like print.
 c_format = logging.Formatter('%(name)s - %(levelname)s - %(message)s')
-f_format = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(funcName)s - %(message)s')
+f_format = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(funcName)s - %(lineno)d - %(message)s')
 c_handler.setFormatter(c_format)
 f_handler.setFormatter(f_format)
 
@@ -515,18 +517,18 @@ def searchfexes(fexp,fexbndlgp,fexes):
                     if child.rn == fexbndlgp:
                         return f
 
-def return_physical_programmed_ports_perleaf(leaf, apic, cookie):
-    nodeprofilelist, nodedict = gather_infraNodeP(apic,cookie)
-    fexes = gather_infraFexP(apic,cookie)
-    accportp = gather_infraAccPortP(apic,cookie, fexes)
-    for x in accportp:
-        for y in x.infraRtAccPortPlist:
-            nodedict[y.tDn].leafprofiles.append(x)
-    leafspfound = []
-    for switchp in sorted(nodedict.values(), key=lambda x: x.name):
-        if int(leaf) in switchp.allleafs:
-            leafspfound.append(switchp)
-    return leafspfound, fexes
+#def return_physical_programmed_ports_perleaf(leaf, apic, cookie):
+#    nodeprofilelist, nodedict = gather_infraNodeP(apic,cookie)
+#    fexes = gather_infraFexP(apic,cookie)
+#    accportp = gather_infraAccPortP(apic,cookie, fexes)
+#    for x in accportp:
+#        for y in x.infraRtAccPortPlist:
+#            nodedict[y.tDn].leafprofiles.append(x)
+#    leafspfound = []
+#    for switchp in sorted(nodedict.values(), key=lambda x: x.name):
+#        if int(leaf) in switchp.allleafs:
+#            leafspfound.append(switchp)
+#    return leafspfound, fexes
     #import pdb; pdb.set_trace()
        # print('{}  {}'.format(switchp.name, switchp.allleafs))
        ## import pdb; pdb.set_trace()
@@ -582,7 +584,6 @@ def gather_physical_policygroups(apic, cookie):
    #     policy_row
 
 def displaypolicycolumns(grouplist):
-    import pdb; pdb.set_trace()
     columnwidthfind = ('num,','name','column1','column2','column3','column4','column5','column6')
     headers = ('#','Policy Group','AAEP','CDP','Fiber-Channel','Link Level','LLDP','Monitor')
     sizes = get_column_sizes(grouplist, columnwidthfind, minimum=5, baseminimum=headers)
@@ -756,6 +757,89 @@ def main(import_apic,import_cookie):
                 continue
         requestpolicy = leaftable[int(reqleafprofile)-1]
         print('\r')
+        displayleaflist = requestpolicy[2]
+
+        results = multithreading_request(return_configured_ports_for_display_per_leaf, displayleaflist, parameters={'apic':apic,'cookie':cookie})
+        #import pdb; pdb.set_trace()
+        #leafmap = zip(results[])
+        for result in results:
+            interfaces.switchpreviewutil.main(apic,cookie,[result[0]], interfacelist=result[1], purpose='custom')
+
+        ##import pdb; pdb.set_trace()
+        ##
+        ##for leaf in requestpolicy[2]:
+        ##    #import pdb; pdb.set_trace()
+##
+        ##    display_configured_ports(leaf,apic,cookie)
+     #       switchpfound, fexes = fabric_access.display_switch_to_leaf_structure.return_physical_programmed_ports_perleaf(leaf, apic, cookie)
+     #       interfaces_with_APS_defined = []
+     #       fexfound = []
+     #       for switchp in switchpfound:
+     #          # for leafp in switchp.leafprofiles:
+     #          # print(switchp.name)
+     #         #  import pdb; pdb.set_trace()
+     #           for leafp in switchp.leafprofiles:
+     #          #     print('\t' + leafp.name)
+     #               interfaces_with_APS_defined.append((switchp.allleafs,leafp.allports))
+     #               #import pdb; pdb.set_trace()
+     #               for portlist in leafp.infraHPortSlist:
+     #          #         print('\t\t' + portlist.name)
+     #                   #print(portlist.__dict__)
+     #                   #print('\t\t\t' + portlist.infraRsAccBaseGrp.tDn)
+     #                   #print('\t\t\t' + portlist.infraRsAccBaseGrp.tDn)
+     #                   #if portlist.infraRsAccBaseGrp.tDn in fexes:
+     #                   for x in fexes:
+     #                       if portlist.infraRsAccBaseGrp.tDn != '' and  x.dn in portlist.infraRsAccBaseGrp.tDn:
+     #                         #  import pdb; pdb.set_trace()
+     #                           if portlist.infraFexPlist:
+     #                  #     print('\t\t\t' + portlist.infraRsAccBaseGrp.fexId)
+     #                               fexfound.append((x,portlist.infraRsAccBaseGrp.fexId))
+     #                  # if portlist.infraRsAccBaseGrp.tCl == 'infraAccPortGrp':
+     #                  #     print('\t\t\t' + 'individual')
+     #                  # elif portlist.infraRsAccBaseGrp.tCl == 'infraAccBndlGrp':
+     #                  #     print('\t\t\t' + 'Port-channel')                    
+     #                  # elif portlist.infraRsAccBaseGrp.tCl == 'infraFexBndlGrp':
+     #                  #     print('\t\t\t' + 'Fex-uplinks')
+     #                  # if portlist.infraFexPlist:
+     #                  #     print('\t\t\t' + portlist.infraRsAccBaseGrp.fexId)
+     #                       
+     #                       
+     #                   
+     #                      # for z in portlist.infraPortsBlklist:
+     #                      #     print('\t\t\t ' + z.fromPort + ' - ' + z.toPort)
+     #                      #     for x in range(int(z.fromPort),int(z.toPort)+1):
+     #                      #         interfaces_with_APS_defined.append((fexes,x))
+     #                                               #print('\t\t\t' + portlist.infraRsAccBaseGrp.tCl)
+     #               #    for z in portlist.infraPortsBlklist:
+     #               #        print('\t\t\t ' + z.fromPort + ' - ' + z.toPort)
+     #               #   # if len(list(range(int(z.fromPort),int(z.toPort)+1))) > 1:
+     #               #   #     for x in range(range(int(z.fromPort),int(z.toPort)+1)):
+     #               #    
+     #               #            
+     #               #        for x in range(int(z.fromPort),int(z.toPort)+1):
+     #               #            interfaces_with_APS_defined.append((switchp.allleafs,x))
+#
+     #       for fex in fexfound:
+     #           interfaces_with_APS_defined.append((fex[1],fex[0].allports))
+     #       compiledports = []
+     #       for interface in interfaces_with_APS_defined:
+     #           if type(interface[0]) != unicode:
+     #              # import pdb; pdb.set_trace()
+     #               for templeaf in interface[0]:
+     #                   for modulenum, ports in interface[1].items():
+     #                       for port in ports:  
+     #                           compiledports.append(('eth' + str(modulenum) + '/' + str(port)))
+     #                   #import pdb; pdb.set_trace()
+     #           else:
+     #               for modulenum, ports in interface[1].items():
+     #                   for port in ports:
+     #                       compiledports.append(('eth' + str(interface[0]) + '/' + str(modulenum) + '/' + str(port)))
+     #       compiledports = list(set(compiledports))
+     #       #import custom_utils
+     #       newlist = []
+     #       for x in compiledports:
+     #           newlist.append(l1PhysIf(id = x, shortnum = x.split('/')[-1][0]))
+     #       switchpreviewutil.main(apic,cookie,[leaf], interfacelist=compiledports, purpose='custom')
         if requestpolicy[5].infraHPortSlist != []:
             apslist = []
             for aps in sorted(requestpolicy[5].infraHPortSlist, key=lambda x: x.name.lower()):
@@ -776,7 +860,7 @@ def main(import_apic,import_cookie):
             print('     {:{num}} {:{apsname}} | {:{inter}} | {:{descr}}'.format('#',*headers,num=len('{}.)'.format(len(apslist))),apsname=sizes[0],inter=sizes[1],descr=sizes[2]))
             print('     {:-<{num}} {:-<{apsname}} | {:-<{inter}} | {:-<{descr}}'.format('','','','',num=len('{}.)'.format(len(apslist))),apsname=sizes[0],inter=sizes[1],descr=sizes[2]))
             for number,aps in enumerate(apslist,1):
-                print('     {:{num}} {:{apsname}} | {:{inter}} | {:{descr}}'.format('{}.)'.format(number),*aps,num=len('{}'.format(len(apslist))),apsname=sizes[0],inter=sizes[1],descr=sizes[2]))
+                print('     {:{num}} {:{apsname}} | {:{inter}} | {:{descr}}'.format('{}.)'.format(number),*aps,num=len('{}.)'.format(len(apslist))),apsname=sizes[0],inter=sizes[1],descr=sizes[2]))
 
         else:
             headers = ('Access Port Selector','Interfaces','Description')
@@ -785,6 +869,17 @@ def main(import_apic,import_cookie):
             print('     {:-<{num}} {:-<{apsname}} | {:-<{inter}} | {:-<{descr}}'.format('','','','',num=len('{}.)'.format(len(apslist))),apsname=sizes[0],inter=sizes[1],descr=sizes[2]))
             print('      no APS found')
         
+
+        while True:
+            askaps = custom_raw_input('\nWhich APS will interfaces be deployed?: ')
+            if askaps != '' and askaps.isdigit() and int(askaps) <= len(apslist) and int(askaps) > 0:
+                break
+            else:
+                print('\r')
+                print('Invalid option...')
+                print('\r')
+        apschoosen = apslist[int(askaps)-1]
+        print(apschoosen)
         #headers = ('Access Port Selector','Interfaces','Description')
         #sizes = get_column_sizes(apslist, minimum=5, baseminimum=headers)
         #print('     {:{num}} {:{apsname}} | {:{inter}} | {:{descr}}'.format('#',*headers,num=len('{}.)'.format(len(apslist))),apsname=sizes[0],inter=sizes[1],descr=sizes[2]))

@@ -10,7 +10,7 @@ import threading
 import time
 import traceback
 import pdb
-from localutils.custom_utils import *
+from localutils.custom_utils import clear_screen, refreshToken, custom_raw_input
 import fabric_access.create_vpc as create_vpc
 import fabric_access.display_switch_to_leaf_structure as display_switch_to_leaf_structure
 import interfaces.change_interface_state as shut_noshut_interfaces
@@ -21,7 +21,7 @@ import interfaces.show_all_endpoints_on_interface as show_all_endpoints_on_inter
 import interfaces.portsanddescriptions as portsanddescriptions
 import interfaces.interfacecounters as showinterface
 import interfaces.switch_port_view as switch_port_view
-import interfaces.switchpreviewutil as switchpreviewutil
+#import interfaces.switchpreviewutil as switchpreviewutil
 import interfaces.clonevpcanddeploy as clonevpcanddeploy
 import interfaces.autodeploy as autodeploy
 import interfaces.portchannel_to_phy_interfaces as portchannel_to_phy_interfaces
@@ -46,7 +46,6 @@ import information.show_static_routes as show_static_routes
 import configuration.create_local_span_session as create_local_span_session
 import configuration.span_to_server as span_to_server
 import logging
-
 # Create a custom logger
 # Allows logging to state detailed info such as module where code is running and 
 # specifiy logging levels for file vs console.  Set default level to DEBUG to allow more

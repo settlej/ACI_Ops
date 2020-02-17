@@ -252,7 +252,7 @@ def searchfexes(fexp,fexbndlgp,fexes):
                         return f
 
 def return_physical_programmed_ports_perleaf(leaf, apic, cookie):
-    import pdb; pdb.set_trace()
+    #import pdb; pdb.set_trace()
     nodeprofilelist, nodedict = gather_infraNodeP(apic,cookie)
     fexes = gather_infraFexP(apic,cookie)
     apps = gather_infraAccPortP(apic,cookie, fexes)

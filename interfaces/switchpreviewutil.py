@@ -202,11 +202,11 @@ def display_port_custom(nodeinterfacegrouping, interfacelist):
             oddlist = []
             evenlist = []
         groups = []
-    print('='*80)
-    print('')
+   # print('='*80)
 
 def pull_leaf_state_interfaces(leaf, apic, q):
     url = """https://{apic}/api/node-{leaf}/class/l1PhysIf.json""".format(leaf=leaf,apic=apic)
+    #import pdb; pdb.set_trace()
     logger.info(url)
     try:
         result = GetResponseData(url, cookie)
@@ -224,6 +224,7 @@ def main(import_apic,import_cookie, leafs, interfacelist=None, purpose='port_sta
         apic = import_apic
         #clear_screen()
         q = Queue.Queue()
+        
         #leafs = leaf_selection(get_All_leafs(apic, cookie))
 
         threadlist = []
@@ -279,5 +280,5 @@ def main(import_apic,import_cookie, leafs, interfacelist=None, purpose='port_sta
 #            interfacesearch = custom_raw_input('interface (xxx ethx/x) [example: 101 eth1/1]: ')
 #            leaf, interfacepull = interfacesearch.split()
 #            showinterface.single_interface_pull(apic,cookie, leaf, interfacepull)
-        cookie = refreshToken(apic, cookie)
+        #cookie = refreshToken(apic, cookie)
         #import pdb; pdb.set_trace()
