@@ -762,9 +762,14 @@ def main(import_apic,import_cookie):
         results = multithreading_request(return_configured_ports_for_display_per_leaf, displayleaflist, parameters={'apic':apic,'cookie':cookie})
         #import pdb; pdb.set_trace()
         #leafmap = zip(results[])
+        #import pdb; pdb.set_trace()
+        #interfaces.switchpreviewutil.main(apic,cookie,[result[0]], interfacelist=result[1], purpose='custom')
+        print('='*80)
+        print('Green:Used, Black:Available')
         for result in results:
             interfaces.switchpreviewutil.main(apic,cookie,[result[0]], interfacelist=result[1], purpose='custom')
-
+        print('='*80)
+        print('\r')
         ##import pdb; pdb.set_trace()
         ##
         ##for leaf in requestpolicy[2]:
@@ -844,6 +849,7 @@ def main(import_apic,import_cookie):
             apslist = []
             for aps in sorted(requestpolicy[5].infraHPortSlist, key=lambda x: x.name.lower()):
                 tempfromtocard_fromtoport_set = set()
+                #import pdb; pdb.set_trace()
                 for portblklist in aps.infraPortsBlklist:
                     if portblklist.fromCard == portblklist.toCard and portblklist.fromPort == portblklist.toPort:
                         tempfromtocard_fromtoport_set.add('{}/{}'.format(portblklist.fromCard,portblklist.fromPort))
@@ -853,39 +859,46 @@ def main(import_apic,import_cookie):
                         tempfromtocard_fromtoport_set.add('{}/{}-{}/{}'.format(portblklist.fromCard,portblklist.toCard,portblklist.toCard,portblklist.toPort))
                     #tempfromtocard_fromtoport_set.add('{}/{}'.format(portblklist.fromCard,portblklist.fromPort))
                     #tempfromtocard_fromtoport_set.add('{}/{}'.format(portblklist.toCard, portblklist.toPort)
-                apslist.append((aps.name, ','.join(sorted(list(tempfromtocard_fromtoport_set))), aps.descr))
-            headers = ('Access Port Selector','Interfaces','Description')
+                if 'accportgrp-' in aps.infraRsAccBaseGrp.tDn:
+                    apslist.append((aps.name, ','.join(sorted(list(tempfromtocard_fromtoport_set))), aps.infraRsAccBaseGrp.tDn[aps.infraRsAccBaseGrp.tDn.find('accportgrp-')+11:], aps.descr))
+                else:      
+                    apslist.append((aps.name, ','.join(sorted(list(tempfromtocard_fromtoport_set))), aps.infraRsAccBaseGrp.tDn[aps.infraRsAccBaseGrp.tDn.find('accbundle-')+10:], aps.descr))
+            headers = ('Access Port Selector','Interfaces','Policy','Description')
             sizes = get_column_sizes(apslist, minimum=5, baseminimum=headers)
             print('     ' + '-' * (len(''.join(list(headers))) + 11))
-            print('     {:{num}} {:{apsname}} | {:{inter}} | {:{descr}}'.format('#',*headers,num=len('{}.)'.format(len(apslist))),apsname=sizes[0],inter=sizes[1],descr=sizes[2]))
-            print('     {:-<{num}} {:-<{apsname}} | {:-<{inter}} | {:-<{descr}}'.format('','','','',num=len('{}.)'.format(len(apslist))),apsname=sizes[0],inter=sizes[1],descr=sizes[2]))
+            print('     {:{num}} {:{apsname}} | {:{inter}} | {:{policy}} | {:{descr}}'.format('#',*headers,num=len('{}.)'.format(len(apslist))),apsname=sizes[0],inter=sizes[1],policy=sizes[2],descr=sizes[3]))
+            print('     {:-<{num}} {:-<{apsname}} | {:-<{inter}} | {:-<{policy}} | {:-<{descr}}'.format('','','','','',num=len('{}.)'.format(len(apslist))),apsname=sizes[0],inter=sizes[1],policy=sizes[2],descr=sizes[3]))
             for number,aps in enumerate(apslist,1):
-                print('     {:{num}} {:{apsname}} | {:{inter}} | {:{descr}}'.format('{}.)'.format(number),*aps,num=len('{}.)'.format(len(apslist))),apsname=sizes[0],inter=sizes[1],descr=sizes[2]))
-
+                print('     {:{num}} {:{apsname}} | {:{inter}} | {:{policy}} | {:{descr}}'.format('{}.)'.format(number),*aps,num=len('{}.)'.format(len(apslist))),apsname=sizes[0],inter=sizes[1],policy=sizes[2],descr=sizes[3]))
+            print('')
+            print('     {:{num}} [CREATE NEW APS]'.format('{}.)'.format(int(number) + 1),num=len('{}.)'.format(len(apslist)))))
         else:
             headers = ('Access Port Selector','Interfaces','Description')
             sizes = get_column_sizes(apslist, minimum=5, baseminimum=headers)
-            print('     {:{num}} {:{apsname}} | {:{inter}} | {:{descr}}'.format('#',*headers,num=len('{}.)'.format(len(apslist))),apsname=sizes[0],inter=sizes[1],descr=sizes[2]))
-            print('     {:-<{num}} {:-<{apsname}} | {:-<{inter}} | {:-<{descr}}'.format('','','','',num=len('{}.)'.format(len(apslist))),apsname=sizes[0],inter=sizes[1],descr=sizes[2]))
+            print('     {:{num}} {:{apsname}} | {:{inter}} | {:{policy}} | {:{descr}}'.format('#',*headers,num=len('{}.)'.format(len(apslist))),apsname=sizes[0],inter=sizes[1],policy=sizes[2],descr=sizes[3]))
+            print('     {:-<{num}} {:-<{apsname}} | {:-<{inter}} | {:-<{descr}}'.format('','','','','',num=len('{}.)'.format(len(apslist))),apsname=sizes[0],inter=sizes[1],policy=sizes[2],descr=sizes[3]))
             print('      no APS found')
         
 
         while True:
             askaps = custom_raw_input('\nWhich APS will interfaces be deployed?: ')
-            if askaps != '' and askaps.isdigit() and int(askaps) <= len(apslist) and int(askaps) > 0:
+            if askaps != '' and askaps.isdigit() and int(askaps) <= len(apslist) +1 and int(askaps) > 0:
                 break
             else:
                 print('\r')
                 print('Invalid option...')
                 print('\r')
-        apschoosen = apslist[int(askaps)-1]
-        print(apschoosen)
+        if askaps == str(len(apslist) + 1):
+            print('create APS')
+        else:
+            apschoosen = apslist[int(askaps)-1]
+            print(apschoosen)
         #headers = ('Access Port Selector','Interfaces','Description')
         #sizes = get_column_sizes(apslist, minimum=5, baseminimum=headers)
-        #print('     {:{num}} {:{apsname}} | {:{inter}} | {:{descr}}'.format('#',*headers,num=len('{}.)'.format(len(apslist))),apsname=sizes[0],inter=sizes[1],descr=sizes[2]))
-        #print('     {:-<{num}} {:-<{apsname}} | {:-<{inter}} | {:-<{descr}}'.format('','','','',num=len('{}.)'.format(len(apslist))),apsname=sizes[0],inter=sizes[1],descr=sizes[2]))
+        #print('     {:{num}} {:{apsname}} | {:{inter}} | {:{descr}}'.format('#',*headers,num=len('{}.)'.format(len(apslist))),apsname=sizes[0],inter=sizes[1],policy=sizes[2],descr=sizes[3]))
+        #print('     {:-<{num}} {:-<{apsname}} | {:-<{inter}} | {:-<{descr}}'.format('','','','',num=len('{}.)'.format(len(apslist))),apsname=sizes[0],inter=sizes[1],policy=sizes[2],descr=sizes[3]))
         #for number,aps in enumerate(apslist,1):
-        #    print('     {:{num}} {:{apsname}} | {:{inter}} | {:{descr}}'.format('{}.)'.format(number),*aps,num=len('{}'.format(len(apslist))),apsname=sizes[0],inter=sizes[1],descr=sizes[2]))
+        #    print('     {:{num}} {:{apsname}} | {:{inter}} | {:{descr}}'.format('{}.)'.format(number),*aps,num=len('{}'.format(len(apslist))),apsname=sizes[0],inter=sizes[1],policy=sizes[2],descr=sizes[3]))
         import pdb; pdb.set_trace()
         print(requestpolicy)
 

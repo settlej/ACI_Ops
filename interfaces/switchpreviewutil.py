@@ -156,8 +156,6 @@ def display_port_status(nodeinterfacegrouping):
     print('')
 
 def display_port_custom(nodeinterfacegrouping, interfacelist): 
-    print('='*80)
-    print('Green:Configured, Black:Not Configured\n')
     for node in nodeinterfacegrouping:
         #print(node)
         #print('\n\n\n')
@@ -198,7 +196,7 @@ def display_port_custom(nodeinterfacegrouping, interfacelist):
                 print('{:31}{}'.format('',evenstring))
             else:
                 print('{:5}{:^85}'.format('',evenstring))
-            print('\n')
+            print('\r')
             oddlist = []
             evenlist = []
         groups = []
