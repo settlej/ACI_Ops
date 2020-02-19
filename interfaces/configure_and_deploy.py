@@ -250,7 +250,7 @@ class l1RsAttEntityPCons():
 #infraRsStormctrlIfPol
 #infraRsQosEgressDppIfPol
 #infraRsL2PortSecurityPol
-
+#infraRsAttEntP,infraRsCdpIfPol,infraRsHIfPol,infraRsLldpIfPol,infraRsMonIfInfraPol
 class policy_row():
     column_order = {
        'column1'  : 'infraRsAttEntP',
@@ -554,8 +554,28 @@ def searchfexes(fexp,fexbndlgp,fexes):
        #         for z in portlist.infraPortsBlklist:
        #             print('\t\t\t ' + z.fromPort + ' - ' + z.toPort)
 
+class pc_policy_row(policy_row):
+    def __repr__(self):
+        return self.name
 
-       
+def gather_portchannel_policygroups(apic,cookie):
+    url = """https://{apic}/api/node/class/infraAccBndlGrp.json?rsp-subtree=full&rsp-subtree-class=infraRsAttEntP,""".format(apic=apic) \
+            + """infraRsCdpIfPol,infraRsHIfPol,infraRsLldpIfPol,infraRsMonIfInfraPol"""
+    result = GetResponseData(url, cookie)
+    policygrouplist = []
+    finallist = []
+    for num,policy in enumerate(result,1):
+        currentpolicygroup = policy_group(policy['infraAccBndlGrp']['attributes'])
+        currentpolicygroup.num = '{}.)'.format(num)
+        if policy['infraAccBndlGrp'].get('children'):
+            for children in policy['infraAccBndlGrp']['children']:
+                for child in children:
+                    currentpolicygroup.policies[child] = children[child]['attributes']['tDn']
+        policygrouplist.append(currentpolicygroup)
+        #import pdb; pdb.set_trace()
+    for group in policygrouplist:
+        finallist.append(pc_policy_row(group))
+    return finallist
 
 def gather_physical_policygroups(apic, cookie):
     url = """https://{apic}/api/node/class/infraAccPortGrp.json?rsp-subtree=full""".format(apic=apic)
@@ -635,10 +655,10 @@ def main(import_apic,import_cookie):
         apic = import_apic
         clear_screen()
         location_banner('Config Interface and Deploy')
+        import pdb; pdb.set_trace()
         nodeprofilelist, nodedict = gather_infraNodeP(apic,cookie)
         fexes = gather_infraFexP(apic,cookie)
         accportp = gather_infraAccPortP(apic,cookie, fexes)
-
         profilelist = []
         leafp = retrieve_leafprofiles(apic, cookie)
         #for lp in leafp:
@@ -887,7 +907,6 @@ def main(import_apic,import_cookie):
             else:
                 print('\r')
                 print('Invalid option...')
-                print('\r')
         if askaps == str(len(apslist) + 1):
             print('create APS')
         else:
@@ -902,21 +921,37 @@ def main(import_apic,import_cookie):
         import pdb; pdb.set_trace()
         print(requestpolicy)
 
-
+        while True:
+            print("\n What will this interface(s) be:\n" \
+                + "\r" \
+                + "    1.)VPC\n"\
+                + "    2.)PC\n"\
+                + "    3.)Normal (access,trunk)")
+            print('')
+            asktype = custom_raw_input(" Please Select a type: ")
+            if asktype != '' and asktype.isdigit() and int(asktype) <= 3 and int(asktype) > 0:
+                break
+            else:
+                print('\r')
+                print('Invalid option...')
+        if asktype == '3':
+            policygroups = gather_physical_policygroups(apic, cookie)
+        else:
+            policygroups = gather_portchannel_policygroups(apic,cookie)
+        
 
         #leafs = leaf_selection(get_All_leafs(apic, cookie))
-        physpolicygroupslist = gather_physical_policygroups(apic, cookie)
         #leafallinterfacesdict = pull_leaf_interfaces(leafs)
         #print_attribute_layout(leafallinterfacesdict,leafs)
-        displaypolicycolumns(physpolicygroupslist)
+        displaypolicycolumns(policygroups)
         while True:
             requestedpolicynum = custom_raw_input("\nWhat Policy Group for new interface. [single number]: ")
-            if requestedpolicynum.isdigit() and int(requestedpolicynum) <= len(physpolicygroupslist) and int(requestedpolicynum) > 0:
+            if requestedpolicynum.isdigit() and int(requestedpolicynum) <= len(policygroups) and int(requestedpolicynum) > 0:
                 break
             else:
                 print('Invalid option...')
                 continue
-        requestpolicy = physpolicygroupslist[int(requestedpolicynum)-1]
+        requestpolicy = policygroups[int(requestedpolicynum)-1]
         print(requestpolicy.name)
 
 
