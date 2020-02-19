@@ -24,6 +24,7 @@ import logging
 # specifiy logging levels for file vs console.  Set default level to DEBUG to allow more
 # grainular logging levels
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 # Define logging handler for file and console logging.  Console logging can be desplayed during
 # program run time, similar to print.  Program can display or write to log file if more debug 
@@ -189,7 +190,11 @@ def create_span_dest_url(dest_int, name, leaf):
     spandestname = name + '_leaf' + leaf + '_' + dest_int.name.replace('/','_')
     desturl = """https://{apic}/api/node/mo/uni/infra/destgrp-{}.json""".format(spandestname,apic=apic)
     destdata = """{"spanDestGrp":{"attributes":{"name":"%s","status":"created"},"children":[{"spanDest":{"attributes":{"name":"%s","status":"created"},"children":[{"spanRsDestPathEp":{"attributes":{"tDn":"%s","status":"created"},"children":[]}}]}}]}}""" % (spandestgrpname, spandestname, destport)
+    logger.info(desturl)
+    logger.info(destdata)
     result, error = PostandGetResponseData(desturl, destdata, cookie)
+    logger.info(result)
+    logger.debug(error)
     if result == []:
         print("Successfully added Destination Port")
         return 'Success'
@@ -199,7 +204,7 @@ def create_span_dest_url(dest_int, name, leaf):
 
 def create_source_session_and_port(source_int, dest_int, name, leaf):
     sourcelist = []
-    if len(source_int) > 1:
+    if len(source_int) >= 1:
         for source in source_int:
             spansourcename = name + '_leaf' + leaf + '_' + source.name.replace('/','_')
             sourcelist.append({"spanSrc":{"attributes":{"name":spansourcename,"status":"created"},"children":[{"spanRsSrcToPathEp":{"attributes":{"tDn":source.dn,"status":"created"},"children":[]}}]}})
@@ -210,7 +215,11 @@ def create_source_session_and_port(source_int, dest_int, name, leaf):
     sourcedata = {"spanSrcGrp":{"attributes":{"name":spansessionname,"status":"created"},"children":[{"spanSpanLbl":{"attributes":{"name":spandestname,"status":"created"},"children":[]}}]}}
     sourcedata['spanSrcGrp']['children'].extend(sourcelist)
     sourcedata = json.dumps(sourcedata)
+    logger.info(sourceurl)
+    logger.info(sourcedata)
     result, error = PostandGetResponseData(sourceurl, sourcedata, cookie)
+    logger.info(result)
+    logger.debug(error)
     if result == []:
         print("Successfully added Source Session and Source Port")
     else:
