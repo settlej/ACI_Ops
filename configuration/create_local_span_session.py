@@ -193,7 +193,7 @@ def create_span_dest_url(dest_int, name, leaf):
     logger.info(desturl)
     logger.info(destdata)
     result, error = PostandGetResponseData(desturl, destdata, cookie)
-    logger.info(result)
+    logger.debug(result)
     logger.debug(error)
     if result == []:
         print("Successfully added Destination Port")
@@ -218,7 +218,7 @@ def create_source_session_and_port(source_int, dest_int, name, leaf):
     logger.info(sourceurl)
     logger.info(sourcedata)
     result, error = PostandGetResponseData(sourceurl, sourcedata, cookie)
-    logger.info(result)
+    logger.debug(result)
     logger.debug(error)
     if result == []:
         print("Successfully added Source Session and Source Port")

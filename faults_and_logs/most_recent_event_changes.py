@@ -58,7 +58,7 @@ def gatheranddisplayrecentevents():
         print("\nEvents loading...\n")
         url = """https://{apic}/api/node/class/eventRecord.json?query-target-filter=not(wcard(eventRecord.dn,%22__ui_%22))&order-by=eventRecord.created|desc&page=0&page-size=50""".format(apic=apic)
         logger.info(url)
-        result = GetResponseData(url,cookie,timeout=12)
+        result = GetResponseData(url,cookie,timeout=60)
         clear_screen()
         print("Current time = " + current_time)
         print('\n{:>5}   {:26}{:20}{:24}{}'.format('#','Time','Time Difference', 'Port','Event Summary'))
