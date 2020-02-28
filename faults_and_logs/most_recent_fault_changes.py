@@ -17,16 +17,16 @@ import logging
 # Allows logging to state detailed info such as module where code is running and 
 # specifiy logging levels for file vs console.  Set default level to DEBUG to allow more
 # grainular logging levels
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('aciops.' + __name__)
 logger.setLevel(logging.INFO)
 
 # Define logging handler for file and console logging.  Console logging can be desplayed during
 # program run time, similar to print.  Program can display or write to log file if more debug 
 # info needed.  DEBUG is lowest and will display all logging messages in program.  
 c_handler = logging.StreamHandler()
-f_handler = logging.FileHandler('file.log')
-c_handler.setLevel(logging.CRITICAL)
-f_handler.setLevel(logging.DEBUG)
+f_handler = logging.FileHandler('aciops.log')
+#c_handler.setLevel(logging.CRITICAL)
+#f_handler.setLevel(logging.DEBUG)
 
 # Create formatters and add it to handlers.  This creates custom logging format such as timestamp,
 # module running, function, debug level, and custom text info (message) like print.

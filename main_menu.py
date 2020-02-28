@@ -46,20 +46,28 @@ import information.show_static_routes as show_static_routes
 import configuration.create_local_span_session as create_local_span_session
 import configuration.span_to_server as span_to_server
 import logging
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument('-l','--level', type=str, nargs='?', choices=["debug","info","warning","error","critical"], default="info",  help='modifiy the logger in logger tree')
+parser.add_argument('-c','--console-level', type=str, nargs='?', choices=["debug","info","warning","error","critical"], default="critical",  help='modifiy the console logger in logger tree')
+parser.add_argument('-f','--file-level', type=str, nargs='?', choices=["debug","info","warning","error","critical"], default="info",  help='modifiy the file logger in logger tree')
+args = parser.parse_args()
 # Create a custom logger
 # Allows logging to state detailed info such as module where code is running and 
 # specifiy logging levels for file vs console.  Set default level to DEBUG to allow more
 # grainular logging levels
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger = logging.getLogger('aciops')
+if args.level:
+    logger.setLevel(eval('logging.' + args.level.upper()))
 
 # Define logging handler for file and console logging.  Console logging can be desplayed during
 # program run time, similar to print.  Program can display or write to log file if more debug 
 # info needed.  DEBUG is lowest and will display all logging messages in program.  
 c_handler = logging.StreamHandler()
-f_handler = logging.FileHandler('file.log')
-c_handler.setLevel(logging.CRITICAL)
-f_handler.setLevel(logging.DEBUG)
+f_handler = logging.FileHandler('aciops.log')
+c_handler.setLevel(eval('logging.' + args.console_level.upper()))
+f_handler.setLevel(eval('logging.' + args.file_level.upper()))
 
 # Create formatters and add it to handlers.  This creates custom logging format such as timestamp,
 # module running, function, debug level, and custom text info (message) like print.
