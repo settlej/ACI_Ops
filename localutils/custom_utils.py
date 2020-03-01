@@ -113,7 +113,7 @@ def location_banner(location):
 
 
 def custom_raw_input(inputstr):
-    r = raw_input(inputstr)
+    r = raw_input(inputstr).strip()
     if r == 'exit':
         raise KeyboardInterrupt
     else:

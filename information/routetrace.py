@@ -18,26 +18,6 @@ import logging
 # specifiy logging levels for file vs console.  Set default level to DEBUG to allow more
 # grainular logging levels
 logger = logging.getLogger('aciops.' + __name__)
-logger.setLevel(logging.CRITICAL)
-
-# Define logging handler for file and console logging.  Console logging can be desplayed during
-# program run time, similar to print.  Program can display or write to log file if more debug 
-# info needed.  DEBUG is lowest and will display all logging messages in program.  
-c_handler = logging.StreamHandler()
-f_handler = logging.FileHandler('aciops.log')
-c_handler.setLevel(logging.CRITICAL)
-f_handler.setLevel(logging.DEBUG)
-
-# Create formatters and add it to handlers.  This creates custom logging format such as timestamp,
-# module running, function, debug level, and custom text info (message) like print.
-c_format = logging.Formatter('%(name)s - %(levelname)s - %(message)s')
-f_format = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(funcName)s - %(message)s')
-c_handler.setFormatter(c_format)
-f_handler.setFormatter(f_format)
-
-# Add handlers to the parent custom logger
-logger.addHandler(c_handler)
-logger.addHandler(f_handler)
 
 def getallroutes(leaf,vrf,tenant):
     url = """https://{apic}/api/node/mo/topology/pod-1/node-{}/sys/uribv4/dom-{}:{}.json?rsp-subtree=full&query-target=subtree&target-subtree-class=uribv4Route""".format(leaf,vrf,tenant,apic=apic)

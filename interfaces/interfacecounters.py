@@ -22,27 +22,6 @@ import logging
 # specifiy logging levels for file vs console.  Set default level to DEBUG to allow more
 # grainular logging levels
 logger = logging.getLogger('aciops.' + __name__)
-logger.setLevel(logging.INFO)
-
-# Define logging handler for file and console logging.  Console logging can be desplayed during
-# program run time, similar to print.  Program can display or write to log file if more debug 
-# info needed.  DEBUG is lowest and will display all logging messages in program.  
-c_handler = logging.StreamHandler()
-f_handler = logging.FileHandler('aciops.log')
-c_handler.setLevel(logging.CRITICAL)
-f_handler.setLevel(logging.DEBUG)
-
-# Create formatters and add it to handlers.  This creates custom logging format such as timestamp,
-# module running, function, debug level, and custom text info (message) like print.
-c_format = logging.Formatter('%(name)s - %(levelname)s - %(message)s')
-f_format = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(funcName)s - %(message)s')
-c_handler.setFormatter(c_format)
-f_handler.setFormatter(f_format)
-
-# Add handlers to the parent custom logger
-logger.addHandler(c_handler)
-logger.addHandler(f_handler)
-
 
 class l1PhysIf():
     def __init__(self, interface):
@@ -268,11 +247,11 @@ def display_interface_stats(epgresult, interface, result):
     print('   Configured internal vlans: {} Working internal vlans: {}'.format(interfaceObject.ethpmPhysIf['allowedVlans'],interfaceObject.ethpmPhysIf['operVlans']))
     print('')
     if interfaceObject.eqptEgrTotal5min == None:
-        print('   [5 min] Input Byte rate: \x1b[1;33;40m0\x1b[0m, Input packet rate \x1b[1;33;40m0\x1b[0m')
-        print('   [5 min] Output Byte rate: \x1b[1;33;40m0\x1b[0m, Output packet rate \x1b[1;33;40m0\x1b[0m')
+        print('   [5 min] Input Bit rate: \x1b[1;33;40m0\x1b[0m, Input packet rate \x1b[1;33;40m0\x1b[0m')
+        print('   [5 min] Output Bit rate: \x1b[1;33;40m0\x1b[0m, Output packet rate \x1b[1;33;40m0\x1b[0m')
     else:
-        print('   [5 min] Input Byte rate: \x1b[1;33;40m{}\x1b[0m, Input packet rate \x1b[1;33;40m{}\x1b[0m'.format(round(float(interfaceObject.eqptIngrTotal5min['bytesRate']),2),round(float(interfaceObject.eqptIngrTotal5min['pktsRate']),2)))
-        print('   [5 min] Output Byte rate: \x1b[1;33;40m{}\x1b[0m, Output packet rate \x1b[1;33;40m{}\x1b[0m'.format(round(float(interfaceObject.eqptEgrTotal5min['bytesRate']),2),round(float(interfaceObject.eqptEgrTotal5min['pktsRate']),2)))
+        print('   [5 min] Input Bit rate: \x1b[1;33;40m{}\x1b[0m, Input packet rate \x1b[1;33;40m{}\x1b[0m'.format(round(float(interfaceObject.eqptIngrTotal5min['bytesRate']) *8,2),round(float(interfaceObject.eqptIngrTotal5min['pktsRate']),2)))
+        print('   [5 min] Output Bit rate: \x1b[1;33;40m{}\x1b[0m, Output packet rate \x1b[1;33;40m{}\x1b[0m'.format(round(float(interfaceObject.eqptEgrTotal5min['bytesRate'])*8,2),round(float(interfaceObject.eqptEgrTotal5min['pktsRate']),2)))
     print('   RX')
     print('       input packets \x1b[1;33;40m{}\x1b[0m, bytes {}, broadcasts {}, mutlicasts {}'.format(interfaceObject.rmonEtherStats['rXNoErrors'],interfaceObject.rmonIfIn['octets'],interfaceObject.rmonIfIn['broadcastPkts'],interfaceObject.rmonIfIn['multicastPkts']))
     print('       input errors {}, giants {}, crc {}, fragments {}, oversize {}'.format(interfaceObject.rmonIfIn['errors'],interfaceObject.rmonEtherStats['rxGiantPkts'],interfaceObject.rmonEtherStats['cRCAlignErrors'],interfaceObject.rmonEtherStats['fragments'],interfaceObject.rmonEtherStats['rxOversizePkts']))

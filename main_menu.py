@@ -31,6 +31,7 @@ import interfaces.configure_and_deploy as configure_and_deploy
 import information.switchandapicinfo as switchandapicinfo
 import information.endpoint_per_leaf as endpoint_per_leaf
 import information.top_interface_problems as top_interface_problems
+import information.bd_epg_relations as bd_epg_relations
 import faults_and_logs.new_important_faults as fault_summary
 import faults_and_logs.most_recent_port_down as recent_port_down
 import faults_and_logs.most_recent_fault_changes as most_recent_fault_changes
@@ -355,6 +356,7 @@ def main():
                             '\t| 22.) Show Static Routes (with add/remove)\n '+
                             '\t| 23.) Show Physical Interface Profiles \n' +
                             '\t| 24.) Show Top 50 counters\n' +
+                            '\t| 25.) Show BD --> EPG Relationships\n' +
                             #'\t| 16.) Show Leaf/Spine/APIC info (Not Available)\n' +
                             #'\t| 17.) EPG to EPG troubleshooting (alpha)\n' +
                             #'\t| 18.) Route lookup to endpoint (alpha)\n' +
@@ -362,9 +364,9 @@ def main():
                             '\t ---------------------------------------------------\n\n' +
                             '\t  [CONFIGURATION]\n'
                             '\t ---------------------------------------------------\n' +
-                            '\t| 25.) Configure Local Span\n' + 
-                            '\t| 26.) Capture server traffic ERSPAN to server (Beta)\n' + 
-                            '\t| 27.) Clone VPC/PC and deploy (Beta)\n' + 
+                            '\t| 26.) Configure Local Span\n' + 
+                            '\t| 27.) Capture server traffic ERSPAN to server (Beta)\n' + 
+                            '\t| 28.) Clone VPC/PC and deploy (Beta)\n' + 
                             #'\t| 20.) Create EPGs (Not Available)\n' +
                             '\t ---------------------------------------------------\x1b[0m')
             print('\x1b[7')
@@ -397,6 +399,14 @@ def main():
                 if chosen == '24':
                     try:
                         top_interface_problems.main(apic,cookie)
+                        keyinterrupt = False
+                    except KeyboardInterrupt as k:
+                        print('\nExit to Main menu\n')
+                        keyinterrupt = True
+                        break
+                if chosen == '25':
+                    try:
+                        bd_epg_relations.main(apic,cookie)
                         keyinterrupt = False
                     except KeyboardInterrupt as k:
                         print('\nExit to Main menu\n')
@@ -482,7 +492,7 @@ def main():
                         print('\nExit to Main menu\n')
                         keyinterrupt = True
                         break
-                elif chosen == '27':
+                elif chosen == '28':
                     try:
                         clonevpcanddeploy.main(apic,cookie)
                         keyinterrupt = False
@@ -644,7 +654,7 @@ def main():
                         keyinterrupt = True
                         break
     
-                elif chosen == '25':
+                elif chosen == '26':
                     try:
                         create_local_span_session.main(apic,cookie)
                         keyinterrupt = False
@@ -654,7 +664,7 @@ def main():
                         break
                 #elif chosen == 'exit':
                 #    raise KeyboardInterrupt
-                elif chosen == '26':
+                elif chosen == '27':
                     try:
                         span_to_server.main(apic,cookie,current_user)
                         keyinterrupt = False

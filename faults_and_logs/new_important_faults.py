@@ -528,13 +528,11 @@ def refreshloop(detail_function, fault, apic, cookie):
 
 
 def main(import_apic,import_cookie):
-    import pdb; pdb.set_trace()
     global apic
     global cookie
+    global current_time
     cookie = import_cookie
     apic = import_apic
-    unauthenticated = False
-    global current_time
     current_time = get_APIC_clock(apic,cookie)
     while True:
         clear_screen()

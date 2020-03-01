@@ -24,35 +24,6 @@ import logging
 # specifiy logging levels for file vs console.  Set default level to DEBUG to allow more
 # grainular logging levels
 logger = logging.getLogger('aciops.' + __name__)
-logger.setLevel(logging.INFO)
-
-# Define logging handler for file and console logging.  Console logging can be desplayed during
-# program run time, similar to print.  Program can display or write to log file if more debug 
-# info needed.  DEBUG is lowest and will display all logging messages in program.  
-c_handler = logging.StreamHandler()
-f_handler = logging.FileHandler('aciops.log')
-c_handler.setLevel(logging.CRITICAL)
-f_handler.setLevel(logging.DEBUG)
-
-# Create formatters and add it to handlers.  This creates custom logging format such as timestamp,
-# module running, function, debug level, and custom text info (message) like print.
-c_format = logging.Formatter('%(name)s - %(levelname)s - %(message)s')
-f_format = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(funcName)s - %(message)s')
-c_handler.setFormatter(c_format)
-f_handler.setFormatter(f_format)
-
-# Add handlers to the parent custom logger
-logger.addHandler(c_handler)
-logger.addHandler(f_handler)
-
-class interface():
-    def __init__(self, kwargs):
-        self.__dict__.update(**kwargs)
-        self.name = '/'.join(self.affected.split('/')[4:-1])[6:-1]
-        self.leaf = self.affected.split('/')[2]
-        self.pod = self.affected.split('/')[1]
-    def __repr__(self):
-        return self.name
 
 class rmonIf():
     def __init__(self, kwargs):
@@ -73,6 +44,17 @@ class eqpt():
         return self.dn
 
 
+class perleaf_locall1PhysIf():
+    def __init__(self, leaf,  kwargs, interface = None, incounter = None , outcounter = None):
+        self.__dict__.update(**kwargs)
+        self.name = ''.join(self.dn.split('[')[1][:-1])
+        self.leaf = leaf
+        self.interface = interface
+        self.incounter = incounter
+        self.outcounter = outcounter
+    def __repr__(self):
+        return self.interface
+
 class locall1PhysIf():
     def __init__(self, kwargs, interface = None, incounter = None , outcounter = None):
         self.__dict__.update(**kwargs)
@@ -90,8 +72,6 @@ def main(import_apic,import_cookie):
     global cookie
     cookie = import_cookie
     apic = import_apic
-    #clear_screen()
-    #location_banner('Top Interface Problems')
     while True:
         clear_screen()
         location_banner('Top Interface Counters')
@@ -112,17 +92,15 @@ def main(import_apic,import_cookie):
                         break
                 break
             elif ask == '2':
-                    all_leaflist = get_All_leafs(apic,cookie)
-                    if all_leaflist == []:
-                        print('\x1b[1;31;40mFailed to retrieve active leafs, make leafs are operational...\x1b[0m')
-                        custom_raw_input('\n#Press enter to continue...')
-                        return
-                    print('\nSelect leaf(s): ')
-                    print('\r')
-#                       desiredleaf = custom_custom_raw_input("\nWhat is the desired \x1b[1;33;40m'Source and Destination'\x1b[0m leaf for span session?\r")
-                
-                    #print("\nWhat is the desired \x1b[1;33;40m'Destination'\x1b[0m leaf for span session?\r")
-                    chosenleafs = physical_leaf_selection(all_leaflist, apic, cookie)
+                all_leaflist = get_All_leafs(apic,cookie)
+                if all_leaflist == []:
+                    print('\x1b[1;31;40mFailed to retrieve active leafs, make leafs are operational...\x1b[0m')
+                    custom_raw_input('\n#Press enter to continue...')
+                    return
+                print('\nSelect leaf(s): ')
+                print('\r')
+                chosenleafs = physical_leaf_selection(all_leaflist, apic, cookie)
+                while True:
                     clear_screen()
                     location_banner('Top Interface Counters')
                     displaycounters_perleaf(chosenleafs[0])
@@ -131,87 +109,36 @@ def main(import_apic,import_cookie):
                         continue
                     else:
                         break
+                break
             else:
                 continue
-   # while True:
-   #     clear_screen()
-   #     location_banner('Top Interface Counters')
-
 
 
 def displaycounters_all():
         interfaceorder = {}
-        url = """https://{apic}/api/class/rmonIfIn.json?order-by=rmonIfIn.errors|desc&page=0&page-size=30&query-target-filter=and(wcard(rmonIfIn.dn,"phys-"),gt(rmonIfIn.errors,"1"))""".format(apic=apic)
-     #   result = GetResponseData(url, cookie)
-     #   rmoifinlist = [rmonIf(x['rmonIfIn']['attributes']) for x in result]
+        counter = 0
         print('\x1b[2;40H*** Warning, (bps) rate is based on 5 min interval that resets every 300 sec to 0 \n' +
-              '\x1b[3;40H    if all output rate displays 0 then wait between 1-10 sec to refresh ***\n')
+              '\x1b[3;40H    if all output rates display 0 then wait between 1-10 sec to refresh ***\n')
         print('\x1b[7;2H' + ('*' * 20))
         print(" Top 50 Input Errors")
-        print('*' * 20)
-   #     if rmoifinlist:
-   #         for x in rmoifinlist:
-   #             print("{} {} {}: {}".format( x.pod, x.leaf, x.name, x.errors))
-   #     else:
-   #         print("No Input errors found")
-            #print(x.pod, x.leaf, x.name, x.errors)
-        #for x in result:
-        #    print(x['rmonIfIn']['attributes']['dn'],x['rmonIfIn']['attributes']['errors'])
-        url = """https://{apic}/api/class/rmonIfOut.json?order-by=rmonIfOut.errors|desc&page=0&page-size=30&query-target-filter=and(wcard(rmonIfOut.dn,"phys-"),gt(rmonIfOut.errors,"1"))""".format(apic=apic)
-    #    result = GetResponseData(url, cookie)
-    #    rmoifoutlist = [rmonIf(x['rmonIfOut']['attributes']) for x in result]
-        counter = 0
+        print('*' * 21)
+
         print('\x1b[7;39H{}'.format('*' * 20))
         print("\x1b[8;39HTop 50 Output Errors")
         print('\x1b[9;39H{}'.format('*' * 20))
-    #    if rmoifoutlist:
-    #        for x in rmoifoutlist:
-    #            print("\x1b[{};38H{} {} {}: {}".format(10 + counter, x.pod, x.leaf, x.name, x.errors))
-    #            counter += 1
-    #    else:
-    #        print("\x1b[10;38HNo Output errors found")
-  #      url = """https://{apic}/api/node/class/fabricNode.json?query-target-filter=and(eq(fabricNode.role,"spine"))""".format(apic=apic)
-  #      result = GetResponseData(url, cookie)
-  #      spinelist = [x['fabricNode']['attributes']['dn'] for x in result]
-   #     url = """https://{apic}/api/class/eqptEgrTotal5min.json?query-target-filter=not(wcard(eqptEgrTotal5min.dn,"po"))&order-by=eqptEgrTotal5min.bytesRate|desc&page=0&page-size=75""".format(apic=apic)
-   #     result = GetResponseData(url, cookie)
-   #     eqptoutlist = [eqpt(x['eqptEgrTotal5min']['attributes']) for x in result]
-   #     counter = 0
+
         print(' \x1b[7;75H{}'.format('*' * 40))
         print(" \x1b[8;75HTop 50 Input (bps) Rate [Access Ports]")
         print(' \x1b[9;75H{}'.format('*' * 40))
-   #     upto50counter = 1
-   #     for x in eqptoutlist:
-   #         if 'topology/{}/{}'.format(x.pod,x.leaf) not in spinelist and not re.findall(r'\/4[9]|\/5[0-9]', x.name):
-   #             print("\x1b[{};75H{} {} {}: {}".format(10 + counter, x.pod, x.leaf, x.name, int(round(float(x.bytesRate))) * 8))
-   #             if upto50counter == 50:
-   #                 
-   #                 break
-   #             else:
-   #                 upto50counter += 1
-   #                 counter += 1
-   #             #counter += 1
-   #     url = """https://{apic}/api/class/eqptIngrTotal5min.json?order-by=eqptIngrTotal5min.bytesRate|desc&page=0&page-size=75""".format(apic=apic)
-   #     result = GetResponseData(url, cookie)
-   #     eqptinlist = [eqpt(x['eqptIngrTotal5min']['attributes']) for x in result]
-   #     counter = 0
+
         print('\x1b[7;121H{}'.format('*' * 40))
         print("\x1b[8;121HTop 50 Output (bps) Rate [Access Ports]")
         print('\x1b[9;121H{}'.format('*' * 40))
-   #     upto50counter = 1
-   #     for x in eqptinlist:
-   #         #import pdb; pdb.set_trace()
-   #         if 'topology/{}/{}'.format(x.pod,x.leaf) not in spinelist and not re.findall(r'\/4[9]|\/5[0-9]', x.name):
-   #             print("\x1b[{};120H{} {} {}: {}".format(10 + counter, x.pod, x.leaf, x.name, int(round(float(x.bytesRate))) * 8))
-   #             if upto50counter == 50:
-   #                 break
-   #             else:
-   #                 upto50counter += 1
-   #                 counter += 1
+
         print(' loading...')
         url = """https://{apic}/api/class/l1PhysIf.json?rsp-subtree-class=l1PhysIf,eqptIngrTotal5min,eqptEgrTotal5min,rmonIfIn,rmonIfOut&rsp-subtree=full&rsp-subtree-include=stats""".format(apic=apic)
         result = GetResponseData(url, cookie)
-
+        logger.info(url)
         errorlist = []
         for x in result:
             if x['l1PhysIf'].get('children') and len(x['l1PhysIf']['children']) > 2:
@@ -223,21 +150,14 @@ def displaycounters_all():
                         incounter=x['l1PhysIf']['children'][1]['rmonIfIn']['attributes']['errors'],
                         outcounter=x['l1PhysIf']['children'][0]['rmonIfOut']['attributes']['errors']))
         upto50counter = 1
-       # for num,x in enumerated(sorted(errorlist, key=lambda x: float(x.incounter), reverse=True)):
-        #    if upto50counter == 1:
-
         for num,errorline in enumerate(sorted(errorlist, key=lambda x: float(x.incounter), reverse=True)):
             if interfaceorder.get(num):
                 a = " {} {} {}: \x1b[1;33;40m{:,}\x1b[0m".format(errorline.pod, errorline.leaf, errorline.name, int(errorline.incounter))
                 interfaceorder[num].append(a)
             else:
                 a = list()
-              #interfaceorder[num] = list(str(errorline))
                 a.append(" {} {} {}: \x1b[1;33;40m{:,}\x1b[0m".format(errorline.pod, errorline.leaf, errorline.name, int(errorline.incounter)))
-                interfaceorder[num] = list(a)
-       #     else:
-       #         print("{} {} {}: \x1b[1;33;40m{:,}\x1b[0m".format(x.pod, x.leaf, x.name, int(x.incounter)))
-       #  #   {}: {}".format( x.pod, x.leaf, x.name, x.errors))
+                interfaceorder[num] = a
             if upto50counter == 50:
                 break
             else:
@@ -245,26 +165,22 @@ def displaycounters_all():
                 counter += 1
         upto50counter = 1
         counter = 0
-       # import pdb; pdb.set_trace()
         for num,errorline in enumerate(sorted(errorlist, key=lambda x: float(x.outcounter), reverse=True)):
             if interfaceorder.get(num):
                 a = " {} {} {}: \x1b[1;33;40m{:,}\x1b[0m".format(errorline.pod, errorline.leaf, errorline.name, int(errorline.outcounter))
                 interfaceorder[num].append(a)
             else:
                 a = list()
-              #interfaceorder[num] = list(str(errorline))
                 a.append(" {} {} {}: \x1b[1;33;40m{:,}\x1b[0m".format(errorline.pod, errorline.leaf, errorline.name, int(errorline.outcounter)))
-                interfaceorder[num] = list(a)
+                interfaceorder[num] = a
             if upto50counter == 50:
                 break
             else:
                 upto50counter += 1
                 counter += 1
 
-       # import pdb; pdb.set_trace()
         ratelist = []
         for x in result:
-            #import pdb; pdb.set_trace()
             if 'epg' in x['l1PhysIf']['attributes']['usage'] or 'fex-fabric' in x['l1PhysIf']['attributes']['mode']:
                 if x['l1PhysIf'].get('children') and len(x['l1PhysIf']['children']) > 2:
                     ratelist.append(locall1PhysIf(x['l1PhysIf']['attributes'], interface=x['l1PhysIf']['attributes']['dn'],
@@ -278,9 +194,8 @@ def displaycounters_all():
                 interfaceorder[num].append(a)
             else:
                 a = list()
-              #interfaceorder[num] = list(str(errorline))
                 a.append("{} {} {}: \x1b[1;33;40m{:,}\x1b[0m".format(x.pod,x.leaf,x.name, int(round(float(x.incounter))) * 8))
-                interfaceorder[num] = list(a)
+                interfaceorder[num] = a
             if upto50counter == 50:
                 break
             else:
@@ -294,269 +209,143 @@ def displaycounters_all():
                 interfaceorder[num].append(a)
             else:
                 a = list()
-              #interfaceorder[num] = list(str(errorline))
                 a.append("{} {} {}: \x1b[1;33;40m{:,}\x1b[0m".format(errorline.pod,errorline.leaf,errorline.name, int(round(float(errorline.outcounter))) * 8))
-                interfaceorder[num] = list(a)
+                interfaceorder[num] = a
             if upto50counter == 50:
                 break
             else:
                 upto50counter += 1
                 counter += 1
-        #import pdb; pdb.set_trace()
         for num,x in enumerate(sorted(interfaceorder, key=lambda x: int(x))):
             if num == 0:
                 print("\x1b[10;0H{:50} {:50} {:59} {:60}".format(interfaceorder[x][0],interfaceorder[x][1],interfaceorder[x][2],interfaceorder[x][3]))
             else:
                 print("{:50} {:50} {:59} {:60}".format(interfaceorder[x][0],interfaceorder[x][1],interfaceorder[x][2],interfaceorder[x][3]))
-    #    for num,x in enumerate(sorted(ratelist, key=lambda x: float(x.incounter), reverse=True)):
-    #        print("\x1b[{};75H{} {} {}: \x1b[1;33;40m{:,}\x1b[0m".format(10 + counter,x.pod,x.leaf,x.name, int(round(float(x.incounter))) * 8))
-    #        #print("\x1b[{};120H{} {} {}: {}".format(10 + counter, x.pod, x.leaf, x.name, int(round(float(x.bytesRate))) * 8))
-    #        if upto50counter == 50:
-    #            break
-    #        else:
-    #            upto50counter += 1
-    #            counter += 1
-    #    upto50counter = 1
-    #    counter = 0
-     #   for num,x in enumerate(sorted(ratelist, key=lambda x: float(x.outcounter), reverse=True)):
-     #       #print(int(round(float(x.incounter))) * 8)
-     #       print("{} {} {}: \x1b[1;33;40m{:,}\x1b[0m".format(x.pod,x.leaf,x.name, int(round(float(x.outcounter))) * 8))
-     #       if upto50counter == 50:
-     #           break
-     #       else:
-     #           upto50counter += 1
-     #           counter += 1
         ratelist = []
         interfaceorder = []
 
-     #   import pdb; pdb.set_trace()
-     #   ingresslist = []
-     #   for x in result:
-     #       if x['l1PhysIf'].get('children'):
-     #           if 'epg' in x['l1PhysIf']['attributes']['usage'] or 'fex-fabric' in x['l1PhysIf']['attributes']['mode']:
-     #               ingresslist.append((x['l1PhysIf']['attributes']['dn'], (x['l1PhysIf']['children'][0]['eqptIngrTotal5min']['attributes']['bytesRate'])))
-     #   for x in sorted(ingresslist, key=lambda x: float(x[1]), reverse=True):
-     #       if int(round(float(x[1]))) * 8 != 0:
-     #           pass
-     #           print('{} {}'.format(x[0], int(round(float(x[1]))) * 8))
-     #   egresslist = []
-     #   for x in result:
-     #       if x['l1PhysIf'].get('children'):
-     #           if 'epg' in x['l1PhysIf']['attributes']['usage'] or 'fex-fabric' in x['l1PhysIf']['attributes']['mode']:
-     #               egresslist.append((x['l1PhysIf']['attributes']['dn'], (x['l1PhysIf']['children'][1]['eqptEgrTotal5min']['attributes']['bytesRate'])))
-#
-     #   upto50counter = 1
-     #   for x in sorted(egresslist, key=lambda x: float(x[1]), reverse=True):
-     #       if int(round(float(x[1]))) * 8 != 0:
-     #           print('{} {}'.format(x[0], int(round(float(x[1]))) * 8))
-     #   for x in eqptinlist:
-     #       #import pdb; pdb.set_trace()
-     #       if 'topology/{}/{}'.format(x.pod,x.leaf) not in spinelist and not re.findall(r'\/4[9]|\/5[0-9]', x.name):
-     #           print("\x1b[{};120H{} {} {}: {}".format(10 + counter, x.pod, x.leaf, x.name, int(round(float(x.bytesRate))) * 8))
-     #           if upto50counter == 50:
-     #               break
-     #           else:
-     #               upto50counter += 1
-     #               counter += 1
-
-    #    url = """https://{apic}/api/node/class/eventRecord.json?order-by=eventRecord.created|desc&page=0&page-size=60&query-target-filter=or(eq(eventRecord.code,"E4205125"),eq(eventRecord.code,"E4215671"))""".format(apic=apic)
-    #    result = GetResponseData(url, cookie)
-    # #   for x in result:
-    #    interfacelist = [interface(x['eventRecord']['attributes']) for x in result]
-    #    for x in interfacelist:
-    #        print("{} {} {}: {}".format(x.pod, x.leaf, x.name, x.descr))
-            #import pdb; pdb.set_trace()
-      #      print(x['eventRecord']['attributes']['affected'],x['eventRecord']['attributes']['descr'])
-
-       # custom_raw_input('#Press Enter to continue...')
 
 
 def displaycounters_perleaf(leaf):
         interfaceorder = {}
-        url = """https://{apic}/api/node-{leaf}/class/rmonIfIn.json?order-by=rmonIfIn.errors|desc&page=0&page-size=30&query-target-filter=and(wcard(rmonIfIn.dn,"phys-"),gt(rmonIfIn.errors,"1"))""".format(apic=apic,leaf=leaf)
-     #   result = GetResponseData(url, cookie)
-     #   rmoifinlist = [rmonIf(x['rmonIfIn']['attributes']) for x in result]
+        counter = 0
         print('\x1b[2;40H*** Warning, (bps) rate is based on 5 min interval that resets every 300 sec to 0 \n' +
               '\x1b[3;40H    if all output rate displays 0 then wait between 1-10 sec to refresh ***\n')
+        
         print('\x1b[7;2H' + ('*' * 20))
-        print(" Top 10 Input Errors")
-        print('*' * 20)
-   #     if rmoifinlist:
-   #         for x in rmoifinlist:
-   #             print("{} {} {}: {}".format( x.pod, x.leaf, x.name, x.errors))
-   #     else:
-   #         print("No Input errors found")
-            #print(x.pod, x.leaf, x.name, x.errors)
-        #for x in result:
-        #    print(x['rmonIfIn']['attributes']['dn'],x['rmonIfIn']['attributes']['errors'])
-        url = """https://{apic}/api/node-{leaf}/class/rmonIfOut.json?order-by=rmonIfOut.errors|desc&page=0&page-size=30&query-target-filter=and(wcard(rmonIfOut.dn,"phys-"),gt(rmonIfOut.errors,"1"))""".format(apic=apic,leaf=leaf)
-    #    result = GetResponseData(url, cookie)
-    #    rmoifoutlist = [rmonIf(x['rmonIfOut']['attributes']) for x in result]
-        counter = 0
+        print(" Top 40 Input Errors")
+        print('*' * 21)
+
         print('\x1b[7;39H{}'.format('*' * 20))
-        print("\x1b[8;39HTop 10 Output Errors")
+        print("\x1b[8;39HTop 40 Output Errors")
         print('\x1b[9;39H{}'.format('*' * 20))
-    #    if rmoifoutlist:
-    #        for x in rmoifoutlist:
-    #            print("\x1b[{};38H{} {} {}: {}".format(10 + counter, x.pod, x.leaf, x.name, x.errors))
-    #            counter += 1
-    #    else:
-    #        print("\x1b[10;38HNo Output errors found")
-  #      url = """https://{apic}/api/node/class/fabricNode.json?query-target-filter=and(eq(fabricNode.role,"spine"))""".format(apic=apic)
-  #      result = GetResponseData(url, cookie)
-  #      spinelist = [x['fabricNode']['attributes']['dn'] for x in result]
-   #     url = """https://{apic}/api/class/eqptEgrTotal5min.json?query-target-filter=not(wcard(eqptEgrTotal5min.dn,"po"))&order-by=eqptEgrTotal5min.bytesRate|desc&page=0&page-size=75""".format(apic=apic)
-   #     result = GetResponseData(url, cookie)
-   #     eqptoutlist = [eqpt(x['eqptEgrTotal5min']['attributes']) for x in result]
-   #     counter = 0
+
         print(' \x1b[7;75H{}'.format('*' * 40))
-        print(" \x1b[8;75HTop 10 Input (bps) Rate [Access Ports]")
+        print(" \x1b[8;75HTop 40 Input (bps) Rate [Access Ports]")
         print(' \x1b[9;75H{}'.format('*' * 40))
-   #     upto10counter = 1
-   #     for x in eqptoutlist:
-   #         if 'topology/{}/{}'.format(x.pod,x.leaf) not in spinelist and not re.findall(r'\/4[9]|\/5[0-9]', x.name):
-   #             print("\x1b[{};75H{} {} {}: {}".format(10 + counter, x.pod, x.leaf, x.name, int(round(float(x.bytesRate))) * 8))
-   #             if upto10counter == 10:
-   #                 
-   #                 break
-   #             else:
-   #                 upto10counter += 1
-   #                 counter += 1
-   #             #counter += 1
-   #     url = """https://{apic}/api/class/eqptIngrTotal5min.json?order-by=eqptIngrTotal5min.bytesRate|desc&page=0&page-size=75""".format(apic=apic)
-   #     result = GetResponseData(url, cookie)
-   #     eqptinlist = [eqpt(x['eqptIngrTotal5min']['attributes']) for x in result]
-   #     counter = 0
+
         print('\x1b[7;121H{}'.format('*' * 40))
-        print("\x1b[8;121HTop 10 Output (bps) Rate [Access Ports]")
+        print("\x1b[8;121HTop 40 Output (bps) Rate [Access Ports]")
         print('\x1b[9;121H{}'.format('*' * 40))
-   #     upto10counter = 1
-   #     for x in eqptinlist:
-   #         #import pdb; pdb.set_trace()
-   #         if 'topology/{}/{}'.format(x.pod,x.leaf) not in spinelist and not re.findall(r'\/4[9]|\/5[0-9]', x.name):
-   #             print("\x1b[{};120H{} {} {}: {}".format(10 + counter, x.pod, x.leaf, x.name, int(round(float(x.bytesRate))) * 8))
-   #             if upto10counter == 10:
-   #                 break
-   #             else:
-   #                 upto10counter += 1
-   #                 counter += 1
+
         print(' loading...')
         url = """https://{apic}/api/node-{leaf}/class/l1PhysIf.json?rsp-subtree-class=l1PhysIf,eqptIngrTotal5min,eqptEgrTotal5min,rmonIfIn,rmonIfOut&rsp-subtree=full&rsp-subtree-include=stats""".format(apic=apic,leaf=leaf)
         result = GetResponseData(url, cookie)
-
+        logger.info(url)
         errorlist = []
         for x in result:
             if x['l1PhysIf'].get('children') and len(x['l1PhysIf']['children']) > 2:
-                errorlist.append(locall1PhysIf(x['l1PhysIf']['attributes'], interface=x['l1PhysIf']['attributes']['dn'],
+                errorlist.append(perleaf_locall1PhysIf(leaf,x['l1PhysIf']['attributes'], interface=x['l1PhysIf']['attributes']['dn'],
                         incounter=x['l1PhysIf']['children'][3]['rmonIfIn']['attributes']['errors'],
                         outcounter=x['l1PhysIf']['children'][2]['rmonIfOut']['attributes']['errors']))
             else:
-                errorlist.append(locall1PhysIf(x['l1PhysIf']['attributes'], interface=x['l1PhysIf']['attributes']['dn'],
+                errorlist.append(perleaf_locall1PhysIf(leaf,x['l1PhysIf']['attributes'], interface=x['l1PhysIf']['attributes']['dn'],
                         incounter=x['l1PhysIf']['children'][1]['rmonIfIn']['attributes']['errors'],
                         outcounter=x['l1PhysIf']['children'][0]['rmonIfOut']['attributes']['errors']))
-        upto10counter = 1
-       # for num,x in enumerated(sorted(errorlist, key=lambda x: float(x.incounter), reverse=True)):
-        #    if upto10counter == 1:
+        upto40counter = 1
 
         for num,errorline in enumerate(sorted(errorlist, key=lambda x: float(x.incounter), reverse=True)):
             if interfaceorder.get(num):
-                a = " {} {} {}: \x1b[1;33;40m{:,}\x1b[0m".format(errorline.pod, errorline.leaf, errorline.name, int(errorline.incounter))
+                a = " node-{} {}: \x1b[1;33;40m{:,}\x1b[0m".format(errorline.leaf, errorline.name, int(errorline.incounter))
                 interfaceorder[num].append(a)
             else:
+                #import pdb; pdb.set_trace()
                 a = list()
-              #interfaceorder[num] = list(str(errorline))
-                a.append(" {} {} {}: \x1b[1;33;40m{:,}\x1b[0m".format(errorline.pod, errorline.leaf, errorline.name, int(errorline.incounter)))
-                interfaceorder[num] = list(a)
-       #     else:
-       #         print("{} {} {}: \x1b[1;33;40m{:,}\x1b[0m".format(x.pod, x.leaf, x.name, int(x.incounter)))
-       #  #   {}: {}".format( x.pod, x.leaf, x.name, x.errors))
-            if upto10counter == 10:
+                a.append(" node-{} {}: \x1b[1;33;40m{:,}\x1b[0m".format(errorline.leaf, errorline.name, int(errorline.incounter)))
+                interfaceorder[num] = a
+            if upto40counter == 40:
                 break
             else:
-                upto10counter += 1
+                upto40counter += 1
                 counter += 1
-        upto10counter = 1
+        upto40counter = 1
         counter = 0
-       # import pdb; pdb.set_trace()
+       # #import pdb; pdb.set_trace()
         for num,errorline in enumerate(sorted(errorlist, key=lambda x: float(x.outcounter), reverse=True)):
             if interfaceorder.get(num):
-                a = " {} {} {}: \x1b[1;33;40m{:,}\x1b[0m".format(errorline.pod, errorline.leaf, errorline.name, int(errorline.outcounter))
+                a = " node-{} {}: \x1b[1;33;40m{:,}\x1b[0m".format(errorline.leaf, errorline.name, int(errorline.outcounter))
                 interfaceorder[num].append(a)
             else:
+                #import pdb; pdb.set_trace()
                 a = list()
-              #interfaceorder[num] = list(str(errorline))
-                a.append(" {} {} {}: \x1b[1;33;40m{:,}\x1b[0m".format(errorline.pod, errorline.leaf, errorline.name, int(errorline.outcounter)))
-                interfaceorder[num] = list(a)
-            if upto10counter == 10:
+                a.append(" node-{} {}: \x1b[1;33;40m{:,}\x1b[0m".format(errorline.leaf, errorline.name, int(errorline.outcounter)))
+                interfaceorder[num] = a
+            if upto40counter == 40:
                 break
             else:
-                upto10counter += 1
+                upto40counter += 1
                 counter += 1
 
-       # import pdb; pdb.set_trace()
+       # #import pdb; pdb.set_trace()
         ratelist = []
         for x in result:
-            #import pdb; pdb.set_trace()
+            ##import pdb; pdb.set_trace()
             if 'epg' in x['l1PhysIf']['attributes']['usage'] or 'fex-fabric' in x['l1PhysIf']['attributes']['mode']:
                 if x['l1PhysIf'].get('children') and len(x['l1PhysIf']['children']) > 2:
-                    ratelist.append(locall1PhysIf(x['l1PhysIf']['attributes'], interface=x['l1PhysIf']['attributes']['dn'],
+                    ratelist.append(perleaf_locall1PhysIf(leaf,x['l1PhysIf']['attributes'], interface=x['l1PhysIf']['attributes']['dn'],
                             incounter=x['l1PhysIf']['children'][0]['eqptIngrTotal5min']['attributes']['bytesRate'],
                             outcounter=x['l1PhysIf']['children'][1]['eqptEgrTotal5min']['attributes']['bytesRate']))
-        upto10counter = 1
+        upto40counter = 1
         counter = 0
         for num,errorline in enumerate(sorted(ratelist, key=lambda x: float(x.incounter), reverse=True)):
             if interfaceorder.get(num):
-                a = "{} {} {}: \x1b[1;33;40m{:,}\x1b[0m".format(errorline.pod,errorline.leaf,errorline.name, int(round(float(errorline.incounter))) * 8)
+                a = "node-{} {}: \x1b[1;33;40m{:,}\x1b[0m".format(errorline.leaf,errorline.name, int(round(float(errorline.incounter))) * 8)
                 interfaceorder[num].append(a)
             else:
                 a = list()
-              #interfaceorder[num] = list(str(errorline))
-                a.append("{} {} {}: \x1b[1;33;40m{:,}\x1b[0m".format(x.pod,x.leaf,x.name, int(round(float(x.incounter))) * 8))
-                interfaceorder[num] = list(a)
-            if upto10counter == 10:
+                a.append("node-{} {}: \x1b[1;33;40m{:,}\x1b[0m".format(errorline.leaf,errorline.name, int(round(float(errorline.incounter))) * 8))
+                interfaceorder[num] = a
+            if upto40counter == 40:
                 break
             else:
-                upto10counter += 1
+                upto40counter += 1
                 counter += 1
         counter = 0
-        upto10counter = 1
+        upto40counter = 1
         for num,errorline in enumerate(sorted(ratelist, key=lambda x: float(x.outcounter), reverse=True)):
             if interfaceorder.get(num):
-                a = "{} {} {}: \x1b[1;33;40m{:,}\x1b[0m".format(errorline.pod,errorline.leaf,errorline.name, int(round(float(errorline.outcounter))) * 8)
+                a = "node-{} {}: \x1b[1;33;40m{:,}\x1b[0m".format(errorline.leaf,errorline.name, int(round(float(errorline.outcounter))) * 8)
                 interfaceorder[num].append(a)
             else:
                 a = list()
-              #interfaceorder[num] = list(str(errorline))
-                a.append("{} {} {}: \x1b[1;33;40m{:,}\x1b[0m".format(errorline.pod,errorline.leaf,errorline.name, int(round(float(errorline.outcounter))) * 8))
-                interfaceorder[num] = list(a)
-            if upto10counter == 10:
+                a.append("node-{} {}: \x1b[1;33;40m{:,}\x1b[0m".format(errorline.leaf,errorline.name, int(round(float(errorline.outcounter))) * 8))
+                interfaceorder[num] = a
+            if upto40counter == 40:
                 break
             else:
-                upto10counter += 1
+                upto40counter += 1
                 counter += 1
-        #import pdb; pdb.set_trace()
         for num,x in enumerate(sorted(interfaceorder, key=lambda x: int(x))):
-            if num == 0:
-                print("\x1b[10;0H{:50} {:50} {:59} {:60}".format(interfaceorder[x][0],interfaceorder[x][1],interfaceorder[x][2],interfaceorder[x][3]))
-            else:
-                print("{:50} {:50} {:59} {:60}".format(interfaceorder[x][0],interfaceorder[x][1],interfaceorder[x][2],interfaceorder[x][3]))
-    #    for num,x in enumerate(sorted(ratelist, key=lambda x: float(x.incounter), reverse=True)):
-    #        print("\x1b[{};75H{} {} {}: \x1b[1;33;40m{:,}\x1b[0m".format(10 + counter,x.pod,x.leaf,x.name, int(round(float(x.incounter))) * 8))
-    #        #print("\x1b[{};120H{} {} {}: {}".format(10 + counter, x.pod, x.leaf, x.name, int(round(float(x.bytesRate))) * 8))
-    #        if upto50counter == 50:
-    #            break
-    #        else:
-    #            upto50counter += 1
-    #            counter += 1
-    #    upto50counter = 1
-    #    counter = 0
-     #   for num,x in enumerate(sorted(ratelist, key=lambda x: float(x.outcounter), reverse=True)):
-     #       #print(int(round(float(x.incounter))) * 8)
-     #       print("{} {} {}: \x1b[1;33;40m{:,}\x1b[0m".format(x.pod,x.leaf,x.name, int(round(float(x.outcounter))) * 8))
-     #       if upto50counter == 50:
-     #           break
-     #       else:
-     #           upto50counter += 1
-     #           counter += 1
+            if len(interfaceorder[x]) == 4:
+                if num == 0:
+                    print("\x1b[10;0H{:50} {:50} {:59} {:60}".format(interfaceorder[x][0],interfaceorder[x][1],interfaceorder[x][2],interfaceorder[x][3]))
+                else:
+                    print("{:50} {:50} {:59} {:60}".format(interfaceorder[x][0],interfaceorder[x][1],interfaceorder[x][2],interfaceorder[x][3]))
+            elif len(interfaceorder[x]) == 2:
+                if num == 0:
+                    print("\x1b[10;0H{:50} {:50} {:45} {:60}".format(interfaceorder[x][0],interfaceorder[x][1],'No Stats Found','No Status Found'))
+                else:
+                    print("{:50} {:50} {:45} {:60}".format(interfaceorder[x][0],interfaceorder[x][1],'No Stats Found','No Status Found'))
+
         ratelist = []
         interfaceorder = []

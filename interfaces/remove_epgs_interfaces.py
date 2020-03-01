@@ -21,64 +21,8 @@ import logging
 # specifiy logging levels for file vs console.  Set default level to DEBUG to allow more
 # grainular logging levels
 logger = logging.getLogger('aciops.' + __name__)
-logger.setLevel(logging.INFO)
-
-# Define logging handler for file and console logging.  Console logging can be desplayed during
-# program run time, similar to print.  Program can display or write to log file if more debug 
-# info needed.  DEBUG is lowest and will display all logging messages in program.  
-c_handler = logging.StreamHandler()
-f_handler = logging.FileHandler('aciops.log')
-c_handler.setLevel(logging.CRITICAL)
-f_handler.setLevel(logging.DEBUG)
-
-# Create formatters and add it to handlers.  This creates custom logging format such as timestamp,
-# module running, function, debug level, and custom text info (message) like print.
-c_format = logging.Formatter('%(name)s - %(levelname)s - %(message)s')
-f_format = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(funcName)s - %(message)s')
-c_handler.setFormatter(c_format)
-f_handler.setFormatter(f_format)
-
-# Add handlers to the parent custom logger
-logger.addHandler(c_handler)
-logger.addHandler(f_handler)
 
 
-"""def removeepgs(interfaces):
-    queue = Queue.Queue()
-    interfacelist = []
-    queueresultlist = []
-    #interfacelist2 =[]
-    for interface in interfaces:
-        t = threading.Thread(target=postremove, args=(interface,queue,))
-        t.start()
-        interfacelist.append(t)
-    for t in interfacelist:
-        t.join()
-        if not queue.empty():
-            for epg in xrange(queue.qsize()):
-                queueresultlist.append(queue.get())
-    for interfaceresult in sorted(queueresultlist):
-        print(interfaceresult)
-
-def postremove(interface,queue):
-    #import pdb; pdb.set_trace()
-    for interface_epg in interface.epgfvRsPathAttlist:
-        url = 'https://{apic}/api/node/mo/{rspathAtt}.json'.format(rspathAtt=interface_epg,apic=apic)
-        # data is the 'POST' data sent in the REST call to 'blacklist' (shutdown) on a normal interface
-        data = """'{{"fvRsPathAtt":{{"attributes":{{"dn":"{rspathAtt}","status":"deleted"}},"children":[]}}}}'""".format(rspathAtt=interface_epg)
-        logger.info(url)
-        logger.info(data)
-        #import pdb; pdb.set_trace()
-        #print(data)
-        result =  PostandGetResponseData(url, data, cookie)
-        logger.debug(result)
-        #print(result)
-        if result[0] == []:
-            #print(interface_epg[:interface_epg.find('rspathAtt')-1] + ' removed from ' + interface.name)
-            queue.put(interface_epg[:interface_epg.find('rspathAtt')-1] + ' removed from ' + interface.name)
-        else:
-            queue.put('Failure -- ' + result[0])
-"""
 def removeepgs(interfaces):
     queue = Queue.Queue()
     interfacelist = []
