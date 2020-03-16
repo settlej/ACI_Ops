@@ -16,7 +16,7 @@ def multithreading_request(func, maplist, threadpoolnum=10, parameters={}):
     if parameters:
         results = pool.map(lambda x : func(x, **parameters), maplist)
     else:
-        results = pool.map(lambda x : func(x), maplist)
+        results = pool.map(func, maplist)
     pool.close()
     pool.join()
     return results

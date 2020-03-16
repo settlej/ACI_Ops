@@ -12,7 +12,7 @@ import trace
 import os
 import time
 import itertools
-from collections import namedtuple
+from collections import namedtuple, OrderedDict
 import interfaces.switchpreviewutil as switchpreviewutil
 from localutils.custom_utils import *
 import logging
@@ -265,6 +265,8 @@ class arpentry():
 class endpoint():
     def __init__(self, **kwargs):
         self.__dict__.update(**kwargs)
+        if 'po' in kwargs['ifId']:
+            self.po_interfaces = kwargs['ifId']
     def __repr__(self):
         return ';'.join((self.addr,self.ifId,self.encap))
 
@@ -391,27 +393,44 @@ def main(import_apic,import_cookie):
                         filteredlist.append(endp)
                 del endpointlist
                 #import pdb; pdb.set_trace()
-                columnwidthfind = ('ethname','addr','foundvlan','encap','ifId','ip')
-                sizes = get_column_sizes(filteredlist, columnwidthfind, minimum=5)
-                print('{:{inter}}  {:{mac}}  {:{epg}}  {:{encap}}  {:{po}}  {:{ip}}'.format('Interface', 'MAC', 'EPG', 'Encap', 'Po #', 'IP',inter=sizes[0]+4,mac=sizes[1],epg=sizes[2],encap=sizes[3],po=sizes[4],ip=sizes[5]))
-                print('{:-<{inter}}  {:-<{mac}}  {:-<{epg}}  {:-<{encap}}  {:-<{po}}  {:-<{ip}}'.format('', '', '', '', '', '',inter=sizes[0]+4,mac=sizes[1],epg=sizes[2],encap=sizes[3],po=sizes[4],ip=sizes[5]))
-                #import pdb; pdb.set_trace()
+                columndata = ['ethname','addr','foundvlan','encap','ifId','ip']
+                #ep.ethname,ep.addr,ep.foundvlan,ep.encap,ep.ifId
+                columnheaders = ('Interface', 'MAC', 'EPG', 'Encap', 'Po #', 'IP')
+                sizes = get_column_sizes(filteredlist, columndata, minimum=5, baseminimum=columnheaders)
+                columnsections = ('column_size0','column_size1','column_size2','column_size3','column_size4','column_size5')
+                #columnsections = ('0','1','2','3','4','5')
+                
+                sizedict = dict(zip(columnsections,sizes))
+
                 fexlist = filter(lambda x: x.ethname.count('/') == 2, filteredlist)
                 nofexlist = filter(lambda x: x.ethname.count('/') == 1, filteredlist)
+                #sizedict['column_size0'] += 4
+                #sizes[0] += 4
+                #('inter','mac','epg','encap','po','ip')
+                #for column in columnsections
+                print(('{:{column_size0}}  {:{column_size1}}  {:{column_size2}} '
+                    + ' {:{column_size3}}  {:{column_size4}}  {:{column_size5}}').format(*columnheaders,**sizedict))#,inter=sizes[0],mac=sizes[1],epg=sizes[2],encap=sizes[3],po=sizes[4],ip=sizes[5]))
+                print(('{blank:-<{column_size0}}  {blank:-<{column_size1}}  {blank:-<{column_size2}} '
+                    + ' {blank:-<{column_size3}}  {blank:-<{column_size4}}  {blank:-<{column_size5}}').format(blank='',**sizedict))#,inter=sizes[0],mac=sizes[1],epg=sizes[2],encap=sizes[3],po=sizes[4],ip=sizes[5]))
+                #import pdb; pdb.set_trace()
+                rowstring = ('{ep.ethname:{column_size0}}  {ep.addr:{column_size1}}  {ep.foundvlan:{column_size2}}'  
+                            +'  {ep.encap:{column_size3}}  {interface:{column_size4}}  {ipgroup:{column_size5}}')
                 for ep in sorted(nofexlist, key=lambda x : int(x.shortname)):
                     if 'po' in ep.ifId:
-                        macsfound += 1
-                        print('{:{inter}}  {:{mac}}  {:{epg}}  {:{encap}}  {:{po}}  {:{ip}}'.format(ep.ethname,ep.addr,ep.foundvlan,ep.encap,ep.ifId,','.join(ep.ip),inter=sizes[0]+4,mac=sizes[1],epg=sizes[2],encap=sizes[3],po=sizes[4],ip=sizes[5]))
+                        print(rowstring.format(ep=ep, interface = ep.ifId, ipgroup = ",".join(ep.ip),**sizedict))
                     else:
+                        print(rowstring.format(ep=ep, interface = '', ipgroup = ",".join(ep.ip),**sizedict))
+                       # print('{:{inter}}  {:{mac}}  {:{epg}}  {:{encap}}  {:{po}}  {:{ip}}'.format(ep.ethname,ep.addr,ep.foundvlan,ep.encap,'',','.join(ep.ip),inter=sizes[0],mac=sizes[1],epg=sizes[2],encap=sizes[3],po=sizes[4],ip=sizes[5]))
+                    macsfound += 1
+                if fexlist != []:
+                    for ep in sorted(fexlist, key=lambda x: (  int(x.ifId.split('/')[-3][-3:]),int(x.ifId.split('/')[-2]),int(x.ifId.split('/')[-1]) )):
+                        if 'po' in ep.ifId:
+                            print(rowstring.format(ep=ep, epinterface = ep.ifId, epipgroup = ",".join(ep.ip),**sizedict))
+                            #print('{:{inter}}  {:{mac}}  {:{epg}}  {:{encap}}  {:{po}}  {:{ip}}'.format(ep.ethname,ep.addr,ep.foundvlan,ep.encap,ep.ifId,','.join(ep.ip),inter=sizes[0],mac=sizes[1],epg=sizes[2],encap=sizes[3],po=sizes[4],ip=sizes[5]))
+                        else:
+                            print(rowstring.format(ep=ep, epinterface = '', epipgroup = ",".join(ep.ip),**sizedict))
+                            #print('{:{inter}}  {:{mac}}  {:{epg}}  {:{encap}}  {:{po}}  {:{ip}}'.format(ep.ethname,ep.addr,ep.foundvlan,ep.encap,'',','.join(ep.ip),inter=sizes[0],mac=sizes[1],epg=sizes[2],encap=sizes[3],po=sizes[4],ip=sizes[5]))
                         macsfound += 1
-                        print('{:{inter}}  {:{mac}}  {:{epg}}  {:{encap}}  {:{po}}  {:{ip}}'.format(ep.ethname,ep.addr,ep.foundvlan,ep.encap,'',','.join(ep.ip),inter=sizes[0]+4,mac=sizes[1],epg=sizes[2],encap=sizes[3],po=sizes[4],ip=sizes[5]))
-                for ep in sorted(fexlist, key=lambda x: (  int(x.ifId.split('/')[-3][-3:]),int(x.ifId.split('/')[-2]),int(x.ifId.split('/')[-1]) )):
-                    if 'po' in ep.ifId:
-                        macsfound += 1
-                        print('{:{inter}}  {:{mac}}  {:{epg}}  {:{encap}}  {:{po}}  {:{ip}}'.format(ep.ethname,ep.addr,ep.foundvlan,ep.encap,ep.ifId,','.join(ep.ip),inter=sizes[0]+4,mac=sizes[1],epg=sizes[2],encap=sizes[3],po=sizes[4],ip=sizes[5]))
-                    else:
-                        macsfound += 1
-                        print('{:{inter}}  {:{mac}}  {:{epg}}  {:{encap}}  {:{po}}  {:{ip}}'.format(ep.ethname,ep.addr,ep.foundvlan,ep.encap,'',','.join(ep.ip),inter=sizes[0]+4,mac=sizes[1],epg=sizes[2],encap=sizes[3],po=sizes[4],ip=sizes[5]))
                 if macsfound == 0:
                     print("No endpoints found!")
                 elif macsfound == 1:
