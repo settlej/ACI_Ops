@@ -47,6 +47,7 @@ import information.show_static_routes as show_static_routes
 import configuration.create_local_span_session as create_local_span_session
 import configuration.span_to_server as span_to_server
 import logging
+from logging.handlers import RotatingFileHandler
 import argparse
 
 parser = argparse.ArgumentParser()
@@ -66,7 +67,7 @@ if args.level:
 # program run time, similar to print.  Program can display or write to log file if more debug 
 # info needed.  DEBUG is lowest and will display all logging messages in program.  
 c_handler = logging.StreamHandler()
-f_handler = logging.FileHandler('aciops.log')
+f_handler = RotatingFileHandler('aciops.log', maxBytes=10000000, backupCount=1)
 c_handler.setLevel(eval('logging.' + args.console_level.upper()))
 f_handler.setLevel(eval('logging.' + args.file_level.upper()))
 
@@ -291,8 +292,12 @@ class AuthenticationFailure(Exception):
 #  #  return False
 #    return True
 
+def settimer():
+    timertest = time.time()
 
 def main():
+    global timertest
+    timertest = time.time()
     apic, current_user, cookie = localOrRemote()
     unauthenticated = False
     keyinterrupt = False
