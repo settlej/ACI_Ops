@@ -72,9 +72,9 @@ def main(import_apic,import_cookie):
         vlanepgdeployment_list = []
         counter = 0
         print('\n T = Trunk\n A = Access(802.1p)\n')
-        print("\x1b[1;33;40m {}".format('-'*64))
-        print(" {:5}| {:10} | {:8}     | {}".format('Leaf','Interface','vlan #', 'Tenant-App-EPG'))
-        print(" {}|{}|{}|{}".format('-'*5,'-'*12,'-'*14,'-'*30))
+        print("\x1b[1;33;40m {}".format('-'*79))
+        print(" {:5}| {:10} | {:8}     | {:12} | {}".format('Leaf','Interface','vlan #','Description', 'Tenant-App-EPG'))
+        print(" {}|{}|{}|{}|{}".format('-'*5,'-'*12,'-'*14,'-'*14,'-'*30))
         #print(" {}|{}|{}|{}".format(' '*5,' '*12,' '*12,' '*30))
         for x in interface_elements_list:
             url = """https://{apic}/api/node/mo/uni/infra/hpaths-{leaf}_{interface}.json""".format(apic=apic, leaf=x.leaf, interface=x.interface.replace('/', '_'))
@@ -101,15 +101,15 @@ def main(import_apic,import_cookie):
                 vlanepgdeployment_list.append((url,data))
                 if counter == 0:
                     if x.encap.lower() == 'trunk':
-                        print(""" {}  | {:10} | vlan-{:5} {} | {}""".format(x.leaf,x.interface,z[0],'T',z[1][4:].replace('tn-','').replace('ap-','').replace('epg-','')))
+                        print(""" {}  | {:10} | vlan-{:5} {} | {:12} | {}""".format(x.leaf,x.interface,z[0],'T',x.desc, z[1][4:].replace('tn-','').replace('ap-','').replace('epg-','')))
                     else:
-                        print(""" {}  | {:10} | vlan-{:5} {} | {}""".format(x.leaf,x.interface,z[0],'A',z[1][4:].replace('tn-','').replace('ap-','').replace('epg-','')))
+                        print(""" {}  | {:10} | vlan-{:5} {} | {:12} | {}""".format(x.leaf,x.interface,z[0],'A',x.desc, z[1][4:].replace('tn-','').replace('ap-','').replace('epg-','')))
                     counter += 1
                 else:
                     if x.encap.lower() == 'trunk':
-                        print(""" {:4}   {:10} | vlan-{:5} {} | {}""".format('', '',z[0], 'T',z[1][4:].replace('tn-','').replace('ap-','').replace('epg-','')))
+                        print(""" {:4}   {:10} | vlan-{:5} {} | {:12} | {}""".format('', '',z[0], 'T',x.desc, z[1][4:].replace('tn-','').replace('ap-','').replace('epg-','')))
                     else:
-                        print(""" {:4}   {:10} | vlan-{:5} {} | {}""".format('', '',z[0], 'A',z[1][4:].replace('tn-','').replace('ap-','').replace('epg-','')))
+                        print(""" {:4}   {:10} | vlan-{:5} {} | {:12} | {}""".format('', '',z[0], 'A',x.desc, z[1][4:].replace('tn-','').replace('ap-','').replace('epg-','')))
                     #counter -= 1
             if counter == 1:
                 counter -= 1

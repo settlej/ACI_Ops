@@ -11,6 +11,7 @@ import time
 import traceback
 import pdb
 from localutils.custom_utils import clear_screen, refreshToken, custom_raw_input
+import localutils.sshleafutil 
 import fabric_access.create_vpc as create_vpc
 import fabric_access.display_switch_to_leaf_structure as display_switch_to_leaf_structure
 import interfaces.change_interface_state as shut_noshut_interfaces
@@ -425,6 +426,10 @@ def main():
                         print('\nExit to Main menu\n')
                         keyinterrupt = True
                         break		
+                if chosen == '999':
+                    #if apic == 'localhost':
+                    localutils.sshleafutil.main(apic,cookie,user=current_user)
+                    raw_input('a')
                 if chosen == '333':
                     try:
                         autodeploy.main(apic,cookie)
