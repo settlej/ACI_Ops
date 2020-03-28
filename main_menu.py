@@ -374,6 +374,10 @@ def main():
                             '\t| 27.) Capture server traffic ERSPAN to server (Beta)\n' + 
                             '\t| 28.) Clone VPC/PC and deploy (Beta)\n' + 
                             #'\t| 20.) Create EPGs (Not Available)\n' +
+                            '\t ---------------------------------------------------\n\n' +
+                            '\t  [TROUBLESHOOTING]\n'
+                            '\t ---------------------------------------------------\n' +
+                            '\t| 29.) Tools (PING, Clear Endpoint on leaf)\n' + 
                             '\t ---------------------------------------------------\x1b[0m')
             print('\x1b[7')
             print('\x1b[1;33;40m\x1b[5;70H -----------------------------\x1b[0m')
@@ -426,7 +430,7 @@ def main():
                         print('\nExit to Main menu\n')
                         keyinterrupt = True
                         break		
-                if chosen == '999':
+                if chosen == '29':
                     #if apic == 'localhost':
                     localutils.sshleafutil.main(apic,cookie,user=current_user)
                     raw_input('a')

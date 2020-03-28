@@ -307,7 +307,7 @@ def main(import_apic,import_cookie):
         while True:
             chosenleafs = physical_leaf_selection(all_leaflist, apic, cookie)
             if len(chosenleafs) > 1:
-                print('\n\x1b[1;31;40mOnce leaf supported at this time, please try again...\x1b[0m')
+                print('\n\x1b[1;31;40mOne leaf supported at this time, please try again...\x1b[0m')
                 print('\r')
             else:
                 break
