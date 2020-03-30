@@ -398,7 +398,7 @@ def main():
                         print('\nExit to Main menu\n')
                         keyinterrupt = True
                         break
-                if chosen == '444':
+                elif chosen == '444':
                     try:
                         configure_and_deploy.main(apic,cookie)
                         keyinterrupt = False
@@ -406,7 +406,7 @@ def main():
                         print('\nExit to Main menu\n')
                         keyinterrupt = True
                         break
-                if chosen == '24':
+                elif chosen == '24':
                     try:
                         top_interface_problems.main(apic,cookie)
                         keyinterrupt = False
@@ -414,7 +414,7 @@ def main():
                         print('\nExit to Main menu\n')
                         keyinterrupt = True
                         break
-                if chosen == '25':
+                elif chosen == '25':
                     try:
                         bd_epg_relations.main(apic,cookie)
                         keyinterrupt = False
@@ -422,7 +422,7 @@ def main():
                         print('\nExit to Main menu\n')
                         keyinterrupt = True
                         break
-                if chosen == '9':
+                elif chosen == '9':
                     try:
                         show_epgs.main(apic,cookie)
                         keyinterrupt = False
@@ -430,11 +430,15 @@ def main():
                         print('\nExit to Main menu\n')
                         keyinterrupt = True
                         break		
-                if chosen == '29':
-                    #if apic == 'localhost':
-                    localutils.sshleafutil.main(apic,cookie,user=current_user)
-                    raw_input('a')
-                if chosen == '333':
+                elif chosen == '29':
+                    try:
+                        localutils.sshleafutil.main(apic,cookie,user=current_user)
+                        keyinterrupt = False
+                    except KeyboardInterrupt as k:
+                        print('\nExit to Main menu\n')
+                        keyinterrupt = True
+                        break		
+                elif chosen == '333':
                     try:
                         autodeploy.main(apic,cookie)
                         keyinterrupt = False
