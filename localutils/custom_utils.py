@@ -691,7 +691,7 @@ class vlanCktEp():
         else:
             return self.epgDn
 
-class foundobj():
+class foundobj(set):
     def __init__(self, kwargs):
         self.__dict__.update(**kwargs)
     def __setitem__(self, k,v):
@@ -709,26 +709,26 @@ def grab_lowest_MO_keyvalues(x, primaryKey=None, keys=None, scope_set=None, retu
         scope_set = set()
     if isinstance(x, list):
         for y in x:
-            return grab_lowest_MO_keyvalues(y, primaryKey, keys, scope_set)
+            grab_lowest_MO_keyvalues(y, primaryKey, keys, scope_set, returnlist)
     elif isinstance(x, dict):
         for k,v in x.items():
             if isinstance(v, list):
-                return grab_lowest_MO_keyvalues(v, primaryKey, keys, scope_set)
+                grab_lowest_MO_keyvalues(v, primaryKey, keys, scope_set, returnlist)
             elif isinstance(v, dict):
-                return grab_lowest_MO_keyvalues(v, primaryKey, keys, scope_set)
+                grab_lowest_MO_keyvalues(v, primaryKey, keys, scope_set, returnlist)
             else:
                 if not x[primaryKey] in scope_set:
                     scope_set.add(x[primaryKey])
                     fo = foundobj({primaryKey:x[primaryKey]})
                     for kk in keys:
+                        print(x[kk])
                         fo[kk] = x[kk]
                     returnlist.append(fo)
-                    import pdb; pdb.set_trace()
+                    #import pdb; pdb.set_trace()
                     #foundobj({k:v for k,v in })
                     #scope_set[x[primaryKey]] = [x[kk] for kk in keys]
-                else:
-                   continue
-    import pdb; pdb.set_trace()
+                #else:
+                    #continue
     return returnlist
 
 
