@@ -12,7 +12,7 @@ import traceback
 import pdb
 from localutils.custom_utils import clear_screen, refreshToken, custom_raw_input
 import localutils.sshleafutil 
-import fabric_access.create_vpc as create_vpc
+#import fabric_access.create_vpc as create_vpc
 import fabric_access.display_switch_to_leaf_structure as display_switch_to_leaf_structure
 import interfaces.change_interface_state as shut_noshut_interfaces
 import interfaces.assign_epg_interfaces as assign_epg_interfaces
@@ -377,7 +377,7 @@ def main():
                             '\t ---------------------------------------------------\n\n' +
                             '\t  [TROUBLESHOOTING]\n'
                             '\t ---------------------------------------------------\n' +
-                            '\t| 29.) Tools (PING, Clear Endpoint on leaf)\n' + 
+                            '\t| 29.) Tools (PING, Clear Endpoint(s) on leaf)\n' + 
                             '\t ---------------------------------------------------\x1b[0m')
             print('\x1b[7')
             print('\x1b[1;33;40m\x1b[5;70H -----------------------------\x1b[0m')

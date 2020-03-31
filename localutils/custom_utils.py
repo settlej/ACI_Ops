@@ -691,6 +691,47 @@ class vlanCktEp():
         else:
             return self.epgDn
 
+class foundobj():
+    def __init__(self, kwargs):
+        self.__dict__.update(**kwargs)
+    def __setitem__(self, k,v):
+        setattr(self, k, v)
+    def __repr__(self):
+        return repr(self.__dict__)
+        
+
+def grab_lowest_MO_keyvalues(x, primaryKey=None, keys=None, scope_set=None, returnlist=None):
+    if returnlist is None:
+        returnlist = []
+    if keys is None:
+        keys = []
+    if scope_set is None:
+        scope_set = set()
+    if isinstance(x, list):
+        for y in x:
+            return grab_lowest_MO_keyvalues(y, primaryKey, keys, scope_set)
+    elif isinstance(x, dict):
+        for k,v in x.items():
+            if isinstance(v, list):
+                return grab_lowest_MO_keyvalues(v, primaryKey, keys, scope_set)
+            elif isinstance(v, dict):
+                return grab_lowest_MO_keyvalues(v, primaryKey, keys, scope_set)
+            else:
+                if not x[primaryKey] in scope_set:
+                    scope_set.add(x[primaryKey])
+                    fo = foundobj({primaryKey:x[primaryKey]})
+                    for kk in keys:
+                        fo[kk] = x[kk]
+                    returnlist.append(fo)
+                    import pdb; pdb.set_trace()
+                    #foundobj({k:v for k,v in })
+                    #scope_set[x[primaryKey]] = [x[kk] for kk in keys]
+                else:
+                   continue
+    import pdb; pdb.set_trace()
+    return returnlist
+
+
 
 def pull_vlan_info_for_leaf(apic, cookie, leaf):
     url = """https://{apic}/api/node/class/topology/pod-1/node-{leaf}/vlanCktEp.json""".format(apic=apic, leaf=leaf)
@@ -719,6 +760,27 @@ def get_All_PCs(apic, cookie, return_count=False):
     else:
         result = GetResponseData(url, cookie)
         return result
+
+def get_All_l2BDs(apic, cookie, return_count=False):
+    url = """https://{apic}/api/class/l2BD.json""".format(apic=apic)
+    logger.info(url)
+    if return_count == True:
+        result, totalcount = GetResponseData(url, cookie, return_count=True)
+        return result, totalcount
+    else:
+        result = GetResponseData(url, cookie)
+        return result
+
+def get_All_BDs(apic, cookie, return_count=False):
+    url = """https://{apic}/api/class/fvBD.json""".format(apic=apic)
+    logger.info(url)
+    if return_count == True:
+        result, totalcount = GetResponseData(url, cookie, return_count=True)
+        return result, totalcount
+    else:
+        result = GetResponseData(url, cookie)
+        return result
+
 
 def get_All_vPCs(apic, cookie, return_count=False):
     url = """https://{apic}/api/node/class/fabricPathEp.json?query-target-filter=and(not(wcard(fabricPathEp.dn,%22__ui_%22)),""" \

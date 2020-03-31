@@ -16,10 +16,10 @@ class local_l2bd():
 
 def remotesshcommand(cmd,user,device,leafnumber):
     sshsequence = 'ssh -t {user}@{device} {cmd}'.format(user=user,device=device,cmd=cmd)
-    #print(sshsequence)
     print(("SSHing to leaf {leafnumber} to perform: '{cmd}'".format(user=user,device=device,cmd=cmd, leafnumber=leafnumber)).replace('\\',''))
-    output = subprocess.Popen(sshsequence, shell=True,)
+    output = subprocess.Popen(sshsequence, shell=True)
     stdout, stderr = output.communicate()
+
 
 class local_vrfobj():
     def __init__(self, kwargs):
@@ -28,28 +28,24 @@ class local_vrfobj():
         return self.name
 
 def get_epmMacEp(mac):
-    url = """https://{apic}/api/node/class/epmMacEp.json?query-target-filter=and(eq(epmMacEp.addr,"{mac}"))&order-by=epmMacEp.modTs|desc""".format(apic=apic,mac=mac)
+    #url = """https://{{apic}}/api/node/class/epmMacEp.json?rsp-subtree=full&query-target-filter=wcard(epmMacEp.flags,"local")""".format(apic=apic,mac=mac)
+    url = """https://{apic}/api/node/class/epmMacEp.json?query-target-filter=and(eq(epmMacEp.addr,"{mac}"),wcard(epmMacEp.flags,"local"))&order-by=epmMacEp.modTs|desc""".format(apic=apic,mac=mac)
     results, totalcount = GetResponseData(url,cookie,return_count=True)
     if int(totalcount) == 1:
         dn = results[0]['epmMacEp']['attributes']['dn']
+        l2bdpath = re.search(r'(^.*)/db-ep',dn).group(1)
         node = re.search(r'/node-(.+?)/',dn).group(1)
-        vlan = re.search(r'\[vlan-(.+?)\]/',dn).group(1)
-        #getnodenum = slice(5,10)
-        #node = dn.split('/')[2][getnodenum]
-        #getvlannum = slice(11,-1)
-        #vlan = dn.split('/')[6][getvlannum]
+        return [[node, l2bdpath]]
     elif int(totalcount) > 1:
+        multiple_locations = []
         for mac in results:
             dn = mac['epmMacEp']['attributes']['dn']
+            l2bdpath = re.search(r'(^.*)/db-ep',dn).group(1)
             node = re.search(r'/node-(.+?)/',dn).group(1)
-            vlan = re.search(r'\[vlan-(.+?)\]/',dn).group(1)
-            #getnodenum = slice(5,10)
-            #re.match(r'node-\d+',nodename)
-            #node = dn.split('/')[2][getnodenum]
-            #getvlannum = slice(6,-1)
-            #vlan = dn.split('/')[6][getvlannum]
-            print(node,vlan)
-    import pdb; pdb.set_trace()
+            multiple_locations.append((node,l2bdpath))
+        return multiple_locations
+    else:
+        return 0
 
 
 
@@ -301,7 +297,58 @@ def clear_endpoint_wizard(apic,cookie,user,all_leaflist):
             endpoint = re.search(r'([0-9a-fA-F]{2,4}[\:|\.]?){6}',endpoint).group()
             endpoint = endpoint.replace('.','').replace(':','').upper()
             endpoint = ':'.join((endpoint[x]+endpoint[x+1] for x in range(0,len(endpoint),2)))
-            get_epmMacEp(endpoint)
+            #results = get_All_l2BDs(apic,cookie)
+           # vrf_bd_dict = grab_lowest_MO_keyvalues(results, primaryKey='dn', keys=['accEncap','id','name'])
+            #import pdb; pdb.set_trace()
+            locations_and_vlans = get_epmMacEp(endpoint)
+            if get_epmMacEp == 0:
+                custom_raw_input("\nUnable to locate MAC address on any leaf, please try another MAC\n")
+                continue
+            maclocation_list = []
+            for maclocation in locations_and_vlans:
+                node, l2path = maclocation
+                url = "https://{apic}/api/mo/".format(apic=apic) + l2path + ".json"
+                results = GetResponseData(url,cookie)
+                l2bdmo = grab_lowest_MO_keyvalues(results, primaryKey='id', keys=['name'])
+                import pdb; pdb.set_trace()
+                maclocation_list.append((node,l2bdmo))
+            if len(maclocation_list) == 1: 
+                m = maclocation_list[0]
+                ask = custom_raw_input("\nRemove MAC {0} on leaf {1} in {2}?: [n]".format(endpoint,m[0],m[1].items()[0][1][0])) or 'n'
+                ask = ask.strip().lstrip()
+                while True:
+                    if ask != "" and ask.lower()[0] == 'n':
+                        custom_raw_input('\nCancalled...')
+                        break
+                    elif ask != "" and ask.lower()[0] == 'y':
+                        print('Submitting for deletion...')
+                        url = """https://{apic}/api/node/class/topSystem.json?query-target-filter=and(eq(topSystem.id,"{leafnumber}"))&order-by=fabricNode.modTs|desc""".format(apic=apic,leafnumber=m[0])
+                        results = GetResponseData(url,cookie)
+                        deviceip = results[0]['topSystem']['attributes']['oobMgmtAddr']
+                        clear_endpoint_ssh(endpoint,user,deviceip,leafnumber=m[0],vlannum=m[1].items()[0][0])
+                        break
+                    else:
+                        print('\nInvalid option\n')
+                        continue
+            elif len(maclocation_list) > 1: 
+                for num,multiple in enumerate(maclocation_list,1):
+                    print('{}.) leaf{} | localvlan-[{}] | {}'.format(num,multiple[0],multiple[1].keys()[0],multiple[1].items()[0][1][0]))
+                while True:
+                    ask = custom_raw_input("\nWhich MAC entry would you like removed?")
+                    ask = ask.strip().lstrip()
+                    if ask != "" and ask.isdigit() and int(ask) > 0 and int(ask) <= (len(ask) + 1):
+                        remove = maclocation_list[int(ask)-1]
+                        confirm = custom_raw_input("Confirm [n]?") or 'n'
+                        if confirm.strip().lstrip()[0].lower() == 'y':
+                            print('Submitting for deletion...')
+                            url = """https://{apic}/api/node/class/topSystem.json?query-target-filter=and(eq(topSystem.id,"{leafnumber}"))&order-by=fabricNode.modTs|desc""".format(apic=apic,leafnumber=remove[0])
+                            results = GetResponseData(url,cookie)
+                            deviceip = results[0]['topSystem']['attributes']['oobMgmtAddr']
+                            clear_endpoint_ssh(endpoint,user,deviceip,leafnumber=remove[0],vlannum=remove[1].keys()[0])
+                        custom_raw_input('\nCancalled...')
+            else:
+                print("Error: Unable to locate")
+            import pdb; pdb.set_trace()
             svilist = gather_svi(apic,cookie,scope=selected_scope,leaf=leafnumber)
             l2bd_dict = gather_l2BD(apic,cookie,leaf=leafnumber)
             for num,x in enumerate(svilist,1):
@@ -320,7 +367,7 @@ def clear_endpoint_wizard(apic,cookie,user,all_leaflist):
         else:
             print('\nInvalid Endpoint...')
 
-def clear_endpoint_ssh(endpoint,user,deviceip,tenantandvrf,leafnumber,vlannum=None):
+def clear_endpoint_ssh(endpoint,user,deviceip,leafnumber,tenantandvrf=None,vlannum=None):
     if ':' in endpoint:
         cmd = 'vsh -c \\"clear system internal epm endpoint key vlan {vlannum} mac {mac}\\"'.format(vlannum=vlannum,mac=endpoint)
     else:
