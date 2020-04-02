@@ -309,6 +309,20 @@ def main():
    # print(role_rights)
    # rolerightsdict = {x['aaaRole']['attributes']['dn'][12:]:x['aaaRole']['attributes'] for x in role_rights}
    # import pdb; pdb.set_trace()
+    clear_screen()
+    print('')
+    print('\x1b[1;33;40m -----------------------------\x1b[0m')
+    print('\x1b[1;33;40m|           Hint:             |\x1b[0m')
+    print('\x1b[1;33;40m|  Type "exit" on any input   |\x1b[0m')
+    print('\x1b[1;33;40m|    to return to main menu   |\x1b[0m')
+    print('\x1b[1;33;40m -----------------------------\x1b[0m')
+    print('\n')
+    print('Disclaimer:  The Author is not held responsible for any service disruptions')
+    print('             or damages that results from this program.  This project was')
+    print('             created to help make ACI easier to troubleshoot and automate.')
+    print('             Please test in lab before trying in production environments.')
+    print('')
+    custom_raw_input('\n\nEnter to continue...')
     while True:
         try:
             clear_screen()
@@ -379,17 +393,11 @@ def main():
                             '\t ---------------------------------------------------\n' +
                             '\t| 29.) Tools (PING, Clear Endpoint(s) on leaf)\n' + 
                             '\t ---------------------------------------------------\x1b[0m')
-            print('\x1b[7')
-            print('\x1b[1;33;40m\x1b[5;70H -----------------------------\x1b[0m')
-            print('\x1b[1;33;40m\x1b[6;70H|           Hint:             |\x1b[0m')
-            print('\x1b[1;33;40m\x1b[7;70H|  Type "exit" on any input   |\x1b[0m')
-            print('\x1b[1;33;40m\x1b[8;70H|    to return to main menu   |\x1b[0m')
-            print('\x1b[1;33;40m\x1b[9;70H -----------------------------\x1b[0m')
-            print('\x1b[8')
+
             cookie = refreshToken(apic, cookie)
 
             while True:
-                chosen = custom_raw_input('\x1b[u\x1b[47;1H Select a number: ')
+                chosen = custom_raw_input('\nSelect a number: ')
                 if chosen == '1':
                     try:
                         shut_noshut_interfaces.main(apic,cookie)

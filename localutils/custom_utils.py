@@ -292,8 +292,10 @@ class fabricPathEp(object):
         self.removedint = '/'.join(dn.split('/')[:-2])
         if 'extpaths' in self.dn:
             self.fex = self.dn.split('/')[3].replace('extpaths','fex')
+            self.fexethname = self.name[:3]+ self.dn.split('/')[3].replace('extpaths-','') + '/' + self.name[3:]
         else:
-            self.fex = ''
+            self.fex = None
+            self.fexethname = None
     def __repr__(self):
         return self.dn
     def __getitem__(self, number):
@@ -389,7 +391,7 @@ def grouper(iterable, n, fillvalue=''):
 def goodspacing(column):
     if column.fex:
         return column.leaf + ' ' + column.fex + ' ' + str(column.name)
-    elif column.fex == '':
+    elif column.fex == None:
         return column.leaf + ' ' + str(column.name)
 
 def get_column_sizes(rowlist, objcolumnwidthfind=None, minimum=5, baseminimum=[],alreadysorted=False):
@@ -495,35 +497,40 @@ def physical_leaf_selection(all_leaflist, apic, cookie, leafnum=None):
         chosenleafs = [leafnum]
     return chosenleafs
 
-def physical_interface_selection(apic, cookie, chosenleafs, provideleaf=False):
-    compoundedleafresult = []
-    for leaf in chosenleafs:
-        url = """https://{apic}/api/node/class/fabricPathEp.json?query-target-filter=and(not(wcard(fabricPathEp.dn,%22__ui_%22)),""" \
-              """and(eq(fabricPathEp.lagT,"not-aggregated"),eq(fabricPathEp.pathT,"leaf"),wcard(fabricPathEp.dn,"topology/pod-1/paths-{leaf}/"),""" \
-              """not(or(wcard(fabricPathEp.name,"^tunnel"),wcard(fabricPathEp.name,"^vfc")))))&order-by=fabricPathEp.dn|desc""".format(leaf=leaf,apic=apic)
-        logger.info(url)
-        result = GetResponseData(url, cookie)
-        logger.debug(result)
-        compoundedleafresult.append(result)
-    result = compoundedleafresult
-    interfacelist = []
-    interfacelist2 = []
-    for x in result:
-        for pathep in x:
-            dn = pathep['fabricPathEp']['attributes']['dn']
-            name = pathep['fabricPathEp']['attributes']['name']
-            descr = pathep['fabricPathEp']['attributes']['descr']
-            if 'extpaths' in dn:
-                interfacelist2.append(fabricPathEp(descr=descr, dn=dn ,name=name))
-            else:
-                interfacelist.append(fabricPathEp(descr=descr, dn=dn ,name=name))
-            
-    interfacelist2 = sorted(interfacelist2, key=lambda x: (x.fex, int(x.shortname)))
-    interfacelist = sorted(interfacelist, key=lambda x: int(x.shortname))
-    interfacenewlist = interfacelist2 + interfacelist
-    interfacelist = []
-    interfacelist2 = []
-    finalsortedinterfacelist = sorted(interfacenewlist, key=lambda x: x.removedint)
+def physical_interface_selection(apic, cookie, chosenleafs, provideleaf=False, provided_interfacelist=None, returnlistonly=False):
+    if provided_interfacelist == None:
+        compoundedleafresult = []
+        for leaf in chosenleafs:
+            url = """https://{apic}/api/node/class/fabricPathEp.json?query-target-filter=and(not(wcard(fabricPathEp.dn,%22__ui_%22)),""" \
+                  """and(eq(fabricPathEp.lagT,"not-aggregated"),eq(fabricPathEp.pathT,"leaf"),wcard(fabricPathEp.dn,"topology/pod-1/paths-{leaf}/"),""" \
+                  """not(or(wcard(fabricPathEp.name,"^tunnel"),wcard(fabricPathEp.name,"^vfc")))))&order-by=fabricPathEp.dn|desc""".format(leaf=leaf,apic=apic)
+            logger.info(url)
+            result = GetResponseData(url, cookie)
+            logger.debug(result)
+            compoundedleafresult.append(result)
+        result = compoundedleafresult
+        interfacelist = []
+        interfacelist2 = []
+        for x in result:
+            for pathep in x:
+                dn = pathep['fabricPathEp']['attributes']['dn']
+                name = pathep['fabricPathEp']['attributes']['name']
+                descr = pathep['fabricPathEp']['attributes']['descr']
+                if 'extpaths' in dn:
+                    interfacelist2.append(fabricPathEp(descr=descr, dn=dn ,name=name))
+                else:
+                    interfacelist.append(fabricPathEp(descr=descr, dn=dn ,name=name))
+                
+        interfacelist2 = sorted(interfacelist2, key=lambda x: (x.fex, int(x.shortname)))
+        interfacelist = sorted(interfacelist, key=lambda x: int(x.shortname))
+        interfacenewlist = interfacelist2 + interfacelist
+        interfacelist = []
+        interfacelist2 = []
+        finalsortedinterfacelist = sorted(interfacenewlist, key=lambda x: x.removedint)
+        if returnlistonly:
+            return finalsortedinterfacelist
+    else:
+        finalsortedinterfacelist = provided_interfacelist
     interfacedict = {}
     for num,interf in enumerate(finalsortedinterfacelist,1):
         if interf != '':
@@ -542,22 +549,27 @@ def physical_interface_selection(apic, cookie, chosenleafs, provideleaf=False):
             b = goodspacing(column1) + '  ' + '\x1b[1;33;40m' + column1.descr[:24] + '\x1b[0m'
         else:
             b = goodspacing(column1) + '  ' + '\x1b[1;33;40m' + column1.descr[:32] + '\x1b[0m'
-        c = column2.number
-        if len(goodspacing(column2) + '  ') >= 22:
-            d = goodspacing(column2) + '  ' + '\x1b[1;33;40m' + column2.descr[:24] + '\x1b[0m'
+        if column2 != '':
+            c = column2.number
+            if len(goodspacing(column2) + '  ') >= 22:
+                d = goodspacing(column2) + '  ' + '\x1b[1;33;40m' + column2.descr[:24] + '\x1b[0m'
+            else:
+                d = goodspacing(column2) + '  ' + '\x1b[1;33;40m' + column2.descr[:32] + '\x1b[0m'
         else:
-            d = goodspacing(column2) + '  ' + '\x1b[1;33;40m' + column2.descr[:32] + '\x1b[0m'
+            c = ''
        # if column3 == '' or column3 == None:
        #     e = ''
-        f = ''
+       # f = ''
        # else:
        #     e = column3.number
        #     if len(goodspacing(column3) + '  ') >= 22:
        #         f = goodspacing(column3) + '  ' + '\x1b[1;33;40m' + column3.descr[:24] + '\x1b[0m'
        #     else:
        #         f = goodspacing(column3) + '  ' + '\x1b[1;33;40m' + column3.descr[:32] + '\x1b[0m'
-        if f != '':
-            print('{:4}.) {:65} {}.) {:65} {}.) {}'.format(a,b,c,d,e,f))
+        #if f != '':
+        #    print('{:4}.) {:65} {}.) {:65} {}.) {}'.format(a,b,c,d,e,f))
+        if c == '':
+            print('{:4}.) {:65}'.format(a,b))
         else:
             print('{:4}.) {:65} {}.) {:65}'.format(a,b,c,d))
     while True:
@@ -575,6 +587,7 @@ def physical_interface_selection(apic, cookie, chosenleafs, provideleaf=False):
             #chosenleafs
             choseninterfaceobjectlist = filter(lambda x: x.number in intsinglelist, finalsortedinterfacelist)
             return choseninterfaceobjectlist, chosenleafs
+
 
 def port_channel_location(pcname, apic, cookie, pctype='vpc'):
     if pctype == 'vpc':
@@ -691,13 +704,30 @@ class vlanCktEp():
         else:
             return self.epgDn
 
-class foundobj(set):
+class moContainer():
+    primaryKey = 'dn'
+    def __init__(self,primaryKey):
+        self.containerset = set()
+    #def __setitem__(self, k,v):
+    #    setattr(self, k, v)
+    #    self.containerset.add(k)
+    def add(self,item):
+        self.containerset.add(item)
+        self[getattr(item,primaryKey)] = item
+    def __getitem__(self,key):
+        return getattr(self,key)
+    def __repr__(self):
+        return repr(self.containerset)
+
+class foundobj():
     def __init__(self, kwargs):
         self.__dict__.update(**kwargs)
     def __setitem__(self, k,v):
         setattr(self, k, v)
+    def __getitem__(self,key):
+        return getattr(self,key)
     def __repr__(self):
-        return repr(self.__dict__)
+        return repr({k:v for k,v in self.__dict__.items()})
         
 
 def grab_lowest_MO_keyvalues(x, primaryKey=None, keys=None, scope_set=None, returnlist=None):
@@ -721,14 +751,8 @@ def grab_lowest_MO_keyvalues(x, primaryKey=None, keys=None, scope_set=None, retu
                     scope_set.add(x[primaryKey])
                     fo = foundobj({primaryKey:x[primaryKey]})
                     for kk in keys:
-                        print(x[kk])
                         fo[kk] = x[kk]
                     returnlist.append(fo)
-                    #import pdb; pdb.set_trace()
-                    #foundobj({k:v for k,v in })
-                    #scope_set[x[primaryKey]] = [x[kk] for kk in keys]
-                #else:
-                    #continue
     return returnlist
 
 
@@ -739,6 +763,17 @@ def pull_vlan_info_for_leaf(apic, cookie, leaf):
     result = GetResponseData(url, cookie)
     vlanlist = [vlanCktEp(**x['vlanCktEp']['attributes']) for x in result]
     return vlanlist
+
+def get_All_vlanCktEp(apic, cookie, return_count=False):
+    url = """https://{apic}/api/node/class/vlanCktEp.json""".format(apic=apic)
+    logger.info(url)
+    if return_count == True:
+        return GetResponseData(url, cookie, return_count=True)
+       # return [vlanckt['vlanCktEp']['attributes']['dn'] for vlanckt in result], totalcount
+    else:
+        return GetResponseData(url, cookie)
+        #return [vlanckt['vlanCktEp']['attributes']['dn'] for vlanckt in result]
+
 
 def get_All_EGPs(apic, cookie, return_count=False):
     url = """https://{apic}/api/node/class/fvAEPg.json""".format(apic=apic)

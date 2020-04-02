@@ -22,6 +22,8 @@ from collections import namedtuple
 import interfaces.switchpreviewutil as switchpreviewutil
 from localutils.custom_utils import *
 import logging
+from operator import attrgetter
+from collections import Counter
 from multiprocessing.dummy import Pool as ThreadPool
 
 #import fabric_access
@@ -635,7 +637,7 @@ def main(import_apic,import_cookie):
         apic = import_apic
         clear_screen()
         location_banner('Config Interface and Deploy')
-        import pdb; pdb.set_trace()
+        #import pdb; pdb.set_trace()
         nodeprofilelist, nodedict = gather_infraNodeP(apic,cookie)
         fexes = gather_infraFexP(apic,cookie)
         accportp = gather_infraAccPortP(apic,cookie, fexes)
@@ -738,7 +740,7 @@ def main(import_apic,import_cookie):
                             for fex in switchp.leafprofiles[0].foundfex:
                                 leaftable.append((fex[0].name, switchp.name, switchp.allleafs, fex[1],(fex,switchp),switchp.leafprofiles[0]))        #for fex in fexes:
 
-        baseminimum = ('Leaf Profile', 'Switch Profile', 'Leafs Affected', 'Fex ID')
+        baseminimum = ('Leaf Profile', 'Switch Profile', 'Leafs Associated', 'Fex ID')
         leaftable = filter(None, leaftable)
         sizes = get_column_sizes(leaftable, minimum=5, baseminimum=baseminimum)
         leaftable = map(lambda x:x[1] + (x[0],), enumerate(leaftable,1))
@@ -749,30 +751,100 @@ def main(import_apic,import_cookie):
         for row in leaftable:
             print('  {:{num}}.) {:{leafp}} | {:{switchp}} | {:{leafaff}} | {:{fexid}}'.format(row[-1],row[0],row[1],row[2],row[3],num=4, leafp=sizes[0],switchp=sizes[1],leafaff=sizes[2],fexid=sizes[3]))
         while True:
-            reqleafprofile = custom_raw_input("\nWhat Leaf Profile for new interface(s). [single number]: ")
+            reqleafprofile = custom_raw_input("\nWhich Leaf Profile for new interface(s)? [single number]: ")
             if reqleafprofile.isdigit() and int(reqleafprofile) < len(leaftable)+1 and int(reqleafprofile) > 0:
                 break
             else:
                 print('Invalid option...')
                 continue
-        requestpolicy = leaftable[int(reqleafprofile)-1]
+        selectedleafprofile = leaftable[int(reqleafprofile)-1]
         print('\r')
-        displayleaflist = requestpolicy[2]
+        displayleaflist = selectedleafprofile[2]
 
-        results = multithreading_request(return_configured_ports_for_display_per_leaf, displayleaflist, parameters={'apic':apic,'cookie':cookie})
+        allconfiguredinterfaces = multithreading_request(return_configured_ports_for_display_per_leaf, displayleaflist, parameters={'apic':apic,'cookie':cookie})
         #import pdb; pdb.set_trace()
         #leafmap = zip(results[])
         #import pdb; pdb.set_trace()
         #interfaces.switchpreviewutil.main(apic,cookie,[result[0]], interfacelist=result[1], purpose='custom')
         print('='*80)
         print('Green:Used, Black:Available')
-        for result in results:
-            interfaces.switchpreviewutil.main(apic,cookie,[result[0]], interfacelist=result[1], purpose='custom')
+        #chosenleafs = []
+        unusedinterfaces = None
+
+            #leaflist = map(lambda x: x[0]x[1])
+            #import pdb; pdb.set_trace()
+            ##def findcommoninterfaces()
+            #for x in allconfiguredinterfaces:
+            #    x = set(x)
+            #    set1 = x.intersection(x)
+        for configured_intefaces in allconfiguredinterfaces:
+           # import pdb; pdb.set_trace()
+            currentinterfacelist = physical_interface_selection(apic, cookie, [configured_intefaces[0]], returnlistonly=True)
+            interfaces.switchpreviewutil.main(apic,cookie,[configured_intefaces[0]], interfacelist=configured_intefaces[1], purpose='custom')
+            if not any(map(attrgetter('fexethname'),currentinterfacelist)):
+                #configured_intefaces[1] = map(attrgetter('fexid'),configured_intefaces[1])
+                #chosenleafs.append(configured_intefaces[0])
+                if unusedinterfaces:
+                    unusedinterfaces += filter(lambda x: x.name not in configured_intefaces[1], currentinterfacelist)
+                else:
+                    unusedinterfaces = filter(lambda x: x.name not in configured_intefaces[1], currentinterfacelist)
+            else:
+#            if unusedinterfaces:
+                            #for interface in currentinterfacelist:
+                def match_fex_or_nonfex(x):
+                    if x.fexethname != None:
+                        if x.fexethname in configured_intefaces[1]:
+                            return False
+                        else:
+                            return True
+                    else:
+                        if x.name in configured_intefaces[1]:
+                            return False
+                        else:
+                            return True
+                if unusedinterfaces:
+                    unusedinterfaces += filter(match_fex_or_nonfex, currentinterfacelist)
+                else:
+                    unusedinterfaces = filter(match_fex_or_nonfex, currentinterfacelist)
         print('='*80)
         print('\r')
-        ##import pdb; pdb.set_trace()
+        if len(allconfiguredinterfaces) > 1:
+            def create_attr(listx):
+                for x in listx:
+                    if x.fexethname != None:
+                        x.fullethname = x.fexethname
+                    else:
+                        x.fullethname = x.name
+
+            create_attr(unusedinterfaces)
+            c = Counter(getattr(x, 'fullethname') for x in unusedinterfaces)
+
+            unusedinterfaces = filter(lambda x: c[x.fullethname] > 1, unusedinterfaces)
+            #import pdb; pdb.set_trace()
+        finalfullethnamelist = list(set(map(attrgetter('fullethname'), unusedinterfaces)))
+        finalfullethnamelist.sort()
+        print('Available common interfaces for Leaf Profile spanning \x1b[1;33;40mmultiple\x1b[0m leafs.\nSelected interfaces will be applied to all leafs in profile:\n')
+        for num,eth in enumerate(finalfullethnamelist,1):
+            print('     {}.) {}'.format(num,eth))
+        while True:
+            selectedinterfaces = custom_raw_input("\nSelect interface(s) by number: ")
+            print('\r')
+            if selectedinterfaces.strip().lstrip() == '':
+                continue
+            intsinglelist = parseandreturnsingelist(selectedinterfaces,finalfullethnamelist)
+            if intsinglelist == 'invalid':
+                continue
+            #choseninterfaceobjectlist = filter(lambda x: x.number in intsinglelist, finalfullethnamelist)
+            else:
+                break
+        selectedinterfacelist = [finalfullethnamelist[x-1] for x in intsinglelist]
+        #import pdb; pdb.set_trace()
+        #commoninterfaces = reduce(lambda x, y : x & y, v)
+        #allinterfaces = physical_interface_selection(apic, cookie, chosenleafs, returnlistonly=True)
+        #unusedinterfaces = filter(lambda x: x.name not in result[1], allinterfaces)
+        #interfaces_selection_result = physical_interface_selection(apic, cookie, chosenleafs, returnlistonly=True,provided_interfacelist=unusedinterfaces)
         ##
-        ##for leaf in requestpolicy[2]:
+        ##for leaf in selectedleafprofile[2]:
         ##    #import pdb; pdb.set_trace()
 ##
         ##    display_configured_ports(leaf,apic,cookie)
@@ -845,9 +917,9 @@ def main(import_apic,import_cookie):
      #       for x in compiledports:
      #           newlist.append(l1PhysIf(id = x, shortnum = x.split('/')[-1][0]))
      #       switchpreviewutil.main(apic,cookie,[leaf], interfacelist=compiledports, purpose='custom')
-        if requestpolicy[5].infraHPortSlist != []:
+        if selectedleafprofile[5].infraHPortSlist != []:
             apslist = []
-            for aps in sorted(requestpolicy[5].infraHPortSlist, key=lambda x: x.name.lower()):
+            for aps in sorted(selectedleafprofile[5].infraHPortSlist, key=lambda x: x.name.lower()):
                 tempfromtocard_fromtoport_set = set()
                 #import pdb; pdb.set_trace()
                 for portblklist in aps.infraPortsBlklist:
@@ -860,12 +932,13 @@ def main(import_apic,import_cookie):
                     #tempfromtocard_fromtoport_set.add('{}/{}'.format(portblklist.fromCard,portblklist.fromPort))
                     #tempfromtocard_fromtoport_set.add('{}/{}'.format(portblklist.toCard, portblklist.toPort)
                 if 'accportgrp-' in aps.infraRsAccBaseGrp.tDn:
-                    apslist.append((aps.name, ','.join(sorted(list(tempfromtocard_fromtoport_set))), aps.infraRsAccBaseGrp.tDn[aps.infraRsAccBaseGrp.tDn.find('accportgrp-')+11:], aps.descr))
+                    apslist.append((aps.name, ','.join(sorted(list(tempfromtocard_fromtoport_set))), aps.infraRsAccBaseGrp.tDn[aps.infraRsAccBaseGrp.tDn.find('accportgrp-')+11:], aps.descr, aps))
                 else:      
-                    apslist.append((aps.name, ','.join(sorted(list(tempfromtocard_fromtoport_set))), aps.infraRsAccBaseGrp.tDn[aps.infraRsAccBaseGrp.tDn.find('accbundle-')+10:], aps.descr))
+                    apslist.append((aps.name, ','.join(sorted(list(tempfromtocard_fromtoport_set))), aps.infraRsAccBaseGrp.tDn[aps.infraRsAccBaseGrp.tDn.find('accbundle-')+10:], aps.descr, aps))
+            print('[Displaying "{leafp}" APS list]'.format(leafp=selectedleafprofile[0]))
             headers = ('Access Port Selector','Interfaces','Policy','Description')
             sizes = get_column_sizes(apslist, minimum=5, baseminimum=headers)
-            print('     ' + '-' * (len(''.join(list(headers))) + 11))
+            print('     ' + '-' * (sum(sizes) + 14))
             print('     {:{num}} {:{apsname}} | {:{inter}} | {:{policy}} | {:{descr}}'.format('#',*headers,num=len('{}.)'.format(len(apslist))),apsname=sizes[0],inter=sizes[1],policy=sizes[2],descr=sizes[3]))
             print('     {:-<{num}} {:-<{apsname}} | {:-<{inter}} | {:-<{policy}} | {:-<{descr}}'.format('','','','','',num=len('{}.)'.format(len(apslist))),apsname=sizes[0],inter=sizes[1],policy=sizes[2],descr=sizes[3]))
             for number,aps in enumerate(apslist,1):
@@ -873,6 +946,7 @@ def main(import_apic,import_cookie):
             print('')
             print('     {:{num}} [CREATE NEW APS]'.format('{}.)'.format(int(number) + 1),num=len('{}.)'.format(len(apslist)))))
         else:
+            print('[Displaying "{leafp}" APS list]'.format(leafp=selectedleafprofile[0]))
             headers = ('Access Port Selector','Interfaces','Description')
             sizes = get_column_sizes(apslist, minimum=5, baseminimum=headers)
             print('     {:{num}} {:{apsname}} | {:{inter}} | {:{policy}} | {:{descr}}'.format('#',*headers,num=len('{}.)'.format(len(apslist))),apsname=sizes[0],inter=sizes[1],policy=sizes[2],descr=sizes[3]))
@@ -881,7 +955,7 @@ def main(import_apic,import_cookie):
         
 
         while True:
-            askaps = custom_raw_input('\nWhich APS will interfaces be deployed?: ')
+            askaps = custom_raw_input('\nWhich Exisiting or New APS will interface(s) be deployed?: ')
             if askaps != '' and askaps.isdigit() and int(askaps) <= len(apslist) +1 and int(askaps) > 0:
                 break
             else:
@@ -891,6 +965,23 @@ def main(import_apic,import_cookie):
             print('create APS')
         else:
             apschoosen = apslist[int(askaps)-1]
+            url = """https://{apic}/api/node/mo/uni/infra/accportprof-{leafp}/{aps}.json""".format(apic=apic,leafp=selectedleafprofile[0],aps=apschoosen[-1].rn)
+            dataframe = {"infraHPortS":{"attributes":{"name":"{}".format(apschoosen[0]),"status":"modified"},"children":[]}}
+            for interface in selectedinterfacelist:
+                port = interface[interface.rfind('/')+1:]
+                card = interface[interface.rfind('/')-1:interface.rfind('/')]
+                rn = random.randrange(100)
+                portblockframe = """{{"infraPortBlk":{{"attributes":{{"fromCard":"{card}","fromPort":"{port}","toCard":"{card}","toPort":"{port}","name":"block{rn}","status":"created,modified"}}}}}}""".format(card=card,port=port,rn=rn)
+                dataframe['infraHPortS']['children'].append(json.loads(portblockframe))
+            data = json.dumps(dataframe)
+            del dataframe
+            results = PostandGetResponseData(url,data,cookie)
+
+            import pdb; pdb.set_trace()
+
+            #    pblist = ''
+            #for portb in selectedinterfacelist:
+            #    pblist += 1
             print(apschoosen)
         #headers = ('Access Port Selector','Interfaces','Description')
         #sizes = get_column_sizes(apslist, minimum=5, baseminimum=headers)
@@ -898,8 +989,8 @@ def main(import_apic,import_cookie):
         #print('     {:-<{num}} {:-<{apsname}} | {:-<{inter}} | {:-<{descr}}'.format('','','','',num=len('{}.)'.format(len(apslist))),apsname=sizes[0],inter=sizes[1],policy=sizes[2],descr=sizes[3]))
         #for number,aps in enumerate(apslist,1):
         #    print('     {:{num}} {:{apsname}} | {:{inter}} | {:{descr}}'.format('{}.)'.format(number),*aps,num=len('{}'.format(len(apslist))),apsname=sizes[0],inter=sizes[1],policy=sizes[2],descr=sizes[3]))
-        import pdb; pdb.set_trace()
-        print(requestpolicy)
+        #import pdb; pdb.set_trace()
+        print(selectedleafprofile)
 
         while True:
             print("\n What will this interface(s) be:\n" \
@@ -931,8 +1022,8 @@ def main(import_apic,import_cookie):
             else:
                 print('Invalid option...')
                 continue
-        requestpolicy = policygroups[int(requestedpolicynum)-1]
-        print(requestpolicy.name)
+        selectedleafprofile = policygroups[int(requestedpolicynum)-1]
+        print(selectedleafprofile.name)
 
 
 

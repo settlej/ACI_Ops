@@ -512,7 +512,9 @@ def mac_path_function(mac, compVM=None):
 
 
 def ip_path_function(ipaddr):
+    arpquerymatch = False
     primaryquerymatch = False
+    secondaryquerymatch = False
     totalcount2 = 1
     totalcount3 = 1
     url = """https://{apic}/api/node/class/fvIp.json?query-target-filter=eq(fvIp.addr,"{ipaddr}")""".format(ipaddr=ipaddr,apic=apic)
@@ -524,11 +526,13 @@ def ip_path_function(ipaddr):
         url = """https://{apic}/api/node/class/fvCEp.json?rsp-subtree=full&rsp-subtree-include=required&query-target-filter=eq(fvCEp.ip,"{}")""".format(ipaddr,apic=apic)
         logger.info(url)
         result, totalcount2 = GetResponseData(url, cookie, return_count=True)
+        secondaryquerymatch = True
     if totalcount2 == '0':
         url = """https://{apic}/api/node/class/arpAdjEp.json?query-target-filter=and(eq(arpAdjEp.ip,"{}"))&order-by=arpAdjEp.modTs|desc""".format(ipaddr,apic=apic)
         logger.info(url)
         result, totalcount3 = GetResponseData(url, cookie, return_count=True)
-        arpquerymatch = True
+        if result != []:
+            arpquerymatch = True
     if totalcount2 == '0' and totalcount3 == '0' :
         print('\n')
         print("{:26}\t{:15}\t{:18}\t{:20}\t{}".format("Date", "encap-vlan", "Ip Address", "Mac Address", "Path"))
@@ -580,7 +584,14 @@ def ip_path_function(ipaddr):
                 #import pdb; pdb.set_trace()
                 #Display current endpoint info
                 find_and_display_current_location_info(completefvCEplist[0], totalcount)
-        
+        elif secondaryquerymatch:
+            macaddrlist = [x['fvCEp']['attributes']['name'] for x in result]
+            for macaddr in macaddrlist:
+                url = """https://{apic}/api/node/class/fvCEp.json?query-target-filter=eq(fvCEp.mac,"{macaddr}")&rsp-subtree=full&rsp-subtree-include=required""".format(apic=apic,macaddr=macaddr)
+                logger.info(url)
+                result, totalcount = GetResponseData(url, cookie, return_count=True)
+                completefvCEplist = gather_fvCEp_fullinfo(result)
+                find_and_display_current_location_info(completefvCEplist[0], totalcount)
         print('\n[History]')
         display_live_history_info(completefvCEplist[0], totalcount)
 

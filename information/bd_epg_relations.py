@@ -100,5 +100,5 @@ def main(apic, cookie):
             currenttenant = row[0]
         print(' {:{tenant}} | {:{bd}} | {:{epg}}'.format(*row,tenant=sizes[0],bd=sizes[1],epg=sizes[2]))
             #print(bdobj.bd, bdobj.epglist)
-    import pdb; pdb.set_trace()
+    #import pdb; pdb.set_trace()
     custom_raw_input('\nContinue...')
