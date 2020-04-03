@@ -26,7 +26,6 @@ from operator import attrgetter
 from collections import Counter
 from multiprocessing.dummy import Pool as ThreadPool
 
-#import fabric_access
 
 # Create a custom logger
 # Allows logging to state detailed info such as module where code is running and 
@@ -38,8 +37,6 @@ class policy_group():
     def __init__(self, kwargs):
         self.__dict__.update(**kwargs)
         self.policies = {}
-       # localobj = globals()[child]
-       # physinterface.profiles[child] = localobj(children[child]['attributes'])
     def __setitem__(self, k,v):
         setattr(self, k, v)
     def __repr__(self):
@@ -278,8 +275,6 @@ class policy_row():
         self.column18 =''
         self.column19 =''
         for num, column in enumerate(sorted(obj.policies.items())):
-            #import pdb; pdb.set_trace()
-          #  if len(obj.policies) == 18:
             if policy_row.column_order.get('column' + str(num+1)):
                 if obj.policies.get(policy_row.column_order['column' + str(num+1)]):
                     insideobj = obj.policies[policy_row.column_order['column' + str(num+1)]] 
@@ -319,13 +314,6 @@ class infraAccPortP():
         self.infraRtAccPortPlist = []
         self.infraHPortSlist = []
         self.allports = {1:[]}
-#    def gatherallleafs(self):
-#        infraranges = []
-#        for local_infraPortBlk in self.infraHPortSlist:
-#            for x in local_infraPortBlk.infraPortsBlklist:
-#                infraranges.extend(range(x.from_, x.to_ + 1))
-#        allranges = list(set(infraranges))
-#        self.allleafs = allranges
     def __repr__(self):
         return self.dn
 
@@ -336,7 +324,6 @@ def gather_infraNodeP(apic,cookie):
     infraNodePlist = []
     infraNodePdict = {}
     for infrnodep in result:
-       # import pdb; pdb.set_trace()
         tempNodeP = infraNodeP(**infrnodep['infraNodeP']['attributes'])
         if infrnodep['infraNodeP'].get('children'):
             for child in infrnodep['infraNodeP']['children']:
@@ -373,17 +360,10 @@ def gather_infraAccPortP(apic,cookie,fexes):
                             if blocks.get('infraRsAccBaseGrp'):
                                 tempinfraaHPortS.infraRsAccBaseGrp = infraRsAccBaseGrp(**blocks['infraRsAccBaseGrp']['attributes'])
                                 if blocks['infraRsAccBaseGrp']['attributes']['tCl'] == "infraFexBndlGrp":
-                                    
-                                    #import pdb; pdb.set_trace()
                                     fexbndlgrppath = blocks['infraRsAccBaseGrp']['attributes']['tDn']# (ending) -> -> Fexp/infrafexbndlgrp.rn
                                     fexp = '/'.join(fexbndlgrppath.split('/')[:-1])
                                     fexbndlgp = fexbndlgrppath.split('/')[-1:][0]
-                                    #match fexp then find fexbndlgrp with rn
-                                   # fexid = blocks['infraRsAccBaseGrp']['attributes']['tCl'] 
-                                   # -> Fexp/infrafexbndlgrp.rn
-                                    #fexresult = searchfexP(fexid)
                                     foundp = searchfexes(fexp,fexbndlgp,fexes)
-                                    
                                     tempinfraaHPortS.infraFexPlist.append(foundp)
                             elif blocks.get('infraPortBlk'):
                                 module = list(xrange(int(blocks['infraPortBlk']['attributes']['fromCard']), int(blocks['infraPortBlk']['attributes']['toCard'])+1))
@@ -416,6 +396,7 @@ class infraHPortS():
         self.infraPortsBlklist = []
         self.infraRsAccBaseGrp = None
         self.infraFexPlist = []
+
 class infraRsAccBaseGrp():
     def __init__(self, **kwargs):
         self.__dict__.update(kwargs)
@@ -431,10 +412,6 @@ class leafprofile():
         self.__dict__.update(kwargs)
 
 
-
-#class infraFexP():
-#    def __init__(self, **kwargs):
-#        self.__dict__.update(kwargs)
 class infraFexBndlGrp():
     def __init__(self, **kwargs):
         self.__dict__.update(kwargs)
@@ -499,42 +476,6 @@ def searchfexes(fexp,fexbndlgp,fexes):
                     if child.rn == fexbndlgp:
                         return f
 
-#def return_physical_programmed_ports_perleaf(leaf, apic, cookie):
-#    nodeprofilelist, nodedict = gather_infraNodeP(apic,cookie)
-#    fexes = gather_infraFexP(apic,cookie)
-#    accportp = gather_infraAccPortP(apic,cookie, fexes)
-#    for x in accportp:
-#        for y in x.infraRtAccPortPlist:
-#            nodedict[y.tDn].leafprofiles.append(x)
-#    leafspfound = []
-#    for switchp in sorted(nodedict.values(), key=lambda x: x.name):
-#        if int(leaf) in switchp.allleafs:
-#            leafspfound.append(switchp)
-#    return leafspfound, fexes
-    #import pdb; pdb.set_trace()
-       # print('{}  {}'.format(switchp.name, switchp.allleafs))
-       ## import pdb; pdb.set_trace()
-    #for leafp in leafspfound:
-
-       # for leafp in switchp.leafprofiles:
-       #     print('\t' + leafp.name)
-       #     #import pdb; pdb.set_trace()
-       #     for portlist in leafp.infraHPortSlist:
-       #         print('\t\t' + portlist.name)
-       #         #print(portlist.__dict__)
-       #         print('\t\t\t' + portlist.infraRsAccBaseGrp.tDn)
-       #         if portlist.infraRsAccBaseGrp.tCl == 'infraAccPortGrp':
-       #             print('\t\t\t' + 'individual')
-       #         elif portlist.infraRsAccBaseGrp.tCl == 'infraAccBndlGrp':
-       #             print('\t\t\t' + 'Port-channel')                    
-       #         elif portlist.infraRsAccBaseGrp.tCl == 'infraFexBndlGrp':
-       #             print('\t\t\t' + 'Fex-uplinks')
-       #         if portlist.infraFexPlist:
-       #             print('\t\t\t' + portlist.infraRsAccBaseGrp.fexId)
-       #         
-       #         #print('\t\t\t' + portlist.infraRsAccBaseGrp.tCl)
-       #         for z in portlist.infraPortsBlklist:
-       #             print('\t\t\t ' + z.fromPort + ' - ' + z.toPort)
 
 class pc_policy_row(policy_row):
     def __repr__(self):
@@ -572,27 +513,17 @@ def gather_physical_policygroups(apic, cookie):
                 for child in children:
                     currentpolicygroup.policies[child] = children[child]['attributes']['tDn']
         policygrouplist.append(currentpolicygroup)
-        #import pdb; pdb.set_trace()
     for group in policygrouplist:
         finallist.append(policy_row(group))
     return finallist
 
-        #if interface['l1PhysIf'].get('children'):
-        #    for children in interface['l1PhysIf']['children']:
-        #        for child in children:
-        #            localobj = globals()[child]
-        #            physinterface.profiles[child] = localobj(children[child]['attributes'])
-   # for policygroup in policygrouplist:
-   #     policy_row
 
-def displaypolicycolumns(grouplist):
+def displaypolicycolumns(grouplist,display_clone=True):
     columnwidthfind = ('num,','name','column1','column2','column3','column4','column5','column6')
     headers = ('#','Policy Group','AAEP','CDP','Fiber-Channel','Link Level','LLDP','Monitor')
     sizes = get_column_sizes(grouplist, columnwidthfind, minimum=5, baseminimum=headers)
     print('        ' + '-'* (sum(sizes)-5))
-    #import pdb; pdb.set_trace()
     topstring = '   {:{num}} {:{policygroup}} | {:{aaep}} | {:{cdp}} | {:{ll}} | {:{lldp}} | {:{mon}} |'
-    #topstring =' {:13} | {:20} | {:20} | {:20} | {:20} | {:20} | {:20} | {:20} | {:20} | {:20} |'
     topstring = topstring.format('#','Policy Group', 'AAEP','CDP','Link Level','LLDP','Monitor',
                 num=sizes[0],policygroup=sizes[1],aaep=sizes[2],cdp=sizes[3],ll=sizes[5],lldp=sizes[6],mon=sizes[7])
     print(topstring)
@@ -611,6 +542,9 @@ def displaypolicycolumns(grouplist):
         rowstring += ' {:{mon}} |'.format(str(row.column6),mon=sizes[7])
         print(rowstring)
         rowstring =''
+    if display_clone:
+        print('\n   {:{num}} {:{policygroup}}   {:{aaep}}   {:{cdp}}   {:{ll}}   {:{lldp}}   {:{mon}}'.format(
+            str(len(grouplist) + 1)+ '.)','[CLONE POLICY]','','','','','',num=sizes[0],policygroup=sizes[1],aaep=sizes[2],cdp=sizes[3],ll=sizes[5],lldp=sizes[6],mon=sizes[7]))
 
 def retrieve_leafprofiles(apic, cookie):
     url = """https://{apic}/api/node/class/infraAccPortP.json""".format(apic=apic)
@@ -624,7 +558,82 @@ def retrieve_fexprofiles(apic, cookie):
     result = GetResponseData(url,cookie)
     return result
 
-#def ask_and_display_leafprofiles(apic,cookie)
+def display_APS_for_leafProfile(leafp, include_create=True):
+        apslist = []
+        if leafp[5].infraHPortSlist != []:
+            for aps in sorted(leafp[5].infraHPortSlist, key=lambda x: x.name.lower()):
+                tempfromtocard_fromtoport_set = set()
+                #import pdb; pdb.set_trace()
+                for portblklist in aps.infraPortsBlklist:
+                    if portblklist.fromCard == portblklist.toCard and portblklist.fromPort == portblklist.toPort:
+                        tempfromtocard_fromtoport_set.add('{}/{}'.format(portblklist.fromCard,portblklist.fromPort))
+                    elif portblklist.fromCard == portblklist.toCard:
+                        tempfromtocard_fromtoport_set.add('{}/{}-{}'.format(portblklist.fromCard,portblklist.fromPort,portblklist.toPort))
+                    elif portblklist.fromCard != portblklist.toCard:
+                        tempfromtocard_fromtoport_set.add('{}/{}-{}/{}'.format(portblklist.fromCard,portblklist.toCard,portblklist.toCard,portblklist.toPort))
+                if 'accportgrp-' in aps.infraRsAccBaseGrp.tDn:
+                    apslist.append((aps.name, ','.join(sorted(list(tempfromtocard_fromtoport_set))), aps.infraRsAccBaseGrp.tDn[aps.infraRsAccBaseGrp.tDn.find('accportgrp-')+11:], aps.descr, aps))
+                else:      
+                    apslist.append((aps.name, ','.join(sorted(list(tempfromtocard_fromtoport_set))), aps.infraRsAccBaseGrp.tDn[aps.infraRsAccBaseGrp.tDn.find('accbundle-')+10:], aps.descr, aps))
+            print('     [Displaying "{leafp}" APS list]'.format(leafp=leafp[0]))
+            headers = ('Access Port Selector','Interfaces','Policy','Description')
+            sizes = get_column_sizes(apslist, minimum=5, baseminimum=headers)
+            print('     ' + '-' * (sum(sizes) + 14))
+            print('     {:{num}} {:{apsname}} | {:{inter}} | {:{policy}} | {:{descr}}'.format('#',*headers,num=len('{}.)'.format(len(apslist))),apsname=sizes[0],inter=sizes[1],policy=sizes[2],descr=sizes[3]))
+            print('     {:-<{num}} {:-<{apsname}} | {:-<{inter}} | {:-<{policy}} | {:-<{descr}}'.format('','','','','',num=len('{}.)'.format(len(apslist))),apsname=sizes[0],inter=sizes[1],policy=sizes[2],descr=sizes[3]))
+            for number,aps in enumerate(apslist,1):
+                print('     {:{num}} {:{apsname}} | {:{inter}} | {:{policy}} | {:{descr}}'.format('{}.)'.format(number),*aps,num=len('{}.)'.format(len(apslist))),apsname=sizes[0],inter=sizes[1],policy=sizes[2],descr=sizes[3]))
+            print('')
+            if include_create:
+                print('     {:{num}} [CREATE NEW APS]'.format('{}.)'.format(int(number) + 1),num=len('{}.)'.format(len(apslist)))))
+        else:
+            print('[Displaying "{leafp}" APS list]'.format(leafp=leafp[0]))
+            headers = ('Access Port Selector','Interfaces','Description')
+            sizes = get_column_sizes(apslist, minimum=5, baseminimum=headers)
+            print('     {:{num}} {:{apsname}} | {:{inter}} | {:{policy}} | {:{descr}}'.format('#',*headers,num=len('{}.)'.format(len(apslist))),apsname=sizes[0],inter=sizes[1],policy=sizes[2],descr=sizes[3]))
+            print('     {:-<{num}} {:-<{apsname}} | {:-<{inter}} | {:-<{descr}}'.format('','','','','',num=len('{}.)'.format(len(apslist))),apsname=sizes[0],inter=sizes[1],policy=sizes[2],descr=sizes[3]))
+            print('      no APS found')
+        return apslist
+
+def display_leafprofiles(accportp,fexes,nodedict):
+        for x in accportp:
+            for y in x.infraRtAccPortPlist:
+                nodedict[y.tDn].leafprofiles.append(x)
+        for switchp in sorted(nodedict.values(), key=lambda x: x.name):
+            for leafp in switchp.leafprofiles:
+                for fex in fexes:
+                    for portlist in leafp.infraHPortSlist:
+                        if fex.dn in portlist.infraRsAccBaseGrp.tDn:
+                            leafp.foundfex.append((fex,portlist.infraRsAccBaseGrp.fexId))
+                            for y in fex.infraHPortSlist:
+                                pass
+        leaftable = []
+        for switchp in sorted(nodedict.values(), key=lambda x: x.name):
+            if len(switchp.leafprofiles) > 1:
+                for lp in switchp.leafprofiles:
+                    leaftable.append((lp.name,'', switchp.name, switchp.allleafs,('',switchp),lp))
+                    if lp.foundfex:
+                        for fex in lp.foundfex:
+                            leaftable.append((fex[0].name, switchp.name, switchp.allleafs,fex[1],(fex,switchp)))
+            else:
+                removedempty_leafprofiles = filter(lambda x: x != '', ','.join(map(lambda x: x.name, switchp.leafprofiles)))
+                if removedempty_leafprofiles:
+                    leaftable.append((switchp.leafprofiles[0].name,switchp.name, switchp.allleafs,'',('',switchp),switchp.leafprofiles[0]))
+                    if switchp.leafprofiles:
+                       if switchp.leafprofiles[0].foundfex:
+                            for fex in switchp.leafprofiles[0].foundfex:
+                                leaftable.append((fex[0].name, switchp.name, switchp.allleafs, fex[1],(fex,switchp),switchp.leafprofiles[0]))        #for fex in fexes:
+
+        baseminimum = ('Leaf Profile', 'Switch Profile', 'Leafs Associated', 'Fex ID')
+        leaftable = filter(None, leaftable)
+        sizes = get_column_sizes(leaftable, minimum=5, baseminimum=baseminimum)
+        leaftable = map(lambda x:x[1] + (x[0],), enumerate(leaftable,1))
+        print('\n     ' + '-' * (sum(sizes) + 13))
+        print('   {:>{num}}   {:{leafp}} | {:{switchp}} | {:{leafaff}} | {:{fexid}}'.format('#', *baseminimum, num=3,leafp=sizes[0],switchp=sizes[1],leafaff=sizes[2],fexid=sizes[3]))
+        print('     {:->{num}} {:-<{leafp}} | {:-<{switchp}} | {:-<{leafaff}} | {:-<{fexid}}'.format('','','','','', num=3,leafp=sizes[0],switchp=sizes[1],leafaff=sizes[2],fexid=sizes[3]))
+        for row in leaftable:
+            print('  {:{num}}.) {:{leafp}} | {:{switchp}} | {:{leafaff}} | {:{fexid}}'.format(row[-1],row[0],row[1],row[2],row[3],num=4, leafp=sizes[0],switchp=sizes[1],leafaff=sizes[2],fexid=sizes[3]))
+        return leaftable
 
 
 
@@ -635,404 +644,304 @@ def main(import_apic,import_cookie):
         global cookie
         cookie = import_cookie
         apic = import_apic
-        clear_screen()
-        location_banner('Config Interface and Deploy')
         #import pdb; pdb.set_trace()
-        nodeprofilelist, nodedict = gather_infraNodeP(apic,cookie)
-        fexes = gather_infraFexP(apic,cookie)
-        accportp = gather_infraAccPortP(apic,cookie, fexes)
-        profilelist = []
-        leafp = retrieve_leafprofiles(apic, cookie)
-        #for lp in leafp:
-        #    profilelist.append(lp['infraAccPortP']['attributes']['dn'].split('/')[2])
-        #fexp = retrieve_fexprofiles(apic, cookie)
-        #for fp in fexp:
-        #    profilelist.append(fp['infraFexP']['attributes']['dn'].split('/')[2])
-        #print('\n')
-        #print('\t # | Leaf Profile or Fex Profile')
-        #print('\t------------------------------------')
-        #for num,profile in enumerate(profilelist,1):
-        #    print("\t{:2}.) {}".format(num,profile.replace("accportprof-","").replace("fexprof-", "")))
-        #while True:
-        #    selected = custom_raw_input("\nSelect interface 'desired' location: ")
-        #    selected = selected.strip().lstrip()
-        #    if selected.isdigit() and int(selected) > 0 and int(selected) <= len(profilelist):
-        #        import pdb; pdb.set_trace()
-        #        print(profilelist[int(selected)-1])
-        #        break
-        #    else:
-        #        print("\nInvalid selection, Please try again...")
-        #        continue
-#
-            ######################################################################################################
-
-        for x in accportp:
-            for y in x.infraRtAccPortPlist:
-                nodedict[y.tDn].leafprofiles.append(x)
-
-
-
-        for switchp in sorted(nodedict.values(), key=lambda x: x.name):
-           # print('{}  {}'.format(switchp.name, switchp.allleafs))
-           # import pdb; pdb.set_trace()
-            for leafp in switchp.leafprofiles:
-               # print('\t' + leafp.name)
-                for fex in fexes:
-                    for portlist in leafp.infraHPortSlist:
-                        #print(fex.dn, portlist.infraRsAccBaseGrp.tDn)
-                        if fex.dn in portlist.infraRsAccBaseGrp.tDn:
-                            leafp.foundfex.append((fex,portlist.infraRsAccBaseGrp.fexId))
-                        #    print('\t\t{} [fex ID: {}]'.format(fex, portlist.infraRsAccBaseGrp.fexId))
-                          #  print(portlist.infraRsAccBaseGrp.fexId)
-                        #for x in fexes:
-                            for y in fex.infraHPortSlist:
-                                pass
-                                #import pdb; pdb.set_trace()
-                  #              print('\t\t\t' + y.infraRsAccBaseGrp.tDn)
-                  #              #print(y.__dict__)
-                  #              for z in y.infraPortsBlklist:
-                  #                  if z.fromPort == z.toPort:
-                  #                      print('\t\t\t\t ' + z.fromPort)
-                  #                  else:   
-                  #                      print('\t\t\t\t ' + z.fromPort + ' - ' + z.toPort)
-
-            #    #import pdb; pdb.set_trace()
-            #    for portlist in leafp.infraHPortSlist:
-            #        print('\t\t' + portlist.name)
-            #        #print(portlist.__dict__)
-            #        print('\t\t\t' + portlist.infraRsAccBaseGrp.tDn)
-            #        if portlist.infraRsAccBaseGrp.tCl == 'infraAccPortGrp':
-            #            print('\t\t\t' + 'individual')
-            #        elif portlist.infraRsAccBaseGrp.tCl == 'infraAccBndlGrp':
-            #            print('\t\t\t' + 'Port-channel')                    
-            #        elif portlist.infraRsAccBaseGrp.tCl == 'infraFexBndlGrp':
-            #            print('\t\t\t' + 'Fex-uplinks')
-            #        if portlist.infraFexPlist:
-            #            print('\t\t\t' + portlist.infraRsAccBaseGrp.fexId)
-            #        
-#
-            #        #print('\t\t\t' + portlist.infraRsAccBaseGrp.tCl)
-            #        for z in portlist.infraPortsBlklist:
-            #            if z.fromPort == z.toPort:
-            #                print('\t\t\t\t ' + z.fromPort)
-            #            else:   
-            #                print('\t\t\t\t ' + z.fromPort + ' - ' + z.toPort)
-        leaftable = []
-        for switchp in sorted(nodedict.values(), key=lambda x: x.name):
-            if len(switchp.leafprofiles) > 1:
-                for lp in switchp.leafprofiles:
-                    leaftable.append((lp.name,'', switchp.name, switchp.allleafs,('',switchp),lp))
-                   #print('{}  {}  | {}'.format(lp.name, switchp.name, switchp.allleafs))
-                    if lp.foundfex:
-                        for fex in lp.foundfex:
-                            leaftable.append((fex[0].name, switchp.name, switchp.allleafs,fex[1],(fex,switchp)))
-                    
-            else:
-                removedempty_leafprofiles = filter(lambda x: x != '', ','.join(map(lambda x: x.name, switchp.leafprofiles)))
-                #import pdb; pdb.set_trace()
-                if removedempty_leafprofiles:
-                    leaftable.append((switchp.leafprofiles[0].name,switchp.name, switchp.allleafs,'',('',switchp),switchp.leafprofiles[0]))
-
-                    #print('{}  {}  | {}'.format(','.join(map(lambda x: x.name, switchp.leafprofiles)), switchp.name, switchp.allleafs ))
-                    if switchp.leafprofiles:
-                       if switchp.leafprofiles[0].foundfex:
-                        #if .foundfex:
-                            for fex in switchp.leafprofiles[0].foundfex:
-                                leaftable.append((fex[0].name, switchp.name, switchp.allleafs, fex[1],(fex,switchp),switchp.leafprofiles[0]))        #for fex in fexes:
-
-        baseminimum = ('Leaf Profile', 'Switch Profile', 'Leafs Associated', 'Fex ID')
-        leaftable = filter(None, leaftable)
-        sizes = get_column_sizes(leaftable, minimum=5, baseminimum=baseminimum)
-        leaftable = map(lambda x:x[1] + (x[0],), enumerate(leaftable,1))
-        #pdb
-        print('\n     ' + '-' * (sum(sizes) + 13))
-        print('   {:>{num}}   {:{leafp}} | {:{switchp}} | {:{leafaff}} | {:{fexid}}'.format('#', *baseminimum, num=3,leafp=sizes[0],switchp=sizes[1],leafaff=sizes[2],fexid=sizes[3]))
-        print('     {:->{num}} {:-<{leafp}} | {:-<{switchp}} | {:-<{leafaff}} | {:-<{fexid}}'.format('','','','','', num=3,leafp=sizes[0],switchp=sizes[1],leafaff=sizes[2],fexid=sizes[3]))
-        for row in leaftable:
-            print('  {:{num}}.) {:{leafp}} | {:{switchp}} | {:{leafaff}} | {:{fexid}}'.format(row[-1],row[0],row[1],row[2],row[3],num=4, leafp=sizes[0],switchp=sizes[1],leafaff=sizes[2],fexid=sizes[3]))
         while True:
-            reqleafprofile = custom_raw_input("\nWhich Leaf Profile for new interface(s)? [single number]: ")
-            if reqleafprofile.isdigit() and int(reqleafprofile) < len(leaftable)+1 and int(reqleafprofile) > 0:
-                break
-            else:
-                print('Invalid option...')
-                continue
-        selectedleafprofile = leaftable[int(reqleafprofile)-1]
-        print('\r')
-        displayleaflist = selectedleafprofile[2]
-
-        allconfiguredinterfaces = multithreading_request(return_configured_ports_for_display_per_leaf, displayleaflist, parameters={'apic':apic,'cookie':cookie})
-        #import pdb; pdb.set_trace()
-        #leafmap = zip(results[])
-        #import pdb; pdb.set_trace()
-        #interfaces.switchpreviewutil.main(apic,cookie,[result[0]], interfacelist=result[1], purpose='custom')
-        print('='*80)
-        print('Green:Used, Black:Available')
-        #chosenleafs = []
-        unusedinterfaces = None
-
-            #leaflist = map(lambda x: x[0]x[1])
-            #import pdb; pdb.set_trace()
-            ##def findcommoninterfaces()
-            #for x in allconfiguredinterfaces:
-            #    x = set(x)
-            #    set1 = x.intersection(x)
-        for configured_intefaces in allconfiguredinterfaces:
-           # import pdb; pdb.set_trace()
-            currentinterfacelist = physical_interface_selection(apic, cookie, [configured_intefaces[0]], returnlistonly=True)
-            interfaces.switchpreviewutil.main(apic,cookie,[configured_intefaces[0]], interfacelist=configured_intefaces[1], purpose='custom')
-            if not any(map(attrgetter('fexethname'),currentinterfacelist)):
-                #configured_intefaces[1] = map(attrgetter('fexid'),configured_intefaces[1])
-                #chosenleafs.append(configured_intefaces[0])
-                if unusedinterfaces:
-                    unusedinterfaces += filter(lambda x: x.name not in configured_intefaces[1], currentinterfacelist)
+            clear_screen()
+            location_banner('Config Interface and Deploy')
+            nodeprofilelist, nodedict = gather_infraNodeP(apic,cookie)
+            fexes = gather_infraFexP(apic,cookie)
+            accportp = gather_infraAccPortP(apic,cookie, fexes)
+            profilelist = []
+            leafp = retrieve_leafprofiles(apic, cookie)
+    
+            leaftable = display_leafprofiles(accportp,fexes,nodedict)
+            while True:
+                reqleafprofile = custom_raw_input("\nWhich Leaf Profile for new interface(s)? [single number]: ")
+                if reqleafprofile.isdigit() and int(reqleafprofile) < len(leaftable)+1 and int(reqleafprofile) > 0:
+                    break
                 else:
-                    unusedinterfaces = filter(lambda x: x.name not in configured_intefaces[1], currentinterfacelist)
-            else:
-#            if unusedinterfaces:
-                            #for interface in currentinterfacelist:
-                def match_fex_or_nonfex(x):
-                    if x.fexethname != None:
-                        if x.fexethname in configured_intefaces[1]:
-                            return False
-                        else:
-                            return True
+                    print('Invalid option...')
+                    continue
+            selectedleafprofile = leaftable[int(reqleafprofile)-1]
+            print('\r')
+            displayleaflist = selectedleafprofile[2]
+            allconfiguredinterfaces = multithreading_request(return_configured_ports_for_display_per_leaf, displayleaflist, parameters={'apic':apic,'cookie':cookie})
+            print('='*80)
+            print('Green:Used, Black:Available')
+            chosenleafs = []
+            unusedinterfaces = None
+            for configured_intefaces in allconfiguredinterfaces:
+                currentinterfacelist = physical_interface_selection(apic, cookie, [configured_intefaces[0]], returnlistonly=True)
+                interfaces.switchpreviewutil.main(apic,cookie,[configured_intefaces[0]], interfacelist=configured_intefaces[1], purpose='custom')
+                if not any(map(attrgetter('fexethname'),currentinterfacelist)):
+                    chosenleafs.append(configured_intefaces[0])
+                    if unusedinterfaces:
+                        unusedinterfaces += filter(lambda x: x.name not in configured_intefaces[1], currentinterfacelist)
                     else:
-                        if x.name in configured_intefaces[1]:
-                            return False
-                        else:
-                            return True
-                if unusedinterfaces:
-                    unusedinterfaces += filter(match_fex_or_nonfex, currentinterfacelist)
+                        unusedinterfaces = filter(lambda x: x.name not in configured_intefaces[1], currentinterfacelist)
                 else:
-                    unusedinterfaces = filter(match_fex_or_nonfex, currentinterfacelist)
-        print('='*80)
-        print('\r')
-        if len(allconfiguredinterfaces) > 1:
+                    def match_fex_or_nonfex(x):
+                        if x.fexethname != None:
+                            if x.fexethname in configured_intefaces[1]:
+                                return False
+                            else:
+                                return True
+                        else:
+                            if x.name in configured_intefaces[1]:
+                                return False
+                            else:
+                                return True
+                    if unusedinterfaces:
+                        unusedinterfaces += filter(match_fex_or_nonfex, currentinterfacelist)
+                    else:
+                        unusedinterfaces = filter(match_fex_or_nonfex, currentinterfacelist)
+            del currentinterfacelist
+            print('='*80)
+            print('\r')
             def create_attr(listx):
                 for x in listx:
                     if x.fexethname != None:
                         x.fullethname = x.fexethname
                     else:
                         x.fullethname = x.name
-
             create_attr(unusedinterfaces)
-            c = Counter(getattr(x, 'fullethname') for x in unusedinterfaces)
-
-            unusedinterfaces = filter(lambda x: c[x.fullethname] > 1, unusedinterfaces)
-            #import pdb; pdb.set_trace()
-        finalfullethnamelist = list(set(map(attrgetter('fullethname'), unusedinterfaces)))
-        finalfullethnamelist.sort()
-        print('Available common interfaces for Leaf Profile spanning \x1b[1;33;40mmultiple\x1b[0m leafs.\nSelected interfaces will be applied to all leafs in profile:\n')
-        for num,eth in enumerate(finalfullethnamelist,1):
-            print('     {}.) {}'.format(num,eth))
-        while True:
-            selectedinterfaces = custom_raw_input("\nSelect interface(s) by number: ")
-            print('\r')
-            if selectedinterfaces.strip().lstrip() == '':
-                continue
-            intsinglelist = parseandreturnsingelist(selectedinterfaces,finalfullethnamelist)
-            if intsinglelist == 'invalid':
-                continue
-            #choseninterfaceobjectlist = filter(lambda x: x.number in intsinglelist, finalfullethnamelist)
+            if len(allconfiguredinterfaces) > 1:
+                c = Counter(getattr(x, 'fullethname') for x in unusedinterfaces)
+                unusedinterfaces = filter(lambda x: c[x.fullethname] > 1, unusedinterfaces)
+                finalfullethnamelist = list(set(map(attrgetter('fullethname'), unusedinterfaces)))
+                finalfullethnamelist.sort()
+                print('Available common interfaces for Leaf Profile spanning \x1b[1;33;40mmultiple\x1b[0m leafs.\nSelected interfaces will be applied to all leafs in profile:\n')
+                for num,eth in enumerate(finalfullethnamelist,1):
+                    print('     {}.) {}'.format(num,eth))
+                while True:
+                    selectedinterfaces = custom_raw_input("\nSelect interface(s) by number: ")
+                    print('\r')
+                    if selectedinterfaces.strip().lstrip() == '':
+                        continue
+                    intsinglelist = parseandreturnsingelist(selectedinterfaces,finalfullethnamelist)
+                    if intsinglelist == 'invalid':
+                        continue
+                    else:
+                        break
+                selectedinterfacelist = [finalfullethnamelist[x-1] for x in intsinglelist]
             else:
-                break
-        selectedinterfacelist = [finalfullethnamelist[x-1] for x in intsinglelist]
-        #import pdb; pdb.set_trace()
-        #commoninterfaces = reduce(lambda x, y : x & y, v)
-        #allinterfaces = physical_interface_selection(apic, cookie, chosenleafs, returnlistonly=True)
-        #unusedinterfaces = filter(lambda x: x.name not in result[1], allinterfaces)
-        #interfaces_selection_result = physical_interface_selection(apic, cookie, chosenleafs, returnlistonly=True,provided_interfacelist=unusedinterfaces)
-        ##
-        ##for leaf in selectedleafprofile[2]:
-        ##    #import pdb; pdb.set_trace()
-##
-        ##    display_configured_ports(leaf,apic,cookie)
-     #       switchpfound, fexes = fabric_access.display_switch_to_leaf_structure.return_physical_programmed_ports_perleaf(leaf, apic, cookie)
-     #       interfaces_with_APS_defined = []
-     #       fexfound = []
-     #       for switchp in switchpfound:
-     #          # for leafp in switchp.leafprofiles:
-     #          # print(switchp.name)
-     #         #  import pdb; pdb.set_trace()
-     #           for leafp in switchp.leafprofiles:
-     #          #     print('\t' + leafp.name)
-     #               interfaces_with_APS_defined.append((switchp.allleafs,leafp.allports))
-     #               #import pdb; pdb.set_trace()
-     #               for portlist in leafp.infraHPortSlist:
-     #          #         print('\t\t' + portlist.name)
-     #                   #print(portlist.__dict__)
-     #                   #print('\t\t\t' + portlist.infraRsAccBaseGrp.tDn)
-     #                   #print('\t\t\t' + portlist.infraRsAccBaseGrp.tDn)
-     #                   #if portlist.infraRsAccBaseGrp.tDn in fexes:
-     #                   for x in fexes:
-     #                       if portlist.infraRsAccBaseGrp.tDn != '' and  x.dn in portlist.infraRsAccBaseGrp.tDn:
-     #                         #  import pdb; pdb.set_trace()
-     #                           if portlist.infraFexPlist:
-     #                  #     print('\t\t\t' + portlist.infraRsAccBaseGrp.fexId)
-     #                               fexfound.append((x,portlist.infraRsAccBaseGrp.fexId))
-     #                  # if portlist.infraRsAccBaseGrp.tCl == 'infraAccPortGrp':
-     #                  #     print('\t\t\t' + 'individual')
-     #                  # elif portlist.infraRsAccBaseGrp.tCl == 'infraAccBndlGrp':
-     #                  #     print('\t\t\t' + 'Port-channel')                    
-     #                  # elif portlist.infraRsAccBaseGrp.tCl == 'infraFexBndlGrp':
-     #                  #     print('\t\t\t' + 'Fex-uplinks')
-     #                  # if portlist.infraFexPlist:
-     #                  #     print('\t\t\t' + portlist.infraRsAccBaseGrp.fexId)
-     #                       
-     #                       
-     #                   
-     #                      # for z in portlist.infraPortsBlklist:
-     #                      #     print('\t\t\t ' + z.fromPort + ' - ' + z.toPort)
-     #                      #     for x in range(int(z.fromPort),int(z.toPort)+1):
-     #                      #         interfaces_with_APS_defined.append((fexes,x))
-     #                                               #print('\t\t\t' + portlist.infraRsAccBaseGrp.tCl)
-     #               #    for z in portlist.infraPortsBlklist:
-     #               #        print('\t\t\t ' + z.fromPort + ' - ' + z.toPort)
-     #               #   # if len(list(range(int(z.fromPort),int(z.toPort)+1))) > 1:
-     #               #   #     for x in range(range(int(z.fromPort),int(z.toPort)+1)):
-     #               #    
-     #               #            
-     #               #        for x in range(int(z.fromPort),int(z.toPort)+1):
-     #               #            interfaces_with_APS_defined.append((switchp.allleafs,x))
-#
-     #       for fex in fexfound:
-     #           interfaces_with_APS_defined.append((fex[1],fex[0].allports))
-     #       compiledports = []
-     #       for interface in interfaces_with_APS_defined:
-     #           if type(interface[0]) != unicode:
-     #              # import pdb; pdb.set_trace()
-     #               for templeaf in interface[0]:
-     #                   for modulenum, ports in interface[1].items():
-     #                       for port in ports:  
-     #                           compiledports.append(('eth' + str(modulenum) + '/' + str(port)))
-     #                   #import pdb; pdb.set_trace()
-     #           else:
-     #               for modulenum, ports in interface[1].items():
-     #                   for port in ports:
-     #                       compiledports.append(('eth' + str(interface[0]) + '/' + str(modulenum) + '/' + str(port)))
-     #       compiledports = list(set(compiledports))
-     #       #import custom_utils
-     #       newlist = []
-     #       for x in compiledports:
-     #           newlist.append(l1PhysIf(id = x, shortnum = x.split('/')[-1][0]))
-     #       switchpreviewutil.main(apic,cookie,[leaf], interfacelist=compiledports, purpose='custom')
-        if selectedleafprofile[5].infraHPortSlist != []:
-            apslist = []
-            for aps in sorted(selectedleafprofile[5].infraHPortSlist, key=lambda x: x.name.lower()):
-                tempfromtocard_fromtoport_set = set()
-                #import pdb; pdb.set_trace()
-                for portblklist in aps.infraPortsBlklist:
-                    if portblklist.fromCard == portblklist.toCard and portblklist.fromPort == portblklist.toPort:
-                        tempfromtocard_fromtoport_set.add('{}/{}'.format(portblklist.fromCard,portblklist.fromPort))
-                    elif portblklist.fromCard == portblklist.toCard:
-                        tempfromtocard_fromtoport_set.add('{}/{}-{}'.format(portblklist.fromCard,portblklist.fromPort,portblklist.toPort))
-                    elif portblklist.fromCard != portblklist.toCard:
-                        tempfromtocard_fromtoport_set.add('{}/{}-{}/{}'.format(portblklist.fromCard,portblklist.toCard,portblklist.toCard,portblklist.toPort))
-                    #tempfromtocard_fromtoport_set.add('{}/{}'.format(portblklist.fromCard,portblklist.fromPort))
-                    #tempfromtocard_fromtoport_set.add('{}/{}'.format(portblklist.toCard, portblklist.toPort)
-                if 'accportgrp-' in aps.infraRsAccBaseGrp.tDn:
-                    apslist.append((aps.name, ','.join(sorted(list(tempfromtocard_fromtoport_set))), aps.infraRsAccBaseGrp.tDn[aps.infraRsAccBaseGrp.tDn.find('accportgrp-')+11:], aps.descr, aps))
-                else:      
-                    apslist.append((aps.name, ','.join(sorted(list(tempfromtocard_fromtoport_set))), aps.infraRsAccBaseGrp.tDn[aps.infraRsAccBaseGrp.tDn.find('accbundle-')+10:], aps.descr, aps))
-            print('[Displaying "{leafp}" APS list]'.format(leafp=selectedleafprofile[0]))
-            headers = ('Access Port Selector','Interfaces','Policy','Description')
-            sizes = get_column_sizes(apslist, minimum=5, baseminimum=headers)
-            print('     ' + '-' * (sum(sizes) + 14))
-            print('     {:{num}} {:{apsname}} | {:{inter}} | {:{policy}} | {:{descr}}'.format('#',*headers,num=len('{}.)'.format(len(apslist))),apsname=sizes[0],inter=sizes[1],policy=sizes[2],descr=sizes[3]))
-            print('     {:-<{num}} {:-<{apsname}} | {:-<{inter}} | {:-<{policy}} | {:-<{descr}}'.format('','','','','',num=len('{}.)'.format(len(apslist))),apsname=sizes[0],inter=sizes[1],policy=sizes[2],descr=sizes[3]))
-            for number,aps in enumerate(apslist,1):
-                print('     {:{num}} {:{apsname}} | {:{inter}} | {:{policy}} | {:{descr}}'.format('{}.)'.format(number),*aps,num=len('{}.)'.format(len(apslist))),apsname=sizes[0],inter=sizes[1],policy=sizes[2],descr=sizes[3]))
-            print('')
-            print('     {:{num}} [CREATE NEW APS]'.format('{}.)'.format(int(number) + 1),num=len('{}.)'.format(len(apslist)))))
-        else:
-            print('[Displaying "{leafp}" APS list]'.format(leafp=selectedleafprofile[0]))
-            headers = ('Access Port Selector','Interfaces','Description')
-            sizes = get_column_sizes(apslist, minimum=5, baseminimum=headers)
-            print('     {:{num}} {:{apsname}} | {:{inter}} | {:{policy}} | {:{descr}}'.format('#',*headers,num=len('{}.)'.format(len(apslist))),apsname=sizes[0],inter=sizes[1],policy=sizes[2],descr=sizes[3]))
-            print('     {:-<{num}} {:-<{apsname}} | {:-<{inter}} | {:-<{descr}}'.format('','','','','',num=len('{}.)'.format(len(apslist))),apsname=sizes[0],inter=sizes[1],policy=sizes[2],descr=sizes[3]))
-            print('      no APS found')
+                interfaces_selection_result = physical_interface_selection(apic, cookie, chosenleafs, returnlistonly=True,provided_interfacelist=unusedinterfaces)
+                selectedinterfacelist = [x.fullethname for x in interfaces_selection_result]
+                del interfaces_selection_result
+            apslist = display_APS_for_leafProfile(leafp=selectedleafprofile)
+    
+            while True:
+                askaps = custom_raw_input('\nWhich Exisiting or New APS will interface(s) be deployed?: ')
+                if askaps != '' and askaps.isdigit() and int(askaps) <= len(apslist) +1 and int(askaps) > 0:
+                    break
+                else:
+                    print('\r')
+                    print('Invalid option...')
+            if askaps != str(len(apslist) + 1):
+                apschoosen = apslist[int(askaps)-1]
+                url = """https://{apic}/api/node/mo/uni/infra/accportprof-{leafp}/{aps}.json""".format(apic=apic,leafp=selectedleafprofile[0],aps=apschoosen[-1].rn)
+                dataframe = {"infraHPortS":{"attributes":{"name":"{}".format(apschoosen[0]),"status":"modified"},"children":[]}}
+                for interface in selectedinterfacelist:
+                    port = interface[interface.rfind('/')+1:]
+                    card = interface[interface.rfind('/')-1:interface.rfind('/')]
+                    rn = random.randrange(100)
+                    portblockframe = """{{"infraPortBlk":{{"attributes":{{"fromCard":"{card}","fromPort":"{port}","toCard":"{card}","toPort":"{port}","name":"block{rn}","status":"created,modified"}}}}}}""".format(card=card,port=port,rn=rn)
+                    dataframe['infraHPortS']['children'].append(json.loads(portblockframe))
+                data = json.dumps(dataframe)
+                addinterfaces_to_APS_POST = (url,data,cookie)
+                del dataframe
+                created_APS = False
+                interface_check_url = addinterfaces_to_APS_POST[0]
+                interface_check_url = interface_check_url.replace('.json','/rsaccBaseGrp.json')
+                results = GetResponseData(interface_check_url,cookie)
+                if not created_APS:
+                    if results[0].get('infraRsAccBaseGrp'):
+                        if 'accportgrp' in results[0]['infraRsAccBaseGrp']['attributes']['tDn']:
+                            while True:
+                                deployepgs = custom_raw_input("Would you like to deploy STATIC EPGs to new interface(s)? [n]") or 'n'
+                                if deployepgs != "" and deployepgs[0].lower() == 'y':
+                                    deployepgsfunction = 1
+                                elif deployepgs != "" and deployepgs[0].lower() == 'n':
+                                    pass
+                                custom_raw_input("")
+                                break
+                            else:
+                                pass
         
-
-        while True:
-            askaps = custom_raw_input('\nWhich Exisiting or New APS will interface(s) be deployed?: ')
-            if askaps != '' and askaps.isdigit() and int(askaps) <= len(apslist) +1 and int(askaps) > 0:
-                break
+                    else:
+                        print('\nERROR: Unable to locate Policy Group for APS\n')  
+                        import pdb; pdb.set_trace() 
             else:
-                print('\r')
-                print('Invalid option...')
-        if askaps == str(len(apslist) + 1):
-            print('create APS')
-        else:
-            apschoosen = apslist[int(askaps)-1]
-            url = """https://{apic}/api/node/mo/uni/infra/accportprof-{leafp}/{aps}.json""".format(apic=apic,leafp=selectedleafprofile[0],aps=apschoosen[-1].rn)
-            dataframe = {"infraHPortS":{"attributes":{"name":"{}".format(apschoosen[0]),"status":"modified"},"children":[]}}
-            for interface in selectedinterfacelist:
-                port = interface[interface.rfind('/')+1:]
-                card = interface[interface.rfind('/')-1:interface.rfind('/')]
-                rn = random.randrange(100)
-                portblockframe = """{{"infraPortBlk":{{"attributes":{{"fromCard":"{card}","fromPort":"{port}","toCard":"{card}","toPort":"{port}","name":"block{rn}","status":"created,modified"}}}}}}""".format(card=card,port=port,rn=rn)
-                dataframe['infraHPortS']['children'].append(json.loads(portblockframe))
-            data = json.dumps(dataframe)
-            del dataframe
-            results = PostandGetResponseData(url,data,cookie)
+                created_APS = True
+                print('\nCreating New APS (Wizard)\n')
+                while True:
+                    new_aps_name = custom_raw_input("   Provide a name for the New APS: ")
+                    if new_aps_name == "":
+                        continue
+                    text = '   Confirm APS name \x1b[1;33;40m{}\x1b[0m'.format(new_aps_name)
+                    confirm = askconfirmation(text)
+                    if confirm == True:
+                        break
 
-            import pdb; pdb.set_trace()
-
-            #    pblist = ''
-            #for portb in selectedinterfacelist:
-            #    pblist += 1
-            print(apschoosen)
-        #headers = ('Access Port Selector','Interfaces','Description')
-        #sizes = get_column_sizes(apslist, minimum=5, baseminimum=headers)
-        #print('     {:{num}} {:{apsname}} | {:{inter}} | {:{descr}}'.format('#',*headers,num=len('{}.)'.format(len(apslist))),apsname=sizes[0],inter=sizes[1],policy=sizes[2],descr=sizes[3]))
-        #print('     {:-<{num}} {:-<{apsname}} | {:-<{inter}} | {:-<{descr}}'.format('','','','',num=len('{}.)'.format(len(apslist))),apsname=sizes[0],inter=sizes[1],policy=sizes[2],descr=sizes[3]))
-        #for number,aps in enumerate(apslist,1):
-        #    print('     {:{num}} {:{apsname}} | {:{inter}} | {:{descr}}'.format('{}.)'.format(number),*aps,num=len('{}'.format(len(apslist))),apsname=sizes[0],inter=sizes[1],policy=sizes[2],descr=sizes[3]))
-        #import pdb; pdb.set_trace()
-        print(selectedleafprofile)
-
-        while True:
-            print("\n What will this interface(s) be:\n" \
-                + "\r" \
-                + "    1.)VPC\n"\
-                + "    2.)PC\n"\
-                + "    3.)Normal (access,trunk)")
-            print('')
-            asktype = custom_raw_input(" Please Select a type: ")
-            if asktype != '' and asktype.isdigit() and int(asktype) <= 3 and int(asktype) > 0:
-                break
-            else:
-                print('\r')
-                print('Invalid option...')
-        if asktype == '3':
-            policygroups = gather_physical_policygroups(apic, cookie)
-        else:
-            policygroups = gather_portchannel_policygroups(apic,cookie)
+                while True:
+                    print("\n What will this new interface(s) be:\n\n" 
+                        + "    1.)VPC\n"
+                        + "    2.)PC\n"
+                        + "    3.)Normal (access,trunk)")
+                    print('')
+                    asktype = custom_raw_input(" Please Select a type: ")
+                    if asktype != '' and asktype.isdigit() and int(asktype) <= 3 and int(asktype) > 0:
+                        break
+                    else:
+                        print('\r')
+                        print('Invalid option...')
+                if asktype == '3':
+                    policygroups = gather_physical_policygroups(apic, cookie)
+                    interfacetype = 'access|trunk'
+                else:
+                    policygroups = gather_portchannel_policygroups(apic,cookie)
+                    interfacetype = 'port-channel'
+                
         
+                #leafs = leaf_selection(get_All_leafs(apic, cookie))
+                #leafallinterfacesdict = pull_leaf_interfaces(leafs)
+                #print_attribute_layout(leafallinterfacesdict,leafs)
+                
+                while True:
+                    if created_APS:
+                        displaypolicycolumns(policygroups, display_clone=False)
+                        clonerequest = custom_raw_input("\nWhich policy group would you like to Clone: ")
+                        if clonerequest != "" and clonerequest.isdigit() and int(clonerequest) <= len(policygroups) and int(clonerequest) > 0:
+                            selectedpolicygroup = policygroups[int(clonerequest)-1].name
+                            clone = True
+                            break
+                        else:
+                            print('Invalid option...')
+                    else:
+                        displaypolicycolumns(policygroups)
 
-        #leafs = leaf_selection(get_All_leafs(apic, cookie))
-        #leafallinterfacesdict = pull_leaf_interfaces(leafs)
-        #print_attribute_layout(leafallinterfacesdict,leafs)
-        displaypolicycolumns(policygroups)
-        while True:
-            requestedpolicynum = custom_raw_input("\nWhat Policy Group for new interface. [single number]: ")
-            if requestedpolicynum.isdigit() and int(requestedpolicynum) <= len(policygroups) and int(requestedpolicynum) > 0:
-                break
-            else:
-                print('Invalid option...')
-                continue
-        selectedleafprofile = policygroups[int(requestedpolicynum)-1]
-        print(selectedleafprofile.name)
+                        requestedpolicynum = custom_raw_input("\nWhat Policy Group for new interface. [single number]: ")
+                        if requestedpolicynum.isdigit() and int(requestedpolicynum) <= len(policygroups) and int(requestedpolicynum) > 0:
+    
+                            selectedpolicygroup = policygroups[int(requestedpolicynum)-1].name
+                            clone = False
+                            break
+                        elif requestedpolicynum.isdigit() and int(requestedpolicynum) == len(policygroups) + 1 and int(requestedpolicynum) > 0:
+                            clonerequest = custom_raw_input("\nWhich policy group would you like to Clone: ")
+                            if clonerequest != "" and clonerequest.isdigit() and int(clonerequest) <= len(policygroups) and int(clonerequest) > 0:
+                                selectedpolicygroup = policygroups[int(clonerequest)-1].name
+                                clone = True
+                                break
+                            else:
+                                print('Invalid option...')
+                        else:
+                            print('Invalid option...')
+                            continue
+                pgdata = False
+                if asktype != '3' and clone == True:
+                    
+                    url = """https://{apic}/api/node/mo/uni/infra/funcprof/accbundle-{policy}.json?rsp-subtree=full&rsp-prop-include=config-only""".format(apic=apic,policy=selectedpolicygroup)
+                    pgresults = GetResponseData(url,cookie)
+                    print('\nCloning \x1b[1;33;40m{}\x1b[0m...'.format(selectedpolicygroup))
+                    while True:
+                        new_pg_name = custom_raw_input("\n   Provide a name for the Policy Group: ")
+                        if new_pg_name == "":
+                            continue
+                        text = '   Confirm Policy Group name \x1b[1;33;40m{}\x1b[0m'.format(new_pg_name)
+                        confirm = askconfirmation(text)
+                        if confirm == False:
+                            continue
+                        pgurl = """https://{apic}/api/node/mo/uni/infra/funcprof/accbundle-{policy}.json""".format(apic=apic,policy=new_pg_name)
+                        pgdata = json.dumps(pgresults).replace(selectedpolicygroup,new_pg_name)
+                        policygroupdict = {'url':pgurl,'data':pgdata}
+                        break
 
-
-
-        import pdb; pdb.set_trace()
-
-        #    print('hit')
-        #    print('{}  {}  | {}'.format(fex.dn, switchp.name, switchp.allleafs))
-
-
-        #for physpolicy in physpolicygroupslist:
-        #    print(physpolicy.name, physpolicy.column1,physpolicy.column2,physpolicy.column3,physpolicy.column4,physpolicy.column5,physpolicy.column6,physpolicy.column7)
-        custom_raw_input('\n#Press enter to continue...')
+                if asktype == '3' and clone == True:
+                    
+                    #pgdata = False
+                    url = """https://{apic}/api/node/mo/uni/infra/funcprof/accportgrp-{policy}.json?rsp-subtree=full&rsp-prop-include=config-only""".format(apic=apic,policy=selectedpolicygroup)
+                    pgresults = GetResponseData(url,cookie)
+                    print('\nCloning \x1b[1;33;40m{}\x1b[0m...'.format(selectedpolicygroup))
+                    while True:
+                        new_pg_name = custom_raw_input("\n   Provide a name for the Policy Group: ")
+                        if new_pg_name == "":
+                            continue
+                        text = '   Confirm Policy Group name \x1b[1;33;40m{}\x1b[0m'.format(new_pg_name)
+                        confirm = askconfirmation(text)
+                        if confirm == False:
+                            continue
+                        pgurl = """https://{apic}/api/node/mo/uni/infra/funcprof/accportgrp-{policy}.json""".format(apic=apic,policy=new_pg_name)
+                        pgdata = json.dumps(pgresults).replace(selectedpolicygroup,new_pg_name)
+                        policygroupdict = {'url':pgurl,'data':pgdata}
+                        break
+                print('\n')
+                # if APS policy group refrences a access/trunk interface, bypass if port-channel
+                #while True:
+                #    deployepgs = custom_raw_input("Would you like to deploy STATIC EPGs to new interface(s)? [n]") or 'n'
+                #    if deployepgs != "" and deployepgs[0].lower() == 'y':
+                #        deployepgsfunction = 1
+                #    elif deployepgs != "" and deployepgs[0].lower() == 'n':
+                #        pass
+                #    custom_raw_input("")
+                #    break
+             
+            while True:
+                deploymenttext = 'Using Leaf Profile \x1b[1;33;40m{}\x1b[0m\n'.format(selectedleafprofile[0])
+                if created_APS:
+                    if pgdata:
+                        newapsdict = {'apsname':new_aps_name,'policygroup':policygroupdict}
+                    elif not pgdata:
+                        newapsdict = {'apsname':new_aps_name,'policygroup':selectedpolicygroup}
+                    deploymenttext += "   Deploying \x1b[1;33;40m{}\x1b[0m to New APS: ".format(map(str,selectedinterfacelist))
+                    deploymenttext +="\x1b[1;33;40m{}\x1b[0m\n".format(new_aps_name)
+                    deploymenttext +="   Interface Type: \x1b[1;33;40m{}\x1b[0m\n".format(interfacetype)
+                    if isinstance(newapsdict['policygroup'], dict):
+                        deploymenttext +="   Using New Cloned Policy_Group \x1b[1;33;40m{}\x1b[0m from ".format(new_pg_name)
+                        deploymenttext +="Policy_Group: \x1b[1;33;40m{}\x1b[0m".format(selectedpolicygroup)
+                    else:
+                        deploymenttext +="\n   Policy_Group: \x1b[1;33;40m{}\x1b[0m".format(selectedpolicygroup)
+                    print(deploymenttext)
+                    print('')
+                    #text = "Confirm deploy {} to {}".format(selectedinterfacelist,apschoosen[-1].name))
+                    #confirm = askconfirmation(text)
+                    #if confirm == True:
+                    #    break
+                    import pdb; pdb.set_trace()
+                else:
+                    confirmation = custom_raw_input("Confirm deploy \x1b[1;33;40m{}\x1b[0m to \x1b[1;33;40m{}\x1b[0m [y]? ".format(map(str,selectedinterfacelist),apschoosen[-1].name)) or 'y'
+                    if confirmation != '' and confirmation[0].lower() == 'y':
+                        results, error = PostandGetResponseData(url,data,cookie)
+                        if error is None:
+                            print('\nSuccessfully Added Ports to APS!\n')
+                            custom_raw_input("Continue...")
+                        else:
+                            print('ERROR: {}'.format(error))
+                            custom_raw_input("Continue...")
+                        cancel = False
+                        break
+                    elif confirmation != '' and confirmation[0].lower() == 'n':
+                        custom_raw_input("\nCanceling...")
+                        cancel = True
+                        break
+                    else:
+                        print('Invalid option...')
+                if cancel:
+                    break
+            nodeprofilelist, nodedict = gather_infraNodeP(apic,cookie)
+            fexes = gather_infraFexP(apic,cookie)
+            accportp = gather_infraAccPortP(apic,cookie, fexes)
+            profilelist = []
+            leafp = retrieve_leafprofiles(apic, cookie)
+            print('\nDisplaying results:\n')
+            leaftable = display_leafprofiles(accportp,fexes,nodedict)
+            print('')
+            selectedleafprofile = leaftable[int(reqleafprofile)-1]
+            display_APS_for_leafProfile(selectedleafprofile, include_create=False)
+            #    print('hit')
+            #    print('{}  {}  | {}'.format(fex.dn, switchp.name, switchp.allleafs))
+    
+    
+            #for physpolicy in physpolicygroupslist:
+            #    print(physpolicy.name, physpolicy.column1,physpolicy.column2,physpolicy.column3,physpolicy.column4,physpolicy.column5,physpolicy.column6,physpolicy.column7)
+            custom_raw_input('\n#Press enter to continue...')
+    

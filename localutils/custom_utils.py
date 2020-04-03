@@ -36,71 +36,30 @@ def return_configured_ports_for_display_per_leaf(leaf,apic,cookie):
     interfaces_with_APS_defined = []
     fexfound = []
     for switchp in switchpfound:
-       # for leafp in switchp.leafprofiles:
-       # print(switchp.name)
-      #  import pdb; pdb.set_trace()
         for leafp in switchp.leafprofiles:
-       #     print('\t' + leafp.name)
             interfaces_with_APS_defined.append((switchp.allleafs,leafp.allports))
-            #import pdb; pdb.set_trace()
             for portlist in leafp.infraHPortSlist:
-       #         print('\t\t' + portlist.name)
-                #print(portlist.__dict__)
-                #print('\t\t\t' + portlist.infraRsAccBaseGrp.tDn)
-                #print('\t\t\t' + portlist.infraRsAccBaseGrp.tDn)
-                #if portlist.infraRsAccBaseGrp.tDn in fexes:
                 for x in fexes:
                     if portlist.infraRsAccBaseGrp.tDn != '' and  x.dn in portlist.infraRsAccBaseGrp.tDn:
-                      #  import pdb; pdb.set_trace()
                         if portlist.infraFexPlist:
-               #     print('\t\t\t' + portlist.infraRsAccBaseGrp.fexId)
                             fexfound.append((x,portlist.infraRsAccBaseGrp.fexId))
-               # if portlist.infraRsAccBaseGrp.tCl == 'infraAccPortGrp':
-               #     print('\t\t\t' + 'individual')
-               # elif portlist.infraRsAccBaseGrp.tCl == 'infraAccBndlGrp':
-               #     print('\t\t\t' + 'Port-channel')                    
-               # elif portlist.infraRsAccBaseGrp.tCl == 'infraFexBndlGrp':
-               #     print('\t\t\t' + 'Fex-uplinks')
-               # if portlist.infraFexPlist:
-               #     print('\t\t\t' + portlist.infraRsAccBaseGrp.fexId)
-                    
-                    
-                
-                   # for z in portlist.infraPortsBlklist:
-                   #     print('\t\t\t ' + z.fromPort + ' - ' + z.toPort)
-                   #     for x in range(int(z.fromPort),int(z.toPort)+1):
-                   #         interfaces_with_APS_defined.append((fexes,x))
-                                            #print('\t\t\t' + portlist.infraRsAccBaseGrp.tCl)
-            #    for z in portlist.infraPortsBlklist:
-            #        print('\t\t\t ' + z.fromPort + ' - ' + z.toPort)
-            #   # if len(list(range(int(z.fromPort),int(z.toPort)+1))) > 1:
-            #   #     for x in range(range(int(z.fromPort),int(z.toPort)+1)):
-            #    
-            #            
-            #        for x in range(int(z.fromPort),int(z.toPort)+1):
-            #            interfaces_with_APS_defined.append((switchp.allleafs,x))
     for fex in fexfound:
         interfaces_with_APS_defined.append((fex[1],fex[0].allports))
     compiledports = []
     for interface in interfaces_with_APS_defined:
         if type(interface[0]) != unicode:
-           # import pdb; pdb.set_trace()
             for templeaf in interface[0]:
                 for modulenum, ports in interface[1].items():
                     for port in ports:  
                         compiledports.append(('eth' + str(modulenum) + '/' + str(port)))
-                #import pdb; pdb.set_trace()
         else:
             for modulenum, ports in interface[1].items():
                 for port in ports:
                     compiledports.append(('eth' + str(interface[0]) + '/' + str(modulenum) + '/' + str(port)))
     compiledports = list(set(compiledports))
-    #import custom_utils
     newlist = []
     for x in compiledports:
         newlist.append(l1PhysIf(id = x, shortnum = x.split('/')[-1][0]))
-    #import pdb; pdb.set_trace()
-    #interfaces.switchpreviewutil.main(apic,cookie,[leaf], interfacelist=compiledports, purpose='custom')
     return (leaf,compiledports)
 
 def location_banner(location):
@@ -111,9 +70,19 @@ def location_banner(location):
             + "######################################\n")
     print(banner)
 
+def askconfirmation(text):
+    while True:
+        confirmation = custom_raw_input("{text} [y]: ".format(text=text)) or 'y'
+        if confirmation != '' and confirmation[0].lower() == 'y':
+            return True
+        elif confirmation != '' and confirmation[0].lower() == 'n':
+            return False
+        else:
+            print('\nInvalid option...')
+
 
 def custom_raw_input(inputstr):
-    r = raw_input(inputstr).strip()
+    r = raw_input(inputstr).strip().lstrip()
     if r == 'exit':
         raise KeyboardInterrupt
     else:
