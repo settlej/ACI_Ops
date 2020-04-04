@@ -272,12 +272,16 @@ class endpoint():
 
 def compile_ethname(ethlist):
     ethnamelist = []
+    #try:
     for eth in ethlist:
-        if eth.fex != '':
+        #import pdb; pdb.set_trace()
+        if eth.fex != '' and eth.fex != None:
             ethname = eth.fex.replace('fex-','eth') + '/' + eth.name[3:]
         else:
             ethname = eth.name
         ethnamelist.append(ethname)
+    #except:
+    #    import pdb; pdb.set_trace()
     return ethnamelist
 
 def main(import_apic,import_cookie):

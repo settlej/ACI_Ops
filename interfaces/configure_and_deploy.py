@@ -636,6 +636,148 @@ def display_leafprofiles(accportp,fexes,nodedict):
         return leaftable
 
 
+def interface_type_and_deployement(chosenepgs, choseninterfaceobjectlist, apic, type="Physical"):
+    while True:
+        print('What is the inteface epg mode?:\n\n'
+              + '**Use either 1 for trunks ports and 2 for normal access ports\n\n' 
+              + '1.) Trunk\n'
+              + '2.) Access\n'
+              + '3.) Untagged\n')
+        askepgtype = custom_raw_input("Which mode? [default=1]: ") or '1'
+        if askepgtype == '1':
+            epg_type = 'trunk_port'
+            break
+        elif askepgtype == '2':
+            epg_type = 'access_port'
+            break
+        elif askepgtype == '3':
+            epg_type = 'untagged_port'
+            break
+        else:
+            print("\n\x1b[1;37;41mInvalid option...Try again\x1b[0m\n")
+            continue
+        
+    urllist, confirmationlist =  vlan_and_url_generating(chosenepgs,choseninterfaceobjectlist, apic, epg_type)
+    print('')
+    print('Please Confirm deployment:\n')
+    for confirm in confirmationlist:
+        print('{epg} with vlan {vlan}'.format(epg=confirm[1],vlan=confirm[2]))
+        for interface in confirm[0]:
+            print('{}'.format(interface))
+        print('')
+    while True:
+        verify = custom_raw_input('Continue? [y|n]: ')
+        if verify == '':
+            print("\n\x1b[1;37;41mInvalid option...Try again\x1b[0m\n")
+            continue
+        elif verify[0].lower() == 'y':
+            break
+        elif verify[0].lower() == 'n':
+            raise KeyboardInterrupt
+        else:
+            print("\n\x1b[1;37;41mInvalid option...Try again\x1b[0m\n")
+            continue    
+    add_egps_to_interfaces(urllist, type, cookie)
+
+def vlan_and_url_generating(chosenepgs,choseninterfaceobjectlist, apic, epg_type):
+    urllist = []
+    confirmationlist = []
+    for epg in sorted(chosenepgs):
+        url = """https://{apic}/api/node/mo/{}.json""".format(epg,apic=apic)
+        logger.info(url)
+        print("\nProvide a vlan number for epg: {}".format(epgformater(epg)))
+        while True:
+            try:
+                vlan = custom_raw_input('vlan number [1-3899]: ')
+                print('\r')
+                if vlan.isdigit() and vlan.strip().lstrip() != '' and int(vlan) > 0 and int(vlan) < 4096:
+                   break
+                else:
+                    print('Invalid vlan number')
+            except ValueError:
+                continue
+        for interface in sorted(choseninterfaceobjectlist):
+            if epg_type == 'trunk_port':
+                data = """'{{"fvRsPathAtt":{{"attributes":{{"encap":"vlan-{vlan}","instrImedcy":"immediate",\
+                     "tDn":"{}","status":"created"}},"children":[]}}}}'""".format(interface,vlan=vlan)
+            elif epg_type == 'access_port':
+                data = """'{{"fvRsPathAtt":{{"attributes":{{"encap":"vlan-{vlan}","mode":"native","instrImedcy":"immediate",\
+                         "tDn":"{}","status":"created"}},"children":[]}}}}'""".format(interface,vlan=vlan)
+            elif epg_type == 'untagged_port':
+                data = """'{{"fvRsPathAtt":{{"attributes":{{"encap":"vlan-{vlan}","mode":"untagged","instrImedcy":"immediate",\
+                         "tDn":"{}","status":"created"}},"children":[]}}}}'""".format(interface,vlan=vlan)
+            urlmodify = namedtuple('urlmodify', ('url', 'interface', 'data'))
+            urllist.append(urlmodify(url, interface, data))
+        confirmationlist.append((choseninterfaceobjectlist,epg, vlan))
+    return urllist, confirmationlist
+
+def add_egps_to_interfaces(urllist, interfacetype, cookie):
+    queue = Queue.Queue()
+    threadlist = []
+    queuelist = []
+    for url in urllist:
+        t = threading.Thread(target=submit_add_post_request, args=(url,interfacetype,queue, cookie))
+        t.daemon = True
+        t.start()
+        threadlist.append(t)
+    for t in threadlist:
+        t.join()
+        queuelist.append(queue.get())
+    for q in sorted(queuelist):
+        print(q)
+
+def submit_add_post_request(url,interfacetype,queue, cookie):
+    result, error = PostandGetResponseData(url.url, url.data, cookie)
+    logger.info(result)
+    logger.info(error)
+    shorturl = url.url[30:-5]
+    if error == None and result == []:
+        finalresult = 'Success! -- Added ' + shorturl + ' > ' + str(url.interface)
+        queue.put(finalresult)
+        logger.debug('{} modify: {}'.format(interfacetype, finalresult))
+    elif result == 'invalid':
+        logger.error('{} modify: {}'.format(interfacetype, error))
+        interfacepath = re.search(r'\[.*\]', error)
+        if 'already exists' in error:
+            queue.put('\x1b[1;37;41mFailure\x1b[0m ' + shorturl + ' > ' + url.interface.dn + '\t -- EPG already on Interface ')# + interfacepath.group())    
+        else:
+            queue.put('\x1b[1;37;41mFailure\x1b[0m ' + shorturl + '\t -- ' + error)
+    else:
+        logger.error('{} modify: {}'.format(interfacetype, error))
+        print(error)
+
+
+
+
+
+def create_deploy_new_aps(parentleafprofile,apsname):
+        url = """https://{apic}/api/node/mo/uni/infra/accportprof-{plp}/hports-{apsname}-typ-range.json""".format(apic=apic,plp=parentleafprofile,apsname=apsname)
+        data = """{{"infraHPortS":{{"attributes":{{"name":"{apsname}","status":"created,modified"}}}}}}""".format(apsname=apsname)
+        results, error = PostandGetResponseData(url,data,cookie)
+        return results, error
+
+def associate_policygroup_to_aps(parentleafprofile,apsname,policygroup):
+        url = """https://{apic}/api/node/mo/uni/infra/accportprof-{plp}/hports-{apsname}-typ-range/rsaccBaseGrp.json""".format(apic=apic,plp=parentleafprofile,apsname=apsname)
+        data = """{{"infraRsAccBaseGrp":{{"attributes":{{"tDn":"uni/infra/funcprof/accportgrp-{policygroup}","status":"created,modified"}}}}}}""".format(policygroup=policygroup)
+        results, error = PostandGetResponseData(url,data,cookie)
+        return results, error
+        #,"children":"""
+        #"""[{"infraPortBlk":{"attributes":{"fromPort":"17","toPort":"17","name":"block2","rn":"portblk-block2","status":"created,modified"},"children":[]}},{"infraRsAccBaseGrp":{"attributes":{"tDn":"uni/infra/funcprof/accportgrp-ACCESS_PORT","status":"created,modified"},"children":[]}}]}}"""
+#
+
+
+def portblock_factory_creator(leafp,aps,selectedinterfacelist):
+    url = """https://{apic}/api/node/mo/uni/infra/accportprof-{leafp}/hports-{aps}-typ-range.json""".format(apic=apic,leafp=leafp,aps=aps)
+    dataframe = {"infraHPortS":{"attributes":{"name":"{}".format(aps),"status":"modified"},"children":[]}}
+    for interface in selectedinterfacelist:
+        port = interface[interface.rfind('/')+1:]
+        card = interface[interface.rfind('/')-1:interface.rfind('/')]
+        rn = random.randrange(100)
+        portblockframe = """{{"infraPortBlk":{{"attributes":{{"fromCard":"{card}","fromPort":"{port}","toCard":"{card}","toPort":"{port}","name":"block{rn}","status":"created,modified"}}}}}}""".format(card=card,port=port,rn=rn)
+        dataframe['infraHPortS']['children'].append(json.loads(portblockframe))
+    data = json.dumps(dataframe)
+    addinterfaces_to_APS_POST = (url,data,cookie)
+    return addinterfaces_to_APS_POST
 
 
 def main(import_apic,import_cookie):
@@ -648,6 +790,7 @@ def main(import_apic,import_cookie):
         while True:
             clear_screen()
             location_banner('Config Interface and Deploy')
+            allepglist = get_All_EGPs(apic,cookie)
             nodeprofilelist, nodedict = gather_infraNodeP(apic,cookie)
             fexes = gather_infraFexP(apic,cookie)
             accportp = gather_infraAccPortP(apic,cookie, fexes)
@@ -727,7 +870,6 @@ def main(import_apic,import_cookie):
             else:
                 interfaces_selection_result = physical_interface_selection(apic, cookie, chosenleafs, returnlistonly=True,provided_interfacelist=unusedinterfaces)
                 selectedinterfacelist = [x.fullethname for x in interfaces_selection_result]
-                del interfaces_selection_result
             apslist = display_APS_for_leafProfile(leafp=selectedleafprofile)
     
             while True:
@@ -754,23 +896,6 @@ def main(import_apic,import_cookie):
                 interface_check_url = addinterfaces_to_APS_POST[0]
                 interface_check_url = interface_check_url.replace('.json','/rsaccBaseGrp.json')
                 results = GetResponseData(interface_check_url,cookie)
-                if not created_APS:
-                    if results[0].get('infraRsAccBaseGrp'):
-                        if 'accportgrp' in results[0]['infraRsAccBaseGrp']['attributes']['tDn']:
-                            while True:
-                                deployepgs = custom_raw_input("Would you like to deploy STATIC EPGs to new interface(s)? [n]") or 'n'
-                                if deployepgs != "" and deployepgs[0].lower() == 'y':
-                                    deployepgsfunction = 1
-                                elif deployepgs != "" and deployepgs[0].lower() == 'n':
-                                    pass
-                                custom_raw_input("")
-                                break
-                            else:
-                                pass
-        
-                    else:
-                        print('\nERROR: Unable to locate Policy Group for APS\n')  
-                        import pdb; pdb.set_trace() 
             else:
                 created_APS = True
                 print('\nCreating New APS (Wizard)\n')
@@ -808,7 +933,7 @@ def main(import_apic,import_cookie):
                 #print_attribute_layout(leafallinterfacesdict,leafs)
                 
                 while True:
-                    if created_APS:
+                    if created_APS and asktype != '3':
                         displaypolicycolumns(policygroups, display_clone=False)
                         clonerequest = custom_raw_input("\nWhich policy group would you like to Clone: ")
                         if clonerequest != "" and clonerequest.isdigit() and int(clonerequest) <= len(policygroups) and int(clonerequest) > 0:
@@ -875,15 +1000,6 @@ def main(import_apic,import_cookie):
                         policygroupdict = {'url':pgurl,'data':pgdata}
                         break
                 print('\n')
-                # if APS policy group refrences a access/trunk interface, bypass if port-channel
-                #while True:
-                #    deployepgs = custom_raw_input("Would you like to deploy STATIC EPGs to new interface(s)? [n]") or 'n'
-                #    if deployepgs != "" and deployepgs[0].lower() == 'y':
-                #        deployepgsfunction = 1
-                #    elif deployepgs != "" and deployepgs[0].lower() == 'n':
-                #        pass
-                #    custom_raw_input("")
-                #    break
              
             while True:
                 deploymenttext = 'Using Leaf Profile \x1b[1;33;40m{}\x1b[0m\n'.format(selectedleafprofile[0])
@@ -902,18 +1018,83 @@ def main(import_apic,import_cookie):
                         deploymenttext +="\n   Policy_Group: \x1b[1;33;40m{}\x1b[0m".format(selectedpolicygroup)
                     print(deploymenttext)
                     print('')
-                    #text = "Confirm deploy {} to {}".format(selectedinterfacelist,apschoosen[-1].name))
-                    #confirm = askconfirmation(text)
-                    #if confirm == True:
-                    #    break
-                    import pdb; pdb.set_trace()
+
+                    while True:
+                        confirmation = custom_raw_input("Confirm Deployment? [y]: ") or 'y'
+                        if confirmation != '' and confirmation[0].lower() == 'y':
+                            deploy = True
+                            break
+                        elif confirmation != '' and confirmation[0].lower() == 'n':
+                            custom_raw_input("Canceling...")
+                            deploy = False
+                            break
+                            
+                    if deploy == True:
+                        print('')
+                        createapsresults, error = create_deploy_new_aps(parentleafprofile=selectedleafprofile[0],apsname=newapsdict['apsname'])
+                        if createapsresults != []:
+                            print('ERROR: Failed creating new APS > {}'.format(error))
+                            break
+                        else:
+                            print('Success > Created APS {}'.format(newapsdict['apsname']))
+                        if pgdata:
+                            pgcreationresults, error = PostandGetResponseData(cookie=cookie,**newapsdict['policygroup'])
+                            if pgcreationresults != []:
+                                print('Failure Creating Policy Group > {}'.format(error))
+                                break
+                            else:
+                                print('Success > Created Policy Group {}'.format(new_pg_name))
+                            associateresults, error = associate_policygroup_to_aps(policygroup=new_pg_name,parentleafprofile=selectedleafprofile[0],apsname=newapsdict['apsname'])
+                            if associateresults != []:
+                                print('ERROR: Failed associating Policy Group to APS > {}'.format(error))
+                                break
+                            else:
+                                print('Success > Associated Poicy Group {} to APS {}'.format(new_pg_name,newapsdict['apsname']))
+                        else:
+                            associateresults, error = associate_policygroup_to_aps(policygroup=selectedpolicygroup,parentleafprofile=selectedleafprofile[0],apsname=newapsdict['apsname'])
+                            if associateresults != []:
+                                print('ERROR: Failed associating Policy Group to APS > {}'.format(error))
+                                break
+                            else:
+                                print('Success > Associated Poicy Group {} to APS {}'.format(selectedpolicygroup,newapsdict['apsname']))
+                        addinterfaces_to_APS_POST = portblock_factory_creator(leafp=selectedleafprofile[0],aps=newapsdict['apsname'],selectedinterfacelist=selectedinterfacelist)
+                        results, error = PostandGetResponseData(*addinterfaces_to_APS_POST)
+                        if error:
+                            print('ERROR: {}'.format(error))
+                            custom_raw_input("Continue...")
+                            break
+                        else:
+                            print('Success > Added Ports to APS!\n')
+                            break
+
+                            #elif not pgdata:
+                            #    results, error = PostandGetResponseData(**newapsdict['policygroup'])
+                        #while True:
+                        #    confirmation = custom_raw_input("Confirm deploy \x1b[1;33;40m{}\x1b[0m to \x1b[1;33;40m{}\x1b[0m [y]? ".format(map(str,selectedinterfacelist),newapsdict['apsname'])) or 'y'
+#
+                        #    #confirmation = custom_raw_input("Confirm deploy \x1b[1;33;40m{}\x1b[0m to \x1b[1;33;40m{}\x1b[0m [y]? ".format(map(str,selectedinterfacelist),apschoosen[-1].name)) or 'y'
+                        #    if confirmation != '' and confirmation[0].lower() == 'y':
+                        #        cancel = False
+                        #        break
+                        #    elif confirmation != '' and confirmation[0].lower() == 'n':
+                        #        custom_raw_input("\nCanceling...")
+                        #        cancel = True
+                        #        break
+                        #    else:
+                        #        print('Invalid option...')
+                        #else:
+                        #    print('ERROR: {}'.format(error))
+                        #    break
+                        #break
+                    else:
+                        custom_raw_input("Cancelled!")
+                        break
                 else:
                     confirmation = custom_raw_input("Confirm deploy \x1b[1;33;40m{}\x1b[0m to \x1b[1;33;40m{}\x1b[0m [y]? ".format(map(str,selectedinterfacelist),apschoosen[-1].name)) or 'y'
                     if confirmation != '' and confirmation[0].lower() == 'y':
-                        results, error = PostandGetResponseData(url,data,cookie)
+                        results, error = PostandGetResponseData(*addinterfaces_to_APS_POST)
                         if error is None:
                             print('\nSuccessfully Added Ports to APS!\n')
-                            custom_raw_input("Continue...")
                         else:
                             print('ERROR: {}'.format(error))
                             custom_raw_input("Continue...")
@@ -927,6 +1108,31 @@ def main(import_apic,import_cookie):
                         print('Invalid option...')
                 if cancel:
                     break
+            
+            if not created_APS:
+                interface_check_url = addinterfaces_to_APS_POST[0]
+                interface_check_url = interface_check_url.replace('.json','/rsaccBaseGrp.json')
+                results = GetResponseData(interface_check_url,cookie)
+                #import pdb; pdb.set_trace() 
+                
+                if results[0].get('infraRsAccBaseGrp'):
+                    if 'accportgrp' in results[0]['infraRsAccBaseGrp']['attributes']['tDn']:
+                        while True:
+                            deployepgs = custom_raw_input("Would you like to deploy STATIC EPGs to new interface(s)? [n]: ") or 'n'
+                            if deployepgs != "" and deployepgs[0].lower() == 'y':
+                                chosenepgs, choseninterfaceobjectlist = display_and_select_epgs(interfaces_selection_result, allepglist)
+                                interface_type_and_deployement(chosenepgs, choseninterfaceobjectlist, apic)
+                            elif deployepgs != "" and deployepgs[0].lower() == 'n':
+                                pass
+                            #custom_raw_input("")
+                            break
+                        else:
+                            pass
+    
+                else:
+                    print('\nERROR: Unable to locate Policy Group for APS\n')  
+                    import pdb; pdb.set_trace() 
+    
             nodeprofilelist, nodedict = gather_infraNodeP(apic,cookie)
             fexes = gather_infraFexP(apic,cookie)
             accportp = gather_infraAccPortP(apic,cookie, fexes)
