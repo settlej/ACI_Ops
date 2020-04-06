@@ -10,6 +10,7 @@ import logging
 import fabric_access
 import interfaces
 from multiprocessing.dummy import Pool as ThreadPool
+import program_globals
 
 def multithreading_request(func, maplist, threadpoolnum=10, parameters={}):
     pool = ThreadPool(int(threadpoolnum))
@@ -130,7 +131,8 @@ def refreshToken(apic,icookie):
     request.add_header("Cookie", cookies)
     response = urllib2.urlopen(request, timeout=45)
     result = json.loads(response.read())
-    return result["imdata"][0]["aaaLogin"]["attributes"]["token"]
+    program_globals.TOKEN = result["imdata"][0]["aaaLogin"]["attributes"]["token"]
+    return program_globals.TOKEN
 
 #############################################################################################################################################
 #                               What does this program do
@@ -699,11 +701,13 @@ class foundobj():
         return repr({k:v for k,v in self.__dict__.items()})
         
 
-def grab_lowest_MO_keyvalues(x, primaryKey=None, keys=None, scope_set=None, returnlist=None):
+def grab_lowest_MO_keyvalues(x, primaryKey=None, keys=None, scope_set=None, returnlist=None,cObject=None):
     if returnlist is None:
         returnlist = []
     if keys is None:
         keys = []
+    if cObject == None:
+        cObject = foundobj
     if scope_set is None:
         scope_set = set()
     if isinstance(x, list):
@@ -718,7 +722,7 @@ def grab_lowest_MO_keyvalues(x, primaryKey=None, keys=None, scope_set=None, retu
             else:
                 if not x[primaryKey] in scope_set:
                     scope_set.add(x[primaryKey])
-                    fo = foundobj({primaryKey:x[primaryKey]})
+                    fo = cObject({primaryKey:x[primaryKey]})
                     for kk in keys:
                         fo[kk] = x[kk]
                     returnlist.append(fo)

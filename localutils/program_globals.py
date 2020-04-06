@@ -1,0 +1,4 @@
+TOKEN = ""
+USER = ""
+APIC = ""
+TIME = ""

@@ -21,6 +21,7 @@ import Queue
 from collections import namedtuple
 import interfaces.switchpreviewutil as switchpreviewutil
 from localutils.custom_utils import *
+import localutils.program_globals 
 import logging
 from operator import attrgetter
 from collections import Counter
@@ -481,10 +482,15 @@ class pc_policy_row(policy_row):
     def __repr__(self):
         return self.name
 
-def gather_portchannel_policygroups(apic,cookie):
+def gather_vpc_policygroup_names(apic,cookie):
+    #url = """https://{apic}/api/node/class/infraAccBndlGrp.json?query-target-filter=eq(infraAccBndlGrp.lagT,"node")&order-by=infraAccBndlGrp.name|asc""".format(apic=apic) 
     url = """https://{apic}/api/node/class/infraAccBndlGrp.json?rsp-subtree=full&rsp-subtree-class=infraRsAttEntP,""".format(apic=apic) \
-            + """infraRsCdpIfPol,infraRsHIfPol,infraRsLldpIfPol,infraRsMonIfInfraPol"""
+            + """infraRsCdpIfPol,infraRsHIfPol,infraRsLldpIfPol,infraRsMonIfInfraPol&query-target-filter=eq(infraAccBndlGrp.lagT,"node")&order-by=infraAccBndlGrp.name|asc"""
     result = GetResponseData(url, cookie)
+    #desiredmoobjects = grab_lowest_MO_keyvalues(result,primaryKey='name',cObject=policy_group)
+    #for num,x in enumerate(desiredmoobjects,1):
+    #    x.num = '{}.)'.format(num)
+    #return desiredmoobjects
     policygrouplist = []
     finallist = []
     for num,policy in enumerate(result,1):
@@ -499,6 +505,91 @@ def gather_portchannel_policygroups(apic,cookie):
     for group in policygrouplist:
         finallist.append(pc_policy_row(group))
     return finallist
+
+def gather_pc_policygroup_names(apic,cookie):
+    url = """https://{apic}/api/node/class/infraAccBndlGrp.json?rsp-subtree=full&rsp-subtree-class=infraRsAttEntP,""".format(apic=apic) \
+            + """infraRsCdpIfPol,infraRsHIfPol,infraRsLldpIfPol,infraRsMonIfInfraPol&query-target-filter=eq(infraAccBndlGrp.lagT,"link")&order-by=infraAccBndlGrp.name|asc"""
+    result = GetResponseData(url, cookie)
+    #desiredmoobjects = grab_lowest_MO_keyvalues(result,primaryKey='name',cObject=policy_group)
+    #for num,x in enumerate(desiredmoobjects,1):
+    #    x.num = '{}.)'.format(num)
+    #return desiredmoobjects
+#    return [x.name for x in desiredmoobjects]
+    policygrouplist = []
+    finallist = []
+    for num,policy in enumerate(result,1):
+        currentpolicygroup = policy_group(policy['infraAccBndlGrp']['attributes'])
+        currentpolicygroup.num = '{}.)'.format(num)
+        if policy['infraAccBndlGrp'].get('children'):
+            for children in policy['infraAccBndlGrp']['children']:
+                for child in children:
+                    currentpolicygroup.policies[child] = children[child]['attributes']['tDn']
+        policygrouplist.append(currentpolicygroup)
+        #import pdb; pdb.set_trace()
+    for group in policygrouplist:
+        finallist.append(pc_policy_row(group))
+    return finallist
+
+#query-target-filter=not(eq(infraAccBndlGrp.lagT,"node"))
+#def gather_vpc_policygroups(apic,cookie):
+#    url = """https://{apic}/api/node/class/infraAccBndlGrp.json?rsp-subtree=full&rsp-subtree-class=infraRsAttEntP,""".format(apic=apic) \
+#            + """infraRsCdpIfPol,infraRsHIfPol,infraRsLldpIfPol,infraRsMonIfInfraPol"""
+#    result = GetResponseData(url, cookie)
+#    import pdb; pdb.set_trace()
+#    policygrouplist = []
+#    finallist = []
+#    for num,policy in enumerate(result,1):
+#        currentpolicygroup = policy_group(policy['infraAccBndlGrp']['attributes'])
+#        currentpolicygroup.num = '{}.)'.format(num)
+#        if policy['infraAccBndlGrp'].get('children'):
+#            for children in policy['infraAccBndlGrp']['children']:
+#                for child in children:
+#                    currentpolicygroup.policies[child] = children[child]['attributes']['tDn']
+#        policygrouplist.append(currentpolicygroup)
+#        #import pdb; pdb.set_trace()
+#    for group in policygrouplist:
+#        finallist.append(pc_policy_row(group))
+#    return finallist
+#
+def gather_portchannel_policygroups(apic,cookie):
+    url = """https://{apic}/api/node/class/infraAccBndlGrp.json?rsp-subtree=full&rsp-subtree-class=infraRsAttEntP,""".format(apic=apic) \
+            + """infraRsCdpIfPol,infraRsHIfPol,infraRsLldpIfPol,infraRsMonIfInfraPol"""
+    result = GetResponseData(url, cookie)
+   # import pdb; pdb.set_trace()
+    policygrouplist = []
+    finallist = []
+    for num,policy in enumerate(result,1):
+        currentpolicygroup = policy_group(policy['infraAccBndlGrp']['attributes'])
+        currentpolicygroup.num = '{}.)'.format(num)
+        if policy['infraAccBndlGrp'].get('children'):
+            for children in policy['infraAccBndlGrp']['children']:
+                for child in children:
+                    currentpolicygroup.policies[child] = children[child]['attributes']['tDn']
+        policygrouplist.append(currentpolicygroup)
+        #import pdb; pdb.set_trace()
+    for group in policygrouplist:
+        finallist.append(pc_policy_row(group))
+    return finallist
+
+
+#def gather_portchannel_policygroups(apic,cookie):
+#    url = """https://{apic}/api/node/class/infraAccBndlGrp.json?rsp-subtree=full&rsp-subtree-class=infraRsAttEntP,""".format(apic=apic) \
+#            + """infraRsCdpIfPol,infraRsHIfPol,infraRsLldpIfPol,infraRsMonIfInfraPol"""
+#    result = GetResponseData(url, cookie)
+#    policygrouplist = []
+#    finallist = []
+#    for num,policy in enumerate(result,1):
+#        currentpolicygroup = policy_group(policy['infraAccBndlGrp']['attributes'])
+#        currentpolicygroup.num = '{}.)'.format(num)
+#        if policy['infraAccBndlGrp'].get('children'):
+#            for children in policy['infraAccBndlGrp']['children']:
+#                for child in children:
+#                    currentpolicygroup.policies[child] = children[child]['attributes']['tDn']
+#        policygrouplist.append(currentpolicygroup)
+#        #import pdb; pdb.set_trace()
+#    for group in policygrouplist:
+#        finallist.append(pc_policy_row(group))
+#    return finallist
 
 def gather_physical_policygroups(apic, cookie):
     url = """https://{apic}/api/node/class/infraAccPortGrp.json?rsp-subtree=full""".format(apic=apic)
@@ -756,9 +847,12 @@ def create_deploy_new_aps(parentleafprofile,apsname):
         results, error = PostandGetResponseData(url,data,cookie)
         return results, error
 
-def associate_policygroup_to_aps(parentleafprofile,apsname,policygroup):
+def associate_policygroup_to_aps(parentleafprofile,apsname,policygroup,interfacetype):
         url = """https://{apic}/api/node/mo/uni/infra/accportprof-{plp}/hports-{apsname}-typ-range/rsaccBaseGrp.json""".format(apic=apic,plp=parentleafprofile,apsname=apsname)
-        data = """{{"infraRsAccBaseGrp":{{"attributes":{{"tDn":"uni/infra/funcprof/accportgrp-{policygroup}","status":"created,modified"}}}}}}""".format(policygroup=policygroup)
+        if interfacetype == 'port-channel':
+            data = """{{"infraRsAccBaseGrp":{{"attributes":{{"tDn":"uni/infra/funcprof/accbundle-{policygroup}","status":"created,modified"}}}}}}""".format(policygroup=policygroup)
+        else:
+            data = """{{"infraRsAccBaseGrp":{{"attributes":{{"tDn":"uni/infra/funcprof/accportgrp-{policygroup}","status":"created,modified"}}}}}}""".format(policygroup=policygroup)
         results, error = PostandGetResponseData(url,data,cookie)
         return results, error
         #,"children":"""
@@ -772,7 +866,7 @@ def portblock_factory_creator(leafp,aps,selectedinterfacelist):
     for interface in selectedinterfacelist:
         port = interface[interface.rfind('/')+1:]
         card = interface[interface.rfind('/')-1:interface.rfind('/')]
-        rn = random.randrange(100)
+        rn = random.randrange(10000)
         portblockframe = """{{"infraPortBlk":{{"attributes":{{"fromCard":"{card}","fromPort":"{port}","toCard":"{card}","toPort":"{port}","name":"block{rn}","status":"created,modified"}}}}}}""".format(card=card,port=port,rn=rn)
         dataframe['infraHPortS']['children'].append(json.loads(portblockframe))
     data = json.dumps(dataframe)
@@ -781,13 +875,12 @@ def portblock_factory_creator(leafp,aps,selectedinterfacelist):
 
 
 def main(import_apic,import_cookie):
+    global apic
+    global cookie
+    apic = import_apic
+    cookie = localutils.program_globals.TOKEN
     while True:
-        global apic
-        global cookie
-        cookie = import_cookie
-        apic = import_apic
-        #import pdb; pdb.set_trace()
-        while True:
+            refreshToken(apic,cookie)
             clear_screen()
             location_banner('Config Interface and Deploy')
             allepglist = get_All_EGPs(apic,cookie)
@@ -920,13 +1013,15 @@ def main(import_apic,import_cookie):
                     else:
                         print('\r')
                         print('Invalid option...')
-                if asktype == '3':
-                    policygroups = gather_physical_policygroups(apic, cookie)
-                    interfacetype = 'access|trunk'
-                else:
-                    policygroups = gather_portchannel_policygroups(apic,cookie)
+                if asktype == '1':
                     interfacetype = 'port-channel'
-                
+                    policygroups = gather_vpc_policygroup_names(apic,cookie)
+                elif asktype == '2':
+                    interfacetype = 'port-channel'
+                    policygroups = gather_pc_policygroup_names(apic, cookie)
+                else:
+                    interfacetype = 'access|trunk'
+                    policygroups = gather_physical_policygroups(apic, cookie)                
         
                 #leafs = leaf_selection(get_All_leafs(apic, cookie))
                 #leafallinterfacesdict = pull_leaf_interfaces(leafs)
@@ -1015,7 +1110,7 @@ def main(import_apic,import_cookie):
                         deploymenttext +="   Using New Cloned Policy_Group \x1b[1;33;40m{}\x1b[0m from ".format(new_pg_name)
                         deploymenttext +="Policy_Group: \x1b[1;33;40m{}\x1b[0m".format(selectedpolicygroup)
                     else:
-                        deploymenttext +="\n   Policy_Group: \x1b[1;33;40m{}\x1b[0m".format(selectedpolicygroup)
+                        deploymenttext +="   Policy_Group: \x1b[1;33;40m{}\x1b[0m".format(selectedpolicygroup)
                     print(deploymenttext)
                     print('')
 
@@ -1025,7 +1120,6 @@ def main(import_apic,import_cookie):
                             deploy = True
                             break
                         elif confirmation != '' and confirmation[0].lower() == 'n':
-                            custom_raw_input("Canceling...")
                             deploy = False
                             break
                             
@@ -1033,38 +1127,38 @@ def main(import_apic,import_cookie):
                         print('')
                         createapsresults, error = create_deploy_new_aps(parentleafprofile=selectedleafprofile[0],apsname=newapsdict['apsname'])
                         if createapsresults != []:
-                            print('ERROR: Failed creating new APS > {}'.format(error))
+                            print('\x1b[1;31;40mERROR:\x1b[0m Failed creating new APS > [{}]'.format(error))
                             break
                         else:
-                            print('Success > Created APS {}'.format(newapsdict['apsname']))
+                            print('\x1b[1;32;40mSuccess\x1b[0m > Created APS [{}]'.format(newapsdict['apsname']))
                         if pgdata:
                             pgcreationresults, error = PostandGetResponseData(cookie=cookie,**newapsdict['policygroup'])
                             if pgcreationresults != []:
-                                print('Failure Creating Policy Group > {}'.format(error))
+                                print('Failure Creating Policy Group > [{}]'.format(error))
                                 break
                             else:
-                                print('Success > Created Policy Group {}'.format(new_pg_name))
-                            associateresults, error = associate_policygroup_to_aps(policygroup=new_pg_name,parentleafprofile=selectedleafprofile[0],apsname=newapsdict['apsname'])
+                                print('\x1b[1;32;40mSuccess\x1b[0m > Created Policy Group [{}]'.format(new_pg_name))
+                            associateresults, error = associate_policygroup_to_aps(policygroup=new_pg_name,parentleafprofile=selectedleafprofile[0],apsname=newapsdict['apsname'],interfacetype=interfacetype)
                             if associateresults != []:
-                                print('ERROR: Failed associating Policy Group to APS > {}'.format(error))
+                                print('\x1b[1;31;40mERROR:\x1b[0m Failed associating Policy Group to APS > [{}]'.format(error))
                                 break
                             else:
-                                print('Success > Associated Poicy Group {} to APS {}'.format(new_pg_name,newapsdict['apsname']))
+                                print('\x1b[1;32;40mSuccess\x1b[0m > Associated Poicy Group [{}] to APS [{}]'.format(new_pg_name,newapsdict['apsname']))
                         else:
-                            associateresults, error = associate_policygroup_to_aps(policygroup=selectedpolicygroup,parentleafprofile=selectedleafprofile[0],apsname=newapsdict['apsname'])
+                            associateresults, error = associate_policygroup_to_aps(policygroup=selectedpolicygroup,parentleafprofile=selectedleafprofile[0],apsname=newapsdict['apsname'],interfacetype=interfacetype)
                             if associateresults != []:
-                                print('ERROR: Failed associating Policy Group to APS > {}'.format(error))
+                                print('\x1b[1;31;40mERROR:\x1b[0m Failed associating Policy Group to APS > [{}]'.format(error))
                                 break
                             else:
-                                print('Success > Associated Poicy Group {} to APS {}'.format(selectedpolicygroup,newapsdict['apsname']))
+                                print('\x1b[1;32;40mSuccess\x1b[0m > Associated Poicy Group [{}] to APS [{}]'.format(selectedpolicygroup,newapsdict['apsname']))
                         addinterfaces_to_APS_POST = portblock_factory_creator(leafp=selectedleafprofile[0],aps=newapsdict['apsname'],selectedinterfacelist=selectedinterfacelist)
                         results, error = PostandGetResponseData(*addinterfaces_to_APS_POST)
                         if error:
-                            print('ERROR: {}'.format(error))
+                            print('\x1b[1;31;40mERROR:\x1b[0m {}'.format(error))
                             custom_raw_input("Continue...")
                             break
                         else:
-                            print('Success > Added Ports to APS!\n')
+                            print('\x1b[1;32;40mSuccess\x1b[0m > Added Ports to APS!\n')
                             break
 
                             #elif not pgdata:
@@ -1083,7 +1177,7 @@ def main(import_apic,import_cookie):
                         #    else:
                         #        print('Invalid option...')
                         #else:
-                        #    print('ERROR: {}'.format(error))
+                        #    print('\x1b[1;31;40mERROR:\x1b[0m {}'.format(error))
                         #    break
                         #break
                     else:
@@ -1096,7 +1190,7 @@ def main(import_apic,import_cookie):
                         if error is None:
                             print('\nSuccessfully Added Ports to APS!\n')
                         else:
-                            print('ERROR: {}'.format(error))
+                            print('\x1b[1;31;40mERROR:\x1b[0m {}'.format(error))
                             custom_raw_input("Continue...")
                         cancel = False
                         break
@@ -1130,7 +1224,7 @@ def main(import_apic,import_cookie):
                             pass
     
                 else:
-                    print('\nERROR: Unable to locate Policy Group for APS\n')  
+                    print('\n\x1b[1;31;40mERROR:\x1b[0m Unable to locate Policy Group for APS\n')  
                     import pdb; pdb.set_trace() 
     
             nodeprofilelist, nodedict = gather_infraNodeP(apic,cookie)

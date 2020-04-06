@@ -386,7 +386,7 @@ def main():
                             '\t ---------------------------------------------------\n' +
                             '\t| 26.) Configure Local Span\n' + 
                             '\t| 27.) Capture server traffic ERSPAN to server (Beta)\n' + 
-                            '\t| 28.) Clone VPC/PC and deploy (Beta)\n' + 
+                            '\t| 28.) Interface Deployment Wizard (Beta)\n' + 
                             #'\t| 20.) Create EPGs (Not Available)\n' +
                             '\t ---------------------------------------------------\n\n' +
                             '\t  [TROUBLESHOOTING]\n'
@@ -406,7 +406,7 @@ def main():
                         print('\nExit to Main menu\n')
                         keyinterrupt = True
                         break
-                elif chosen == '444':
+                elif chosen == '28':
                     try:
                         configure_and_deploy.main(apic,cookie)
                         keyinterrupt = False
@@ -518,14 +518,14 @@ def main():
                         print('\nExit to Main menu\n')
                         keyinterrupt = True
                         break
-                elif chosen == '28':
-                    try:
-                        clonevpcanddeploy.main(apic,cookie)
-                        keyinterrupt = False
-                    except KeyboardInterrupt as k:
-                        print('\nExit to Main menu\n')
-                        keyinterrupt = True
-                        break
+                #elif chosen == '28':
+                #    try:
+                #        clonevpcanddeploy.main(apic,cookie)
+                #        keyinterrupt = False
+                #    except KeyboardInterrupt as k:
+                #        print('\nExit to Main menu\n')
+                #        keyinterrupt = True
+                #        break
                 elif chosen == '19':
                     try:
                         switchandapicinfo.main(apic,cookie)
