@@ -804,20 +804,22 @@ def vlan_and_url_generating(chosenepgs,choseninterfaceobjectlist, apic, epg_type
 
 def add_egps_to_interfaces(urllist, interfacetype, cookie):
     queue = Queue.Queue()
-    threadlist = []
+    results = multithreading_request(submit_add_post_request, urllist, threadpoolnum=10, parameters=[interfacetype,queue,cookie])
+    #import pdb; pdb.set_trace()
+    #threadlist = []
     queuelist = []
-    for url in urllist:
-        t = threading.Thread(target=submit_add_post_request, args=(url,interfacetype,queue, cookie))
-        t.daemon = True
-        t.start()
-        threadlist.append(t)
-    for t in threadlist:
-        t.join()
+    #for url in urllist:
+    #    t = threading.Thread(target=submit_add_post_request, args=(url,interfacetype,queue, cookie))
+    #    t.daemon = True
+    #    t.start()
+    #    threadlist.append(t)
+    for t in results:
+    #    t.join()
         queuelist.append(queue.get())
     for q in sorted(queuelist):
         print(q)
 
-def submit_add_post_request(url,interfacetype,queue, cookie):
+def submit_add_post_request(url,interfacetype,queue,cookie):
     result, error = PostandGetResponseData(url.url, url.data, cookie)
     logger.info(result)
     logger.info(error)
@@ -901,7 +903,7 @@ def main(import_apic,import_cookie):
             selectedleafprofile = leaftable[int(reqleafprofile)-1]
             print('\r')
             displayleaflist = selectedleafprofile[2]
-            allconfiguredinterfaces = multithreading_request(return_configured_ports_for_display_per_leaf, displayleaflist, parameters={'apic':apic,'cookie':cookie})
+            allconfiguredinterfaces = multithreading_request(return_configured_ports_for_display_per_leaf, displayleaflist, parameters={'apic':apic,'cookie':cookie}, threadpoolnum=25)
             print('='*80)
             print('Green:Used, Black:Available')
             chosenleafs = []
@@ -944,6 +946,7 @@ def main(import_apic,import_cookie):
             if len(allconfiguredinterfaces) > 1:
                 c = Counter(getattr(x, 'fullethname') for x in unusedinterfaces)
                 unusedinterfaces = filter(lambda x: c[x.fullethname] > 1, unusedinterfaces)
+                import pdb; pdb.set_trace()
                 finalfullethnamelist = list(set(map(attrgetter('fullethname'), unusedinterfaces)))
                 finalfullethnamelist.sort()
                 print('Available common interfaces for Leaf Profile spanning \x1b[1;33;40mmultiple\x1b[0m leafs.\nSelected interfaces will be applied to all leafs in profile:\n')
@@ -960,6 +963,8 @@ def main(import_apic,import_cookie):
                     else:
                         break
                 selectedinterfacelist = [finalfullethnamelist[x-1] for x in intsinglelist]
+                #interfaces_selection_result = [for x in unusedinterfaces]
+                #interfaces_selection_result = selectedinterfacelist
             else:
                 interfaces_selection_result = physical_interface_selection(apic, cookie, chosenleafs, returnlistonly=True,provided_interfacelist=unusedinterfaces)
                 selectedinterfacelist = [x.fullethname for x in interfaces_selection_result]
@@ -1214,6 +1219,7 @@ def main(import_apic,import_cookie):
                         while True:
                             deployepgs = custom_raw_input("Would you like to deploy STATIC EPGs to new interface(s)? [n]: ") or 'n'
                             if deployepgs != "" and deployepgs[0].lower() == 'y':
+                                import pdb; pdb.set_trace()
                                 chosenepgs, choseninterfaceobjectlist = display_and_select_epgs(interfaces_selection_result, allepglist)
                                 interface_type_and_deployement(chosenepgs, choseninterfaceobjectlist, apic)
                             elif deployepgs != "" and deployepgs[0].lower() == 'n':

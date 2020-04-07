@@ -12,10 +12,12 @@ import interfaces
 from multiprocessing.dummy import Pool as ThreadPool
 import program_globals
 
-def multithreading_request(func, maplist, threadpoolnum=10, parameters={}):
+def multithreading_request(func, maplist, threadpoolnum=10, parameters=None):
     pool = ThreadPool(int(threadpoolnum))
-    if parameters:
+    if parameters and isinstance(parameters,dict):
         results = pool.map(lambda x : func(x, **parameters), maplist)
+    elif parameters and isinstance(parameters,list):
+        results = pool.map(lambda x : func(x, *parameters), maplist)
     else:
         results = pool.map(func, maplist)
     pool.close()
