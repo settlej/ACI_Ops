@@ -18,7 +18,7 @@ import itertools
 import random
 import threading
 import Queue
-from collections import namedtuple
+from collections import namedtuple, OrderedDict
 import interfaces.switchpreviewutil as switchpreviewutil
 from localutils.custom_utils import *
 import localutils.program_globals 
@@ -945,24 +945,28 @@ def main(import_apic,import_cookie):
             create_attr(unusedinterfaces)
             if len(allconfiguredinterfaces) > 1:
                 c = Counter(getattr(x, 'fullethname') for x in unusedinterfaces)
-                unusedinterfaces = filter(lambda x: c[x.fullethname] > 1, unusedinterfaces)
-                import pdb; pdb.set_trace()
-                finalfullethnamelist = list(set(map(attrgetter('fullethname'), unusedinterfaces)))
-                finalfullethnamelist.sort()
+                unusedinterfaces = filter(lambda x: c[x.fullethname] == len(allconfiguredinterfaces), unusedinterfaces)
+                interfacegroups = {k:list(g) for k, g in itertools.groupby(sorted(unusedinterfaces, key=lambda x: x.fullethname),key=lambda x:x.fullethname)}
+                sortedinterfacegroups = OrderedDict(sorted(interfacegroups.items(),key=lambda x:x[0]))
+                #finalfullethnamelist = list(set(map(attrgetter('fullethname'), unusedinterfaces)))
+                #finalfullethnamelist.sort()
                 print('Available common interfaces for Leaf Profile spanning \x1b[1;33;40mmultiple\x1b[0m leafs.\nSelected interfaces will be applied to all leafs in profile:\n')
-                for num,eth in enumerate(finalfullethnamelist,1):
+                for num,eth in enumerate(sortedinterfacegroups.keys(),1):
                     print('     {}.) {}'.format(num,eth))
                 while True:
                     selectedinterfaces = custom_raw_input("\nSelect interface(s) by number: ")
                     print('\r')
                     if selectedinterfaces.strip().lstrip() == '':
                         continue
-                    intsinglelist = parseandreturnsingelist(selectedinterfaces,finalfullethnamelist)
+                    intsinglelist = parseandreturnsingelist(selectedinterfaces,sortedinterfacegroups)
                     if intsinglelist == 'invalid':
                         continue
                     else:
                         break
-                selectedinterfacelist = [finalfullethnamelist[x-1] for x in intsinglelist]
+                #selectedinterfacelist = [finalfullethnamelist[x-1] for x in intsinglelist]
+
+                selectedinterfacelist = [sortedinterfacegroups.keys()[x-1] for x in intsinglelist]
+                interfaces_selection_result = map(lambda x: sortedinterfacegroups[x],selectedinterfacelist)
                 #interfaces_selection_result = [for x in unusedinterfaces]
                 #interfaces_selection_result = selectedinterfacelist
             else:
@@ -1219,20 +1223,69 @@ def main(import_apic,import_cookie):
                         while True:
                             deployepgs = custom_raw_input("Would you like to deploy STATIC EPGs to new interface(s)? [n]: ") or 'n'
                             if deployepgs != "" and deployepgs[0].lower() == 'y':
-                                import pdb; pdb.set_trace()
                                 chosenepgs, choseninterfaceobjectlist = display_and_select_epgs(interfaces_selection_result, allepglist)
-                                interface_type_and_deployement(chosenepgs, choseninterfaceobjectlist, apic)
+                                if isinstance(choseninterfaceobjectlist[0], list):
+                                    newlist = []
+                                    def extract_nested_interfacelist(listx):
+                                        for x in listx:
+                                            newlist.extend(x)
+                                        return newlist
+                                    choseninterfaceobjectlist = extract_nested_interfacelist(choseninterfaceobjectlist)
+                                    interface_type_and_deployement(chosenepgs, choseninterfaceobjectlist, apic)
+                                    break
+                                else:
+                                    interface_type_and_deployement(chosenepgs, choseninterfaceobjectlist, apic)
+                                    break
                             elif deployepgs != "" and deployepgs[0].lower() == 'n':
-                                pass
-                            #custom_raw_input("")
-                            break
-                        else:
-                            pass
-    
+                                break
+
+                    else:
+                        while True:
+                            deployepgs = custom_raw_input("Would you like to deploy STATIC EPGs to new interface(s)? [n]: ") or 'n'
+                            if deployepgs != "" and deployepgs[0].lower() == 'y':
+                                pcinterface = apschoosen[0]
+                                pcnameresult = get_portchannel_by_name(pcinterface, apic, cookie, type='vpc')
+                                pcinterface = pcnameresult[0]['fabricPathEp']['attributes']['dn']
+                                chosenepgs, choseninterfaceobjectlist = display_and_select_epgs([pcinterface], allepglist)
+                                interface_type_and_deployement(chosenepgs, choseninterfaceobjectlist, apic, type="Port-Channel")
+                                del apschoosen
+                            elif deployepgs != "" and deployepgs[0].lower() == 'n':
+                                break    
                 else:
                     print('\n\x1b[1;31;40mERROR:\x1b[0m Unable to locate Policy Group for APS\n')  
                     import pdb; pdb.set_trace() 
-    
+            if created_APS and asktype != '3':
+                while True:
+                    deployepgs = custom_raw_input("Would you like to deploy STATIC EPGs to new interface(s)? [n]: ") or 'n'
+                    if deployepgs != "" and deployepgs[0].lower() == 'y':
+                        pcinterface = new_pg_name
+                        pcnameresult = get_portchannel_by_name(pcinterface, apic, cookie, type='vpc')
+                        pcinterface = pcnameresult[0]['fabricPathEp']['attributes']['dn']
+                        chosenepgs, choseninterfaceobjectlist = display_and_select_epgs([pcinterface], allepglist)
+                        interface_type_and_deployement(chosenepgs, choseninterfaceobjectlist, apic, type="Port-Channel")
+                        del new_pg_name
+                    elif deployepgs != "" and deployepgs[0].lower() == 'n':
+                        break    
+            elif created_APS and asktype == '3':
+                while True:
+                    deployepgs = custom_raw_input("Would you like to deploy STATIC EPGs to new interface(s)? [n]: ") or 'n'
+                    if deployepgs != "" and deployepgs[0].lower() == 'y':
+                        chosenepgs, choseninterfaceobjectlist = display_and_select_epgs(interfaces_selection_result, allepglist)
+                        if isinstance(choseninterfaceobjectlist[0], list):
+                            newlist = []
+                            def extract_nested_interfacelist(listx):
+                                for x in listx:
+                                    newlist.extend(x)
+                                return newlist
+                            choseninterfaceobjectlist = extract_nested_interfacelist(choseninterfaceobjectlist)
+                            interface_type_and_deployement(chosenepgs, choseninterfaceobjectlist, apic)
+                            break
+                        else:
+                            interface_type_and_deployement(chosenepgs, choseninterfaceobjectlist, apic)
+                            break
+                    elif deployepgs != "" and deployepgs[0].lower() == 'n':
+                        break
+
             nodeprofilelist, nodedict = gather_infraNodeP(apic,cookie)
             fexes = gather_infraFexP(apic,cookie)
             accportp = gather_infraAccPortP(apic,cookie, fexes)

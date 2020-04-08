@@ -1,5 +1,6 @@
 import re
-
+#from localutils.custom_utils import *
+import itertools
 class interfacebase():
     def get_leaf(self, x):
         leafcompile = re.compile(r"((node-|paths-)\d+)")
@@ -51,14 +52,33 @@ class interfacebase():
                 return re.search(r"phys-\[(eth.*)\]",x).group(1)
             else:
                 return None
+    def parse_pod_leaf_phyinterface(self, x, returntype='dict'):
+        if re.search(r"pod-(\d+)\/paths-(\d+)\/pathep-\[(.*)\]",x):
+            self._physpath =  re.findall(r"pod-(\d+)\/paths-(\d+)\/pathep-\[(.*)\]",x)
+            import pdb; pdb.set_trace()
+            self._pod, self._leaf, self._interface = self._physpath[0]
+            if returntype == 'dict':
+                return {'pod':self._pod,'leaf':self._leaf,'interface':self._interface}
+            elif returntype == 'list':
+                return self._physpath[0]
+            else:
+                raise NotImplementedError
+        else:
+            return None
+
 
 
 class epgbase():
-    def parse_tenant_app_epg(self,x):
+    def parse_tenant_app_epg(self,x, returntype='dict'):
         if re.search(r"tn-(.*)\/ap-(.*)\/epg-([^/]*)",x):
-            self.dngroups = re.findall(r"tn-(.*)\/ap-(.*)\/epg-([^/]*)",x)
-            self.tenant, self.app, self.epg = self.dngroups[0]
-            return self.dngroups[0]
+            self._dngroups = re.findall(r"tn-(.*)\/ap-(.*)\/epg-([^/]*)",x)
+            self._tenant, self._app, self._epg = self._dngroups[0]
+            if returntype == 'dict':
+                return {'tenant':self._dngroups[0],'app':self._dngroups[1],'epg':self._dngroups[2]}
+            elif returntype == 'list':
+                return self._dngroups[0]
+            else:
+                raise NotImplementedError
         else:
             return None
     def tenantappepg_formatter(self, x=None, delimiter='/'):
@@ -81,28 +101,23 @@ class epgbase():
 
 
 
-
-class interobject(interfacebase):
-    def __init__(self, kwargs):
-        self.__dict__.update(**kwargs)
-    def __repr__(self):
-        return self.dn
-
-
-
 class interfacelower(interfacebase,epgbase):
     def __init__(self,kwargs):
         self.__dict__.update(**kwargs)
+
+if __name__ == '__main__':   
+    interfacelist = [{'dn': u'topology/pod-1/paths-101/pathep-[eth1/34]', 'leaf': u'leaf-101', 'name': u'eth1/34', 'descr': u'', 'number': None, 'fexethname': None, 'fullethname': u'eth1/34', 'removedint': u'topology/pod-1/paths-101', 'shortname': u'34', 'epgfvRsPathAttlist': [], 'fex': None},
+    {'dn': u'topology/pod-1/paths-102/pathep-[eth1/34]', 'leaf': u'leaf-101', 'name': u'eth1/34', 'descr': u'', 'number': None, 'fexethname': None, 'fullethname': u'eth1/34', 'removedint': u'topology/pod-1/paths-102', 'shortname': u'34', 'epgfvRsPathAttlist': [], 'fex': None},
+    {'dn': u'topology/pod-1/paths-101/pathep-[eth1/35]', 'leaf': u'leaf-101', 'name': u'eth1/35', 'descr': u'', 'number': None, 'fexethname': None, 'fullethname': u'eth1/35', 'removedint': u'topology/pod-1/paths-101', 'shortname': u'35', 'epgfvRsPathAttlist': [], 'fex': None}]
     
-interfacelist = [{'dn': u'topology/pod-1/paths-101/pathep-[eth1/34]', 'leaf': u'leaf-101', 'name': u'eth1/34', 'descr': u'', 'number': None, 'fexethname': None, 'fullethname': u'eth1/34', 'removedint': u'topology/pod-1/paths-101', 'shortname': u'34', 'epgfvRsPathAttlist': [], 'fex': None},
-{'dn': u'uni/tn-SI/ap-APP-AD/epg-EPG-VL11-AD/fltCnts', 'leaf': u'leaf-101', 'name': u'eth1/34', 'descr': u'', 'number': None, 'fexethname': None, 'fullethname': u'eth1/34', 'removedint': u'topology/pod-1/paths-102', 'shortname': u'34', 'epgfvRsPathAttlist': [], 'fex': None},
-{'dn': u'topology/pod-1/paths-101/pathep-[eth1/35]', 'leaf': u'leaf-101', 'name': u'eth1/35', 'descr': u'', 'number': None, 'fexethname': None, 'fullethname': u'eth1/34', 'removedint': u'topology/pod-1/paths-101', 'shortname': u'35', 'epgfvRsPathAttlist': [], 'fex': None}]
-
-
-newinterfacelist = [interobject(x) for x in interfacelist] 
-
-#dn = "uni/tn-SI/ap-APP-AD/epg-EPG-VL11-AD/fltCnts"
-for x in newinterfacelist:
-    j = interfacelower(x.__dict__)
-    j.parse_tenant_app_epg(j.dn)
-    print(j.tenantappepg_formatter())
+    newinterfacelist = [interobject(x) for x in interfacelist] 
+    finalinfralist = {k:list(g) for k, g in itertools.groupby(newinterfacelist, key=lambda x: x.fullethname)}
+    #dn = "uni/tn-SI/ap-APP-AD/epg-EPG-VL11-AD/fltCnts"
+    interfacedn = 'topology/pod-1/paths-101/pathep-[eth1/39]'
+    #for x in newinterfacelist:
+    j = interfacelower({'dn':interfacedn})
+    print(j.parse_pod_leaf_phyinterface(interfacedn, returntype='dict'))
+    #    print(j.tenantappepg_formatter())
+    
+    
+    import pdb; pdb.set_trace()

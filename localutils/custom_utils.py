@@ -792,6 +792,20 @@ def get_All_BDs(apic, cookie, return_count=False):
         return result
 
 
+def get_portchannel_by_name(name, apic, cookie, type='vpc'):
+    if type=='vpc':
+        url = """https://{apic}/api/node/class/fabricPathEp.json?query-target-filter=and(not(wcard(fabricPathEp.dn,%22__ui_%22)),""" \
+                """and(eq(fabricPathEp.lagT,"node"),wcard(fabricPathEp.dn,"^topology/pod-[\d]*/protpaths-"),eq(fabricPathEp.name,"{name}")))""".format(apic=apic,name=name)
+        results = GetResponseData(url, cookie)
+        #url = 'https://{apic}/api/node/class/fabricPathEp.json?query-target-filter=eq(fabricPathEP.dn,"{name}"),wcard(fabricPathEp.dn,"^topology/pod-[\d]*/protpaths-")'
+    elif type=='pc':
+        url = """https://{apic}/api/node/class/fabricPathEp.json?query-target-filter=and(not(wcard(fabricPathEp.dn,%22__ui_%22)),""" \
+                """and(eq(fabricPathEp.lagT,"link"),wcard(fabricPathEp.dn,"^topology/pod-[\d]*/protpaths-"),eq(fabricPathEp.name,"{name}")))""".format(apic=apic,name=name)
+    else:
+        raise NotImplementedError
+    result = GetResponseData(url, cookie)
+    return result
+
 def get_All_vPCs(apic, cookie, return_count=False):
     url = """https://{apic}/api/node/class/fabricPathEp.json?query-target-filter=and(not(wcard(fabricPathEp.dn,%22__ui_%22)),""" \
           """and(eq(fabricPathEp.lagT,"node"),wcard(fabricPathEp.dn,"^topology/pod-[\d]*/protpaths-")))""".format(apic=apic)
