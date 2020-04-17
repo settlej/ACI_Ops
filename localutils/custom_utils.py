@@ -425,7 +425,6 @@ def get_column_sizes(rowlist, objcolumnwidthfind=None, minimum=5, baseminimum=[]
         temprowlist.append(baseminimum)
         columns = zip(*temprowlist)
         del(temprowlist)
-        import pdb; pdb.set_trace()
         for column in columns:
             sizelist.append(len(str(max(column, key=lambda x:len(str(x))))))
         return sizelist
