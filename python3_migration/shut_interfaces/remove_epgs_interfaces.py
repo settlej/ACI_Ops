@@ -160,7 +160,7 @@ class pcObject():
         else:
             return None
 
-def get_All_EGPs():
+def get_All_EGPs_names():
     get_Cookie()
     epgdict = {}
     url = """https://localhost/api/node/class/fvAEPg.json"""
@@ -375,7 +375,7 @@ def port_channel_selection(allpclist,allepglist):
 def main():
     while True:
         get_Cookie()
-        allepglist = get_All_EGPs()
+        allepglist = get_All_EGPs_names()
         allpclist = get_All_PCs()
         allvpclist = get_All_vPCs()
         all_leaflist = get_All_leafs()

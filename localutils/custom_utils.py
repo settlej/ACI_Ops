@@ -425,6 +425,7 @@ def get_column_sizes(rowlist, objcolumnwidthfind=None, minimum=5, baseminimum=[]
         temprowlist.append(baseminimum)
         columns = zip(*temprowlist)
         del(temprowlist)
+        import pdb; pdb.set_trace()
         for column in columns:
             sizelist.append(len(str(max(column, key=lambda x:len(str(x))))))
         return sizelist
@@ -750,7 +751,7 @@ def get_All_vlanCktEp(apic, cookie, return_count=False):
         #return [vlanckt['vlanCktEp']['attributes']['dn'] for vlanckt in result]
 
 
-def get_All_EGPs(apic, cookie, return_count=False):
+def get_All_EGPs_names(apic, cookie, return_count=False):
     url = """https://{apic}/api/node/class/fvAEPg.json""".format(apic=apic)
     logger.info(url)
     if return_count == True:
@@ -759,6 +760,17 @@ def get_All_EGPs(apic, cookie, return_count=False):
     else:
         result = GetResponseData(url, cookie)
         return [epg['fvAEPg']['attributes']['dn'] for epg in result]
+
+def get_All_EGPs_data(apic, cookie, return_count=False):
+    url = """https://{apic}/api/node/class/fvAEPg.json""".format(apic=apic)
+    logger.info(url)
+    if return_count == True:
+        result, totalcount = GetResponseData(url, cookie, return_count=True)
+        return [epg for epg in result], totalcount
+    else:
+        result = GetResponseData(url, cookie)
+        return [epg for epg in result]
+
 
 def get_All_PCs(apic, cookie, return_count=False):
     url = """https://{apic}/api/node/class/fabricPathEp.json?query-target-filter=and(not(wcard(fabricPathEp.dn,%22__ui_%22)),""" \

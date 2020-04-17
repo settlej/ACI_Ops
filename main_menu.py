@@ -41,12 +41,14 @@ import faults_and_logs.most_recent_event_changes as most_recent_event_changes
 import faults_and_logs.alleventsbetweendates as alleventsbetweendates
 import faults_and_logs.alleventsbetweendates_fulldetail as alleventsbetweendates_fulldetail
 import information.endpoint_search as ipendpoint_search
+import information.zoning_rules_checking as zoning_rules_checking
 #import information.routetranslation as epg_troubleshooting
 #import information.routetranslation as routetranslation
 #import information.routetrace as check_routing
 import information.show_static_routes as show_static_routes
 import configuration.create_local_span_session as create_local_span_session
 import configuration.span_to_server as span_to_server
+import localutils.program_globals
 import logging
 from logging.handlers import RotatingFileHandler
 import argparse
@@ -132,6 +134,7 @@ def localOrRemote(error=False):
             cookie = getCookie()
             user = getpass.getuser()
             # return apic hostname and discovered cookie
+            localutils.program_globals.APIC = apic
             return apic, user, cookie # str , str
         else:
             # Automatic login if environment variables in terminal/cmd are set
@@ -300,6 +303,8 @@ def main():
     global timertest
     timertest = time.time()
     apic, current_user, cookie = localOrRemote()
+    localutils.program_globals.APIC = apic
+
     unauthenticated = False
     keyinterrupt = False
    # url = """https://{}/api/node/mo/uni/userext/user-{}.json?rsp-subtree=full""".format(apic,current_user)
@@ -377,6 +382,7 @@ def main():
                             '\t| 23.) Show Physical Interface Profiles \n' +
                             '\t| 24.) Show Top 50 counters\n' +
                             '\t| 25.) Show BD --> EPG Relationships\n' +
+                            #'\t| 26.) Show Contract Rules and Hits\n' +
                             #'\t| 16.) Show Leaf/Spine/APIC info (Not Available)\n' +
                             #'\t| 17.) EPG to EPG troubleshooting (alpha)\n' +
                             #'\t| 18.) Route lookup to endpoint (alpha)\n' +
@@ -401,6 +407,14 @@ def main():
                 if chosen == '1':
                     try:
                         shut_noshut_interfaces.main(apic,cookie)
+                        keyinterrupt = False
+                    except KeyboardInterrupt as k:
+                        print('\nExit to Main menu\n')
+                        keyinterrupt = True
+                        break
+                elif chosen == '888':
+                    try:
+                        zoning_rules_checking.main()
                         keyinterrupt = False
                     except KeyboardInterrupt as k:
                         print('\nExit to Main menu\n')

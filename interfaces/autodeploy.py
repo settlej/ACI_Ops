@@ -47,7 +47,7 @@ def main(import_apic,import_cookie):
         global cookie
         cookie = import_cookie
         apic = import_apic
-        allepglist = get_All_EGPs(apic,cookie)
+        allepglist = get_All_EGPs_names(apic,cookie)
         allpclist = get_All_PCs(apic,cookie)
         allvpclist = get_All_vPCs(apic,cookie)
         all_leaflist = get_All_leafs(apic,cookie)

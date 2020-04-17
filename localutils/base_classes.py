@@ -81,6 +81,20 @@ class epgbase():
                 raise NotImplementedError
         else:
             return None
+    @staticmethod
+    def _parse_tenant_app_epg(x, returntype='dict'):
+        if re.search(r"tn-(.*)\/ap-(.*)\/epg-([^/]*)",x):
+            _dngroups = re.findall(r"tn-(.*)\/ap-(.*)\/epg-([^/]*)",x)
+            _tenant, _app, _epg = _dngroups[0]
+            if returntype == 'dict':
+                return {'tenant':_dngroups[0],'app':_dngroups[1],'epg':_dngroups[2]}
+            elif returntype == 'list':
+                return _dngroups[0]
+            else:
+                raise NotImplementedError
+        else:
+            return None
+
     def tenantappepg_formatter(self, x=None, delimiter='/'):
         if x == None:
             if hasattr(self,'tenant') and hasattr(self,'app') and hasattr(self,'epg'): 
@@ -97,6 +111,18 @@ class epgbase():
             return delimiter.join(x)
         else:
             return None
+    @staticmethod
+    def _tenantappepg_formatter(x, delimiter='/'):
+        if isinstance(x,str) or isinstance(x,unicode):
+            if re.search(r"tn-(.*)\/ap-(.*)\/epg-([^/]*)",x):
+                dngroups = re.findall(r"tn-(.*)\/ap-(.*)\/epg-([^/]*)",x)
+                return delimiter.join(*dngroups)
+            else:
+                return None
+        elif isinstance(x,list) or isinstance(x,tuple):
+            return delimiter.join(x)
+        else:
+            return None
 
 
 
@@ -104,6 +130,7 @@ class epgbase():
 class interfacelower(interfacebase,epgbase):
     def __init__(self,kwargs):
         self.__dict__.update(**kwargs)
+        
 
 if __name__ == '__main__':   
     interfacelist = [{'dn': u'topology/pod-1/paths-101/pathep-[eth1/34]', 'leaf': u'leaf-101', 'name': u'eth1/34', 'descr': u'', 'number': None, 'fexethname': None, 'fullethname': u'eth1/34', 'removedint': u'topology/pod-1/paths-101', 'shortname': u'34', 'epgfvRsPathAttlist': [], 'fex': None},

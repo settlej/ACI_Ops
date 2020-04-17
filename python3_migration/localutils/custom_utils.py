@@ -194,7 +194,7 @@ def GetResponseData(url, cookie):
 
 
 
-#def get_All_EGPs(apic):
+#def get_All_EGPs_names(apic):
 #    ##get_Cookie()
 #    epgdict = {}
 #    url = """https://{apic}/api/node/class/fvAEPg.json""".format(apic=apic)

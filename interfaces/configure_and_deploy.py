@@ -885,7 +885,7 @@ def main(import_apic,import_cookie):
             refreshToken(apic,cookie)
             clear_screen()
             location_banner('Config Interface and Deploy')
-            allepglist = get_All_EGPs(apic,cookie)
+            allepglist = get_All_EGPs_names(apic,cookie)
             nodeprofilelist, nodedict = gather_infraNodeP(apic,cookie)
             fexes = gather_infraFexP(apic,cookie)
             accportp = gather_infraAccPortP(apic,cookie, fexes)
@@ -1241,7 +1241,7 @@ def main(import_apic,import_cookie):
 
                     else:
                         while True:
-                            deployepgs = custom_raw_input("Would you like to deploy STATIC EPGs to new interface(s)? [n]: ") or 'n'
+                            deployepgs = custom_raw_input("Would you like to deploy new STATIC EPGs to interface(s)? [n]: ") or 'n'
                             if deployepgs != "" and deployepgs[0].lower() == 'y':
                                 pcinterface = apschoosen[0]
                                 pcnameresult = get_portchannel_by_name(pcinterface, apic, cookie, type='vpc')
@@ -1292,9 +1292,9 @@ def main(import_apic,import_cookie):
             profilelist = []
             leafp = retrieve_leafprofiles(apic, cookie)
             print('\nDisplaying results:\n')
-            leaftable = display_leafprofiles(accportp,fexes,nodedict)
-            print('')
-            selectedleafprofile = leaftable[int(reqleafprofile)-1]
+            #leaftable = display_leafprofiles(accportp,fexes,nodedict)
+            #print('')
+            #selectedleafprofile = leaftable[int(reqleafprofile)-1]
             display_APS_for_leafProfile(selectedleafprofile, include_create=False)
             #    print('hit')
             #    print('{}  {}  | {}'.format(fex.dn, switchp.name, switchp.allleafs))

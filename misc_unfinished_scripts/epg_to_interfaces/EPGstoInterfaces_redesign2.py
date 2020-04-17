@@ -120,7 +120,7 @@ def menu():
             continue
     return selection 
 
-def get_All_EGPs():
+def get_All_EGPs_names():
     get_Cookie()
     epgdict = {}
     url = """https://localhost/api/node/class/fvAEPg.json"""
@@ -517,7 +517,7 @@ def physical_selection(all_leaflist, allepglist):
 def main():
     while True:
         get_Cookie()
-        allepglist = get_All_EGPs()
+        allepglist = get_All_EGPs_names()
         allpclist = get_All_PCs()
         allvpclist = get_All_vPCs()
         all_leaflist = get_All_leafs()

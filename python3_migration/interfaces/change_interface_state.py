@@ -164,7 +164,7 @@ class pcObject():
         else:
             return None
 
-def get_All_EGPs():
+def get_All_EGPs_names():
     ##get_Cookie()
     epgdict = {}
     url = """https://{apic}/api/node/class/fvAEPg.json""".format(apic=apic)
@@ -391,7 +391,7 @@ def main(import_apic, import_cookie):
         global cookie
         cookie = import_cookie
         apic = import_apic
-        allepglist = get_All_EGPs()
+        allepglist = get_All_EGPs_names()
         allpclist = get_All_PCs()
         allvpclist = get_All_vPCs()
         all_leaflist = get_All_leafs()
