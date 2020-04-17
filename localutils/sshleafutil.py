@@ -111,12 +111,12 @@ def tools_menu():
             "--------\n\n" +
             "1.) iping endpoint from leaf\n" + 
             "2.) Clear endpoint on leaf\n" + 
-            "3.) Check endpoint on leaf\n" + 
+            "3.) Check endpoint on leaf (placeholder)\n" + 
             "4.) Change ssh method (inband,oobm,infra) [default=oobm]\n")
     while True:
         result = custom_raw_input("What would you like to do?: ")
         result = result.strip().lstrip()
-        if result != "" and result.isdigit() and int(result) <= 4 and int(result) > 0:
+        if result != "" and result.isdigit() and int(result) <= 4 and int(result) > 0 and int(result) != 3:
             return result
         else:
             print('\n Invalid option...\n')
@@ -298,7 +298,7 @@ def clear_endpoint_wizard(apic,cookie,user,all_leaflist):
             while True:
                 ask = custom_raw_input("\nMethod to find:\n" + \
                                     "1.) Manually select leaf\n" + \
-                                    "2.) Search for me\n\n" + \
+                                    "2.) Search for me (beta)\n\n" + \
                                     "Selection [Default=2]: ") or "2"
                 ask = ask.strip().lstrip()
                 if ask != "" and ask.isdigit() and int(ask) > 0 and int(ask) <= 2:
@@ -321,12 +321,15 @@ def clear_endpoint_wizard(apic,cookie,user,all_leaflist):
                     vlanMOlist = grab_lowest_MO_keyvalues(vlanresults, primaryKey='dn', keys=['name','id'])
                     print('\nFound:\n')
                     retopology = re.compile(r"(topology/pod-\d/(node-\d{1,4})/.*/vlan-\[(vlan-\d{1,4})\])")
-                    import pdb; pdb.set_trace()
                     for num,ipMO in enumerate(ipMOlist,1):
                         dn, node, vlan = retopology.findall(ipMO.dn)[0]
                         print("{num}.) leaf{leaf} | {ifId} | encap [{vlan}] | {ip}".format(num=num,leaf=node[4:],vlan=vlan,ip=endpoint,ifId=ipMO.ifId))
-                    ask = custom_raw_input("\nDesired removal (only one supported): ")
-
+                    while True:
+                        ask = custom_raw_input("\nDesired removal (only one supported): ")
+                        if ask != "" and ask.isdigit() and int(ask) > 0 and int(ask) <= len(ipMOlist):
+                            break
+                    clear_endpoint_ssh(ipMO.ifId,user,deviceip,leafnumber,tenantandvrf=tenantandvrf)
+                    
         elif re.search(r'([0-9a-fA-F]{2,4}[\:|\.]?){6}',endpoint):
             endpoint = re.search(r'([0-9a-fA-F]{2,4}[\:|\.]?){6}',endpoint).group()
             endpoint = endpoint.replace('.','').replace(':','').upper()
