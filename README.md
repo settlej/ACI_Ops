@@ -6,7 +6,7 @@ Tested in 4.0(3d), 4.1(2m) and 4.2(1j) APIC/ACI</br>
 This program fully supports Python2 and will be updated to Python3 when ACI's internal platform migrates from Python2.</br></br>
 The entire program uses Python2 Standard Library!  </br><b>No 3rd party modules to import and update!</b></br>
 Program can run on Windows, Mac, and Linux.</br></br>
-Can be ran on local computer or on APIC itself.  If on the APIC you can store the program in you home directory.</br>
+Can be ran on local computer or on APIC itself.  If on the APIC you can store the program in your home directory.</br>
 # New Features!
 1.) Picture showing interfaces like available in GUI with colors reflecting interface status, role, errors</br>
 2.) Show recent ports down</br>
