@@ -1,5 +1,4 @@
 # ACI Ops
-(Pervious know as: Better ACI CLI Tools)
 Tools to enhance CLI experience replacing slower ACI show commands with additional information.</br></br>
 <strong>WARNING</strong>: Sandbox (sandboxapicdc.cisco.com) for APIC doesn't fully work with ACI Ops, this is due to the fact that the APICs and Fabric are virtual and don't have all the API object returns relating to real equipment.</br></br>
 Tested in 4.0(3d), 4.1(2m) and 4.2(1j) APIC/ACI</br>
@@ -24,6 +23,12 @@ Can be ran on local computer or on APIC itself.  If on the APIC you can store th
  </br>
 # Features in Development!
 1.) Display every contract between EPGs (vrf contracts, Taboo, and Normal EPGs) and filters in detail; in both directions</br>
+
+# Limitations:
+ Python2 </br>
+ Single Pod-1 deployment</br>
+ 1u Leafs only supported </br>
+ Some features like log pull may not be limited to single pod or 1u leaf.
 
 
 # Screen Shots:
