@@ -170,6 +170,51 @@ rulepriority = {'class-eq-filter': '1',
                 'any_vrf_any_deny': '22',
                 'default_action': '23'}
 
+class Aclfilter():
+    ENTRY_PRIORITY = {'prot':20,
+                      'arpOpc':1,
+                      'dFromPort':9,
+                      'dToPort':9,
+                      'sFromPort':4,
+                      'sToPort':4,
+                      'tcpRules':50,
+                      'applyToFrag':''}
+    def __init__(self,rule):
+        self.name = rule['name']
+        self.parse_categorize_fields()
+    def __setitem__(self, k,v):
+        setattr(self, k, v)
+    def parse_categorize_fields(self,rule):
+        for category in rule:
+            self[category] = rule[category]
+        
+
+def gather_aclfilters_entries():
+            url = "https://{apic}/api/node/class/topology/pod-{pod}/node-{node}/actrlEntry.json".format(apic=apic,pod=1,node=chosenleafs[0])
+            #url = """https://{apic}/api/node/class/vzFilter.json?rsp-subtree=children&rsp-subtree-class=vzEntry""".format(apic=apic)
+            results = GetResponseData(url, cookie)
+            acldict = {}
+            aclre_compile = re.compile(r"filt-(.*)\/ent-(.*)")
+
+
+            for acl in results:
+                if len(acl['actrlEntry']['attributes']['name'].split('_')) == 1:
+                    acldict[acl['actrlEntry']['attributes']['name']] = acl['actrlEntry']['attributes']
+                else:
+                    if acldict.get(acl['actrlEntry']['attributes']['name'].split('_')[0]):
+                        acldict[acl['actrlEntry']['attributes']['name'].split('_')[0]].append(acl['actrlEntry']['attributes'])
+                    else:
+                        acldict[acl['actrlEntry']['attributes']['name'].split('_')[0]] = acl['actrlEntry']['attributes']
+            import pdb; pdb.set_trace()
+                
+            #    aclre_compile.search(acl['actrlEntry']['attributes']['name'])
+            #    acldict[]
+            mmm = grab_lowest_MO_keyvalues(results, primaryKey='dn', keys=['name','etherT','prot','icmpv4T','icmpv6T','dFromPort','dToPort','sFromPort','sToPort','tcpRules','applyToFrag'])
+            #mmm = grab_lowest_MO_keyvalues2(results, parentclass='vzFilter',parentid='dn', parent_keys=['uid','name','fwdId','revId'], childclass='vzEntry', childid='name',child_keys=['name','etherT','prot','icmpv4T','icmpv6T','dFromPort','dToPort','sFromPort','sToPort','tcpRules','applyToFrag'])
+            import pdb; pdb.set_trace()
+            for k in mmm.values():
+                print(k.dn, k.fwdId, k.children)
+
 
 
 def main():
@@ -238,17 +283,20 @@ def main():
                 import pdb; pdb.set_trace()
     
             finalacllist = []
-            for x in allrules:
+            for x in allrules:                
                 try:
                     if vrfdict.get(x.scopeId):
     
-                        finalacllist.append([rulepriority[x.prio],x.id,x.action,vrfdict[x.scopeId],x.dPcTag,x.dPcTagname,x.sPcTag,x.sPcTagname,x.ctrctName,x.hitcum,x.pktsLast])
+                        finalacllist.append([rulepriority[x.prio],x.id,x.action,vrfdict[x.scopeId],x.sPcTag,x.sPcTagname,x.dPcTag,x.dPcTagname,x.ctrctName,x.hitcum,x.pktsLast])
                     else:
                         if x.sPcTagname == '32777' or x.sPcTagname == 32777:
                             import pdb; pdb.set_trace()
-                        finalacllist.append([rulepriority[x.prio],x.id,x.action,x.scopeId,x.dPcTag,x.dPcTagname,x.sPcTag,x.sPcTagname,x.ctrctName,x.hitcum,x.pktsLast])
+                        finalacllist.append([rulepriority[x.prio],x.id,x.action,x.scopeId,x.sPcTag,x.sPcTagname,x.dPcTag,x.dPcTagname,x.ctrctName,x.hitcum,x.pktsLast])
                 except TypeError:
                     import pdb; pdb.set_trace()
+
+            filterdict = gather_aclfilters_entries()
+
 
             ######
             from collections import deque
@@ -274,36 +322,28 @@ def main():
                             #denyque.append(rule)
                     for rule in entries:
                         if 'redir' in rule[2] and 'log' in rule[2]:
-                            qq.put((3,rule))
+                            qq.put((30,rule))
                         if 'redir' in rule[2] and 'log' not in rule[2]:
-                            qq.put((4,rule))
+                            qq.put((40,rule))
                             #redirque.appendleft(rule)
                     #if len(redirque) > 1:
                     #    tiebreaker
                     for rule in entries:
                         if 'permit' in rule[2] and 'log' in rule[2]:
-                            qq.put((5,rule))
+                            qq.put((50,rule))
                             #permitque.append(rule)
                     for rule in entries:
                         if 'permit' in rule[2]  and 'log' not in rule[2]:
-                            qq.put((6,rule))
+                            qq.put((60,rule))
                             #permitque.append(rule)
-                import pdb; pdb.set_trace()
+                print(rule)
                 continue
+                import pdb; pdb.set_trace()
                 redirque.extend(permitque)
                 denyque.extend(redirque)
                 print(denyque)
 
-                import heapq 
-                class PriorityQueue:
-                    def __init__(self):
-                        self._queue = []
-                        self._index = 0
-                    def push(self, item, priority):
-                        heapq.heappush(self._queue, (-priority, self._index, item))
-                        self._index += 1
-                    def pop(self):
-                        return heapq.heappop(self._queue)[-1]
+
 
                     #if len(per)
                 

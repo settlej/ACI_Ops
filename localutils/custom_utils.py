@@ -730,6 +730,94 @@ def grab_lowest_MO_keyvalues(x, primaryKey=None, keys=None, scope_set=None, retu
                     returnlist.append(fo)
     return returnlist
 
+class parentobj():
+    def __init__(self,objectname):
+        self.objectname = objectname
+        self.children = []
+    def add_child(self,childobj):
+        self.children.append(childobj)
+    def __getitem__(self,key):
+        return getattr(self,key)
+    def __setitem__(self, k,v):
+        setattr(self, k, v)
+    def __eq__(self,item):
+        return type(self) == type(item)
+    def __hash__(self):
+        return hash(self.objectname)
+    def __repr__(self):
+        return repr(self.objectname)
+
+class childobj():
+    def __init__(self, childname):
+        self.childname = childname
+        #self.__dict__.update(**kwargs)
+    def __setitem__(self, k,v):
+        setattr(self, k, v)
+    def __getitem__(self,key):
+        return getattr(self,key)
+    def __repr__(self):
+        if hasattr(self, 'name'):
+            return self.name
+        else:
+            return self.childname
+#        return repr({k:v for k,v in self.__dict__.items()})
+
+
+def grab_lowest_MO_keyvalues2(x, parentclass=None, parentid=None, parent_keys=None, childclass=None, childid =None,child_keys=None, parent_dict=None,child_set=None, returnlist=None,pObject=None,cObject=None):
+    if returnlist is None:
+        returnlist = []
+    if parent_keys is None:
+        parent_keys = []
+    if child_keys is None:
+        child_keys = []
+    if child_set is None:
+        child_set = set()
+    if cObject is None:
+        CO = childobj
+    else:
+        CO = cObject
+    if pObject is None:
+        PO = parentobj
+    else:
+        PO = pObject
+    if parent_dict is None:
+        parent_dict = dict()
+    if isinstance(x, list):
+        for y in x:
+            grab_lowest_MO_keyvalues2(y, parentclass, parentid, parent_keys, childclass, childid,child_keys, parent_dict,child_set, returnlist, PO,CO)
+    elif isinstance(x, dict):
+        if not isinstance(PO,parentobj):
+            PO = PO(x[parentclass]['attributes'][parentid])
+        for k,v in x.items():
+            if isinstance(v, list):
+                grab_lowest_MO_keyvalues2(v, parentclass,parentid, parent_keys, childclass, childid,child_keys, parent_dict,child_set, returnlist, PO,CO)
+            elif isinstance(v, dict):
+                if k == 'attributes':
+                    grab_lowest_MO_keyvalues2(v, parentclass,parentid, parent_keys, childclass, childid,child_keys, parent_dict,child_set, returnlist, PO,CO)
+                if CO == childobj and k != parentclass and k != 'attributes':
+                    CO = CO(v['attributes'][childid])
+                    grab_lowest_MO_keyvalues2(v, parentclass,parentid, parent_keys, childclass, childid,child_keys, parent_dict,child_set, returnlist, PO,CO)
+                else:
+                    grab_lowest_MO_keyvalues2(v, parentclass,parentid, parent_keys, childclass, childid,child_keys, parent_dict,child_set, returnlist, PO,CO)
+            else:
+                if isinstance(PO,parentobj) and not isinstance(CO,childobj):
+                    PO[k] = v
+                    for k in parent_keys:
+                        PO[k] = x[k]
+                    if PO.objectname not in parent_dict:
+                        parent_dict[PO.objectname] = PO
+                    return
+                if isinstance(PO,parentobj) and isinstance(CO,childobj):
+                    if (PO.objectname + CO.childname) not in child_set:
+                        child_set.add(PO.objectname + CO.childname)
+                        if PO.objectname in parent_dict:
+                            for k in child_keys:
+                                CO[k] = x[k]
+                            parent_dict[PO.objectname].add_child(CO)
+                            
+                            return
+            
+    return parent_dict
 
 
 def pull_vlan_info_for_leaf(apic, cookie, leaf):
