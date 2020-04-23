@@ -171,49 +171,69 @@ rulepriority = {'class-eq-filter': '1',
                 'default_action': '23'}
 
 class Aclfilter():
-    ENTRY_PRIORITY = {'prot':20,
-                      'arpOpc':1,
-                      'dFromPort':9,
-                      'dToPort':9,
-                      'sFromPort':4,
-                      'sToPort':4,
-                      'tcpRules':50,
-                      'applyToFrag':''}
+    ENTRY_PRIORITY = {'flags':1,
+                      'sport_dport':2,
+                      'dport':3,
+                      'sport':4,
+                      'proto':5,
+                      'frag':6,
+                      'def':7,
+                      'implicit':8}
     def __init__(self,rule):
         self.name = rule['name']
-        self.parse_categorize_fields()
+        self.parse_categorize_fields(rule)
     def __setitem__(self, k,v):
         setattr(self, k, v)
     def parse_categorize_fields(self,rule):
         for category in rule:
             self[category] = rule[category]
+            if category == 'prio':
+                self['entry_priority'] = self.ENTRY_PRIORITY[rule[category]]
+            if category == 'dn':
+                try:
+                    filtersearch = re.search(r'filt-(\d+)|filt-([\w|\d]+)',rule[category])
+                    if filtersearch.group(1):
+                        self['filterid'] = filtersearch.group(1)
+                    else:
+                        self['filterid'] = filtersearch.group(2)
+                except:
+                    self['filterid'] = 'Unknown'
+        
         
 
-def gather_aclfilters_entries():
-            url = "https://{apic}/api/node/class/topology/pod-{pod}/node-{node}/actrlEntry.json".format(apic=apic,pod=1,node=chosenleafs[0])
+def gather_aclfilters_entries(leaf):
+            url = "https://{apic}/api/node/class/topology/pod-{pod}/node-{node}/actrlEntry.json".format(apic=apic,pod=1,node=leaf)
             #url = """https://{apic}/api/node/class/vzFilter.json?rsp-subtree=children&rsp-subtree-class=vzEntry""".format(apic=apic)
             results = GetResponseData(url, cookie)
             acldict = {}
-            aclre_compile = re.compile(r"filt-(.*)\/ent-(.*)")
-
-
             for acl in results:
-                if len(acl['actrlEntry']['attributes']['name'].split('_')) == 1:
-                    acldict[acl['actrlEntry']['attributes']['name']] = acl['actrlEntry']['attributes']
+                a = Aclfilter(acl['actrlEntry']['attributes'])
+                if acldict.get(a.filterid):
+                    acldict[a.filterid].append(a)
                 else:
-                    if acldict.get(acl['actrlEntry']['attributes']['name'].split('_')[0]):
-                        acldict[acl['actrlEntry']['attributes']['name'].split('_')[0]].append(acl['actrlEntry']['attributes'])
-                    else:
-                        acldict[acl['actrlEntry']['attributes']['name'].split('_')[0]] = acl['actrlEntry']['attributes']
-            import pdb; pdb.set_trace()
-                
-            #    aclre_compile.search(acl['actrlEntry']['attributes']['name'])
-            #    acldict[]
-            mmm = grab_lowest_MO_keyvalues(results, primaryKey='dn', keys=['name','etherT','prot','icmpv4T','icmpv6T','dFromPort','dToPort','sFromPort','sToPort','tcpRules','applyToFrag'])
-            #mmm = grab_lowest_MO_keyvalues2(results, parentclass='vzFilter',parentid='dn', parent_keys=['uid','name','fwdId','revId'], childclass='vzEntry', childid='name',child_keys=['name','etherT','prot','icmpv4T','icmpv6T','dFromPort','dToPort','sFromPort','sToPort','tcpRules','applyToFrag'])
-            import pdb; pdb.set_trace()
-            for k in mmm.values():
-                print(k.dn, k.fwdId, k.children)
+                    acldict[a.filterid] = [a]
+
+            return acldict
+            #aclre_compile = re.compile(r"filt-(.*)\/ent-(.*)")
+
+
+            #for acl in results:
+            #    if len(acl['actrlEntry']['attributes']['name'].split('_')) == 1:
+            #        acldict[acl['actrlEntry']['attributes']['name']] = acl['actrlEntry']['attributes']
+            #    else:
+            #        if acldict.get(acl['actrlEntry']['attributes']['name'].split('_')[0]):
+            #            acldict[acl['actrlEntry']['attributes']['name'].split('_')[0]].append(acl['actrlEntry']['attributes'])
+            #        else:
+            #            acldict[acl['actrlEntry']['attributes']['name'].split('_')[0]] = acl['actrlEntry']['attributes']
+            #import pdb; pdb.set_trace()
+            #    
+            ##    aclre_compile.search(acl['actrlEntry']['attributes']['name'])
+            ##    acldict[]
+            #mmm = grab_lowest_MO_keyvalues(results, primaryKey='dn', keys=['name','etherT','prot','icmpv4T','icmpv6T','dFromPort','dToPort','sFromPort','sToPort','tcpRules','applyToFrag'])
+            ##mmm = grab_lowest_MO_keyvalues2(results, parentclass='vzFilter',parentid='dn', parent_keys=['uid','name','fwdId','revId'], childclass='vzEntry', childid='name',child_keys=['name','etherT','prot','icmpv4T','icmpv6T','dFromPort','dToPort','sFromPort','sToPort','tcpRules','applyToFrag'])
+            #import pdb; pdb.set_trace()
+            #for k in mmm.values():
+            #    print(k.dn, k.fwdId, k.children)
 
 
 
@@ -286,17 +306,18 @@ def main():
             for x in allrules:                
                 try:
                     if vrfdict.get(x.scopeId):
-    
-                        finalacllist.append([rulepriority[x.prio],x.id,x.action,vrfdict[x.scopeId],x.sPcTag,x.sPcTagname,x.dPcTag,x.dPcTagname,x.ctrctName,x.hitcum,x.pktsLast])
+                        finalacllist.append([rulepriority[x.prio],x.id,x.action,vrfdict[x.scopeId],x.sPcTag,x.sPcTagname,x.dPcTag,x.dPcTagname,x.ctrctName,x.fltId,x.hitcum,x.pktsLast])
                     else:
                         if x.sPcTagname == '32777' or x.sPcTagname == 32777:
                             import pdb; pdb.set_trace()
-                        finalacllist.append([rulepriority[x.prio],x.id,x.action,x.scopeId,x.sPcTag,x.sPcTagname,x.dPcTag,x.dPcTagname,x.ctrctName,x.hitcum,x.pktsLast])
+                        finalacllist.append([rulepriority[x.prio],x.id,x.action,x.scopeId,x.sPcTag,x.sPcTagname,x.dPcTag,x.dPcTagname,x.ctrctName,x.fltId,x.hitcum,x.pktsLast])
                 except TypeError:
                     import pdb; pdb.set_trace()
 
-            filterdict = gather_aclfilters_entries()
-
+            aclentriesdict = gather_aclfilters_entries(chosenleafs[0])
+            for aclentry in aclentriesdict.values():
+                for entry in aclentry:
+                    print(entry.entry_priority, entry.tcpRules)
 
             ######
             from collections import deque
@@ -311,32 +332,67 @@ def main():
                 #redirque = deque()
                 for rule in entries:
                     if 'deny' in rule[2] and 'log' in rule[2]:
-                        qq.put((1,rule))
+                        rule.insert(3,'1')
+                        #qq.put((1,rule))
                         #denyque.appendleft(rule)
                 if qq.qsize != len(entries):
 
                 #if len(denyque) != len(entries):
                     for rule in entries:
                         if 'deny' in rule[2] and 'log' not in rule[2]:
-                            qq.put((2,rule))
+                            rule.insert(3,'2')
+                            #qq.put((3,rule))
                             #denyque.append(rule)
                     for rule in entries:
                         if 'redir' in rule[2] and 'log' in rule[2]:
-                            qq.put((30,rule))
+                            rule.insert(3,'30')
+                            #qq.put((30,rule))
                         if 'redir' in rule[2] and 'log' not in rule[2]:
-                            qq.put((40,rule))
+                            rule.insert(3,'40')
+                            #qq.put((40,rule))
                             #redirque.appendleft(rule)
                     #if len(redirque) > 1:
                     #    tiebreaker
                     for rule in entries:
                         if 'permit' in rule[2] and 'log' in rule[2]:
-                            qq.put((50,rule))
+                            rule.insert(3,'50')
+                            #qq.put((50,rule))
                             #permitque.append(rule)
                     for rule in entries:
                         if 'permit' in rule[2]  and 'log' not in rule[2]:
-                            qq.put((60,rule))
+                            rule.insert(3,'60')
+                            #qq.put((60,rule))
                             #permitque.append(rule)
-                print(rule)
+                print(prilevel)
+                ruleprint = ''
+                newentries = []
+                for x in entries:
+                    if len(aclentriesdict[x[10]]) > 1:
+                        for num,z in enumerate(aclentriesdict[x[10]]):
+                            v = aclentriesdict[x[10]][num]
+                            t = x[:]
+                            rulestring = ';'.join((v.etherT,v.prot,v.sFromPort,v.sToPort,v.dFromPort,v.dToPort,v.tcpRules)).replace('unspecified','unsp')
+                            t.append(rulestring)
+                            t.append(str(aclentriesdict[x[10]][num].entry_priority))
+                            newentries.append(t)
+                    else:
+                        v = aclentriesdict[x[10]][0]
+                        t = x[:]
+                        rulestring = ';'.join((v.etherT,v.prot,v.sFromPort,v.sToPort,v.dFromPort,v.dToPort,v.tcpRules)).replace('unspecified','unsp')
+                        t.append(rulestring)
+                        t.append(str(v.entry_priority))
+                        newentries.append(t)
+
+
+                for x in sorted(newentries, key=lambda x: (x[0],x[3],x[-1],x[5])):
+                    ruleprint += ', '.join(map(str,x))
+                    ruleprint += '\n'
+                print(ruleprint)
+                #for x in sorted(entries, key=lambda x: (x[0],x[3],x[5])):
+                    
+                #for x in range(qq.qsize()):
+                #    print(qq.get())
+                print('\n\n')
                 continue
                 import pdb; pdb.set_trace()
                 redirque.extend(permitque)
@@ -358,11 +414,11 @@ def main():
             ######
             import pdb; pdb.set_trace()
             headers = ['','','Action','T/vrf','(S)Tag','Source EPG','(D)Tag','Destination EPG','Contract','Total Hit','Last5min Hits']
-            sizes = get_column_sizes(rowlist=finalacllist,baseminimum=headers)
+            sizes = get_column_sizes(rowlist=newentries,baseminimum=headers)
             print(' Order #  {:{s2}} {:{s3}} {:{s4}} {:{s5}} {:{s6}} {:{s7}} {:{s8}} {:{s9}} {:{s10}}'.format(*headers[2:],s0=sizes[0],s1=sizes[1],s2=sizes[2],s3=sizes[3],s4=sizes[4],s5=sizes[5],s6=sizes[6],s7=sizes[7],s8=sizes[8],s9=sizes[9],s10=sizes[10]))
             print('-' * sum(sizes))
             for x in sorted(finalacllist, key=lambda x: (int(x[0]),x[3],x[2])):
-                print('[{:>{s0}}:{:{s1}}] {:{s2}} {:{s3}} {:{s4}} {:{s5}} {:{s6}} {:{s7}} {:{s8}} {:{s9}} {:{s10}}'.format(*x,s0=sizes[0],s1=sizes[1],s2=sizes[2],s3=sizes[3],s4=sizes[4],s5=sizes[5],s6=sizes[6],s7=sizes[7],s8=sizes[8],s9=sizes[9],s10=sizes[10]))
+                print('[{:>{s0}}:{:{s1}}] {:{s2}} {:{s3}} {:{s4}} {:{s5}} {:{s6}} {:{s7}} {:{s8}} {:{s9}} {:{s10}} {{:s11}} {:{s12}} {:{s13}} {{:s14}} {{:s15}}'.format(*x,s0=sizes[0],s1=sizes[1],s2=sizes[2],s3=sizes[3],s4=sizes[4],s5=sizes[5],s6=sizes[6],s7=sizes[7],s8=sizes[8],s9=sizes[9],s10=sizes[10]))
 
             import pdb; pdb.set_trace()
         elif selectedoption == '2':
