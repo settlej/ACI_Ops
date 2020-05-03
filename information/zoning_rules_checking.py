@@ -45,6 +45,14 @@ class epgclass():
     def __repr__(self):
         return "epg|{pcTag}|{epgname}".format(pcTag=self.pcTag,epgname=self.name)
 
+class redirclass():
+    def __init__(self, kwargs):
+        self.__dict__.update(**kwargs)
+        self.contract = re.search(r'GraphInst_C-\[(.*)]-G-',self.dn).group(1)
+        #import pdb; pdb.set_trace()
+        self.contract = self.contract[self.contract.find('brc-') + 4:] + '|' +self.name
+    def __repr__(self):
+        return "redir|{vlantag}|{contract}".format(vlantag=self.encap,contract=self.contract)
 class l3outclass():
     def __init__(self, kwargs):
         self.__dict__.update(**kwargs)
@@ -81,6 +89,8 @@ def gather_bd_sclass(tenant=None):
     results = GetResponseData(url,cookie)
     return results
 
+
+
 def create_epgnum_to_epgname_dict(epgapiresults):
     epgdict = {}
     for epg in epgapiresults:
@@ -96,6 +106,9 @@ def create_epgnum_to_epgname_dict(epgapiresults):
             epgdict[str(epgobj.pcTag)] = epgobj
         elif epg.get('fvBD'):
             epgobj = bdclass(epg['fvBD']['attributes'])
+            epgdict[str(epgobj.pcTag)] = epgobj
+        elif epg.get('vnsEPgDef'):
+            epgobj = redirclass(epg['vnsEPgDef']['attributes'])
             epgdict[str(epgobj.pcTag)] = epgobj
     return epgdict
 
@@ -235,6 +248,11 @@ def gather_aclfilters_entries(leaf):
             #for k in mmm.values():
             #    print(k.dn, k.fwdId, k.children)
 
+def gather_redir_sclass():
+    url = """https://{apic}/api/node/class/vnsEPgDef.json""".format(apic=apic)
+    results = GetResponseData(url,cookie)
+    return results
+
 def gather_and_provide_ruletable_per_leaf(leaf,allepglist):
     allrules = gather_per_leaf_zonerules(leaf,pod='1')
     epgdict = create_epgnum_to_epgname_dict(allepglist)
@@ -248,6 +266,10 @@ def gather_and_provide_ruletable_per_leaf(leaf,allepglist):
     bdresults = gather_bd_sclass()
     tempdict = create_epgnum_to_epgname_dict(bdresults)
     epgdict.update(tempdict)
+    redirresults = gather_redir_sclass()
+    tempdict = create_epgnum_to_epgname_dict(redirresults)
+    epgdict.update(tempdict)
+    tempdict = {}
     vrfdict = {}
     for k in vrfresults:
             #import pdb; pdb.set_trace()
@@ -263,6 +285,9 @@ def gather_and_provide_ruletable_per_leaf(leaf,allepglist):
            #     import pdb; pdb.set_trace()
             if epgdict.get(rule.dPcTag):
                 nameformat = epgbase._tenantappepg_formatter(epgdict[rule.dPcTag].dn,delimiter='|')
+                #if 'redir' in nameformat:
+                #    import pdb; pdb.set_trace()
+                #    nameformat = 'redir|' + 'contract' + '|' + 'name'
                 if nameformat == None:
                     nameformat = repr(epgdict[rule.dPcTag])
                 rule.dPcTagname = nameformat
@@ -314,37 +339,31 @@ def gather_and_provide_ruletable_per_leaf(leaf,allepglist):
         #permitque = deque()
         #redirque = deque()
         for rule in entries:
-            if 'deny' in rule[2] and 'log' in rule[2]:
+            if 'deny' in rule[2] and 'log' in rule[2] and 'no_stats' in rule[2]:
                 rule.insert(3,'1')
-                #qq.put((1,rule))
-                #denyque.appendleft(rule)
-      #  if qq.qsize != len(entries):
-      #  #if len(denyque) != len(entries):
-        for rule in entries:
-            if 'deny' in rule[2] and 'log' not in rule[2]:
+            elif 'deny' in rule[2] and 'log' in rule[2] and not 'no_stats' in rule[2]:
                 rule.insert(3,'2')
-                #qq.put((3,rule))
-                #denyque.append(rule)
-        for rule in entries:
-            if 'redir' in rule[2] and 'log' in rule[2]:
-                rule.insert(3,'30')
-                #qq.put((30,rule))
-            if 'redir' in rule[2] and 'log' not in rule[2]:
-                rule.insert(3,'40')
-                #qq.put((40,rule))
-                #redirque.appendleft(rule)
-        #if len(redirque) > 1:
-        #    tiebreaker
-        for rule in entries:
-            if 'permit' in rule[2] and 'log' in rule[2]:
-                rule.insert(3,'50')
-                #qq.put((50,rule))
-                #permitque.append(rule)
-        for rule in entries:
-            if 'permit' in rule[2]  and 'log' not in rule[2]:
-                rule.insert(3,'60')
-                #qq.put((60,rule))
-                #permitque.append(rule)
+            elif 'deny' in rule[2] and not 'log' in rule[2] and 'no_stats' in rule[2]:
+                rule.insert(3,'3')
+            elif 'deny' in rule[2] and not 'log' in rule[2]:
+                rule.insert(3,'4')
+            elif 'deny' in rule[2] and 'redir' in rule[2]:
+                rule.insert(3,'4')
+            elif 'redir' in rule[2] and 'log' in rule[2] and 'no_stats' in rule[2]:
+                rule.insert(3,'5')
+            elif 'redir' in rule[2] and 'log' in rule[2] and not 'no_stats' in rule[2]:
+                rule.insert(3,'6')
+            elif 'redir' in rule[2] and not 'log' in rule[2] and 'no_stats' in rule[2]:
+                rule.insert(3,'7')
+            elif 'redir' in rule[2] and not 'log' in rule[2]:
+                rule.insert(3,'8')
+            elif 'permit' in rule[2] and 'log' in rule[2]:
+                rule.insert(3,'10')
+            elif 'permit' in rule[2]  and not 'log' in rule[2]:
+                rule.insert(3,'11')
+            else:
+                rule.insert(3,'99')
+
         ruleprint = ''
         for x in entries:
             if len(aclentriesdict[x[10]]) > 1:
@@ -383,8 +402,13 @@ def main():
                 rulestring = ""
                 headers = ['','','Action','P#','T/vrf','(S)Tag','Source EPG','(D)Tag','Destination EPG','Contract','FilterID','Total_Hit','5min_Hit','[Type;Protocol;from-toSport;from-toDport,flags]','']
                 sizes = get_column_sizes(rowlist=newentries,baseminimum=headers)
+<<<<<<< HEAD
                 rulestring += ' Order #  {:{s2}}  {:{s3}}  {:{s4}}  {:{s5}}  {:{s6}}  {:{s7}}  {:{s8}}  {:{s9}}  {:{s10}}  {:>{s11}}  {:{s12}}  {:{s13}}\n'.format(*headers[2:-1],
                               s2=sizes[2],s3=sizes[3],s4=sizes[4],s5=sizes[5],s6=sizes[6],s7=sizes[7],s8=sizes[8],s9=sizes[9],s10=sizes[10],s11=sizes[11],s12=sizes[12],s13=sizes[13])
+=======
+                rulestring += 'Order #   {:{s2}}  {:{s4}}  {:{s5}}  {:{s6}}  {:{s7}}  {:{s8}}  {:{s9}}  {:{s10}}  {:>{s11}}  {:{s12}}  {:{s13}}\n'.format(headers[2], *headers[4:-1],
+                              s2=sizes[2],s4=sizes[4],s5=sizes[5],s6=sizes[6],s7=sizes[7],s8=sizes[8],s9=sizes[9],s10=sizes[10],s11=sizes[11],s12=sizes[12],s13=sizes[13])
+>>>>>>> 9f20658817d516fb13f8eaf892a7834c9277bd26
                 rulestring += '-' * sum(sizes)
                 rulestring += '\n'
                 for x in sorted(newentries, key=lambda x: (int(x[0]),x[3],x[-1],x[5],x[4])):
@@ -393,8 +417,13 @@ def main():
                             continue
                         else:
                             s = ''
+<<<<<<< HEAD
                     rulestring += '[{:>{s0}}:{:{s1}}] {:{s2}}  {:{s3}}  {:{s4}}  {:{s5}}  {:{s6}}  {:{s7}}  {:{s8}}  {:{s9}}  {:{s10}}  {:{s11}}  {:{s12}}  {:{s13}}\n'.format(*x[:-1],s0=sizes[0],
                                 s1=sizes[1],s2=sizes[2],s3=sizes[3],s4=sizes[4],s5=sizes[5],s6=sizes[6],s7=sizes[7],s8=sizes[8],s9=sizes[9],s10=sizes[10],s11=sizes[11],s12=sizes[12],s13=sizes[13])
+=======
+                    rulestring += '[{:>{s0}}:{:{s1}}] {:{s2}}  {:{s4}}  {:{s5}}  {:{s6}}  {:{s7}}  {:{s8}}  {:{s9}}  {:{s10}}  {:{s11}}  {:{s12}}  {:{s13}}\n'.format(x[0],x[1],x[2],*x[4:-1],s0=sizes[0],
+                                s1=sizes[1],s2=sizes[2],s4=sizes[4],s5=sizes[5],s6=sizes[6],s7=sizes[7],s8=sizes[8],s9=sizes[9],s10=sizes[10],s11=sizes[11],s12=sizes[12],s13=sizes[13])
+>>>>>>> 9f20658817d516fb13f8eaf892a7834c9277bd26
                 print(rulestring)
                 raw_input('\nContinue...')
             elif selectedoption == '2':
@@ -428,8 +457,13 @@ def main():
                 rulestring = ""
                 headers = ['','','Action','P#','T/vrf','(S)Tag','Source EPG','(D)Tag','Destination EPG','Contract','FilterID','Hits','5min_Hit','[Type;Protocol;from-toSport;from-toDport,flags]','']
                 sizes = get_column_sizes(rowlist=newentries,baseminimum=headers)
+<<<<<<< HEAD
                 rulestring += ' Order #  {:{s2}}  {:{s3}}  {:{s4}}  {:{s5}}  {:{s6}}  {:{s7}}  {:{s8}}  {:{s9}}  {:{s10}}  {:>{s11}}  {:{s12}}  {:{s13}}\n'.format(*headers[2:-1],
                               s2=sizes[2],s3=sizes[3],s4=sizes[4],s5=sizes[5],s6=sizes[6],s7=sizes[7],s8=sizes[8],s9=sizes[9],s10=sizes[10],s11=sizes[11],s12=sizes[12],s13=sizes[13])
+=======
+                rulestring += 'Order #   {:{s2}}  {:{s4}}  {:{s5}}  {:{s6}}  {:{s7}}  {:{s8}}  {:{s9}}  {:{s10}}  {:>{s11}}  {:{s12}}  {:{s13}}\n'.format(headers[2], *headers[4:-1],
+                              s2=sizes[2],s4=sizes[4],s5=sizes[5],s6=sizes[6],s7=sizes[7],s8=sizes[8],s9=sizes[9],s10=sizes[10],s11=sizes[11],s12=sizes[12],s13=sizes[13])
+>>>>>>> 9f20658817d516fb13f8eaf892a7834c9277bd26
                 rulestring += '-' * sum(sizes)
                 rulestring += '\n'
                 for x in sorted(newentries, key=lambda x: (int(x[0]),x[3],x[-1],x[5],x[4])):
@@ -438,8 +472,13 @@ def main():
                             continue
                         else:
                             s = ''
+<<<<<<< HEAD
                     rulestring += '[{:>{s0}}:{:{s1}}] {:{s2}}  {:{s3}}  {:{s4}}  {:{s5}}  {:{s6}}  {:{s7}}  {:{s8}}  {:{s9}}  {:{s10}}  {:{s11}}  {:{s12}}  {:{s13}}\n'.format(*x[:-1],s0=sizes[0],
                                 s1=sizes[1],s2=sizes[2],s3=sizes[3],s4=sizes[4],s5=sizes[5],s6=sizes[6],s7=sizes[7],s8=sizes[8],s9=sizes[9],s10=sizes[10],s11=sizes[11],s12=sizes[12],s13=sizes[13])
+=======
+                    rulestring += '[{:>{s0}}:{:{s1}}] {:{s2}}  {:{s4}}  {:{s5}}  {:{s6}}  {:{s7}}  {:{s8}}  {:{s9}}  {:{s10}}  {:{s11}}  {:{s12}}  {:{s13}}\n'.format(x[0],x[1],x[2],*x[4:-1],s0=sizes[0],
+                                s1=sizes[1],s2=sizes[2],s4=sizes[4],s5=sizes[5],s6=sizes[6],s7=sizes[7],s8=sizes[8],s9=sizes[9],s10=sizes[10],s11=sizes[11],s12=sizes[12],s13=sizes[13])
+>>>>>>> 9f20658817d516fb13f8eaf892a7834c9277bd26
                 print(rulestring)
                 raw_input('\nContinue...')            
             elif selectedoption == '3':
@@ -452,8 +491,13 @@ def main():
                 rulestring = ""
                 headers = ['','','Action','P#','T/vrf','(S)Tag','Source EPG','(D)Tag','Destination EPG','Contract','FilterID','Hits','5min_Hit','[Type;Protocol;from-toSport;from-toDport,flags]','']
                 sizes = get_column_sizes(rowlist=newentries,baseminimum=headers)
+<<<<<<< HEAD
                 rulestring += ' Order #  {:{s2}}  {:{s3}}  {:{s4}}  {:{s5}}  {:{s6}}  {:{s7}}  {:{s8}}  {:{s9}}  {:{s10}}  {:>{s11}}  {:{s12}}  {:{s13}}\n'.format(*headers[2:-1],
                               s2=sizes[2],s3=sizes[3],s4=sizes[4],s5=sizes[5],s6=sizes[6],s7=sizes[7],s8=sizes[8],s9=sizes[9],s10=sizes[10],s11=sizes[11],s12=sizes[12],s13=sizes[13])
+=======
+                rulestring += 'Order #   {:{s2}}  {:{s4}}  {:{s5}}  {:{s6}}  {:{s7}}  {:{s8}}  {:{s9}}  {:{s10}}  {:>{s11}}  {:{s12}}  {:{s13}}\n'.format(headers[2], *headers[4:-1],
+                              s2=sizes[2],s4=sizes[4],s5=sizes[5],s6=sizes[6],s7=sizes[7],s8=sizes[8],s9=sizes[9],s10=sizes[10],s11=sizes[11],s12=sizes[12],s13=sizes[13])
+>>>>>>> 9f20658817d516fb13f8eaf892a7834c9277bd26
                 rulestring += '-' * sum(sizes)
                 rulestring += '\n'
                 for x in sorted(newentries, key=lambda x: (int(x[0]),x[3],x[-1],x[5],x[4])):
@@ -462,8 +506,13 @@ def main():
                             continue
                         else:
                             s = ''
+<<<<<<< HEAD
                     rulestring += '[{:>{s0}}:{:{s1}}] {:{s2}}  {:{s3}}  {:{s4}}  {:{s5}}  {:{s6}}  {:{s7}}  {:{s8}}  {:{s9}}  {:{s10}}  {:{s11}}  {:{s12}}  {:{s13}}\n'.format(*x[:-1],s0=sizes[0],
                                 s1=sizes[1],s2=sizes[2],s3=sizes[3],s4=sizes[4],s5=sizes[5],s6=sizes[6],s7=sizes[7],s8=sizes[8],s9=sizes[9],s10=sizes[10],s11=sizes[11],s12=sizes[12],s13=sizes[13])
+=======
+                    rulestring += '[{:>{s0}}:{:{s1}}] {:{s2}}  {:{s4}}  {:{s5}}  {:{s6}}  {:{s7}}  {:{s8}}  {:{s9}}  {:{s10}}  {:{s11}}  {:{s12}}  {:{s13}}\n'.format(x[0],x[1],x[2],*x[4:-1],s0=sizes[0],
+                                s1=sizes[1],s2=sizes[2],s4=sizes[4],s5=sizes[5],s6=sizes[6],s7=sizes[7],s8=sizes[8],s9=sizes[9],s10=sizes[10],s11=sizes[11],s12=sizes[12],s13=sizes[13])
+>>>>>>> 9f20658817d516fb13f8eaf892a7834c9277bd26
                 print(rulestring)
                 raw_input('\nContinue...')
     
