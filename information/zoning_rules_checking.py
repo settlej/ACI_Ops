@@ -383,7 +383,7 @@ def main():
                 rulestring = ""
                 headers = ['','','Action','P#','T/vrf','(S)Tag','Source EPG','(D)Tag','Destination EPG','Contract','FilterID','Total_Hit','5min_Hit','[Type;Protocol;from-toSport;from-toDport,flags]','']
                 sizes = get_column_sizes(rowlist=newentries,baseminimum=headers)
-                rulestring += ' Order #  {:{s2}} {:{s3}} {:{s4}} {:{s5}} {:{s6}} {:{s7}} {:{s8}} {:{s9}} {:{s10}} {:>{s11}} {:{s12}} {:{s13}}\n'.format(*headers[2:-1],
+                rulestring += ' Order #  {:{s2}}  {:{s3}}  {:{s4}}  {:{s5}}  {:{s6}}  {:{s7}}  {:{s8}}  {:{s9}}  {:{s10}}  {:>{s11}}  {:{s12}}  {:{s13}}\n'.format(*headers[2:-1],
                               s2=sizes[2],s3=sizes[3],s4=sizes[4],s5=sizes[5],s6=sizes[6],s7=sizes[7],s8=sizes[8],s9=sizes[9],s10=sizes[10],s11=sizes[11],s12=sizes[12],s13=sizes[13])
                 rulestring += '-' * sum(sizes)
                 rulestring += '\n'
@@ -393,7 +393,7 @@ def main():
                             continue
                         else:
                             s = ''
-                    rulestring += '[{:>{s0}}:{:{s1}}] {:{s2}} {:{s3}} {:{s4}} {:{s5}} {:{s6}} {:{s7}} {:{s8}} {:{s9}} {:{s10}} {:{s11}} {:{s12}}  {:{s13}}\n'.format(*x[:-1],s0=sizes[0],
+                    rulestring += '[{:>{s0}}:{:{s1}}] {:{s2}}  {:{s3}}  {:{s4}}  {:{s5}}  {:{s6}}  {:{s7}}  {:{s8}}  {:{s9}}  {:{s10}}  {:{s11}}  {:{s12}}  {:{s13}}\n'.format(*x[:-1],s0=sizes[0],
                                 s1=sizes[1],s2=sizes[2],s3=sizes[3],s4=sizes[4],s5=sizes[5],s6=sizes[6],s7=sizes[7],s8=sizes[8],s9=sizes[9],s10=sizes[10],s11=sizes[11],s12=sizes[12],s13=sizes[13])
                 print(rulestring)
                 raw_input('\nContinue...')
@@ -428,7 +428,7 @@ def main():
                 rulestring = ""
                 headers = ['','','Action','P#','T/vrf','(S)Tag','Source EPG','(D)Tag','Destination EPG','Contract','FilterID','Hits','5min_Hit','[Type;Protocol;from-toSport;from-toDport,flags]','']
                 sizes = get_column_sizes(rowlist=newentries,baseminimum=headers)
-                rulestring += ' Order #  {:{s2}} {:{s3}} {:{s4}} {:{s5}} {:{s6}} {:{s7}} {:{s8}} {:{s9}} {:{s10}} {:>{s11}} {:{s12}} {:{s13}}\n'.format(*headers[2:-1],
+                rulestring += ' Order #  {:{s2}}  {:{s3}}  {:{s4}}  {:{s5}}  {:{s6}}  {:{s7}}  {:{s8}}  {:{s9}}  {:{s10}}  {:>{s11}}  {:{s12}}  {:{s13}}\n'.format(*headers[2:-1],
                               s2=sizes[2],s3=sizes[3],s4=sizes[4],s5=sizes[5],s6=sizes[6],s7=sizes[7],s8=sizes[8],s9=sizes[9],s10=sizes[10],s11=sizes[11],s12=sizes[12],s13=sizes[13])
                 rulestring += '-' * sum(sizes)
                 rulestring += '\n'
@@ -438,7 +438,7 @@ def main():
                             continue
                         else:
                             s = ''
-                    rulestring += '[{:>{s0}}:{:{s1}}] {:{s2}} {:{s3}} {:{s4}} {:{s5}} {:{s6}} {:{s7}} {:{s8}} {:{s9}} {:{s10}} {:{s11}} {:{s12}}  {:{s13}}\n'.format(*x[:-1],s0=sizes[0],
+                    rulestring += '[{:>{s0}}:{:{s1}}] {:{s2}}  {:{s3}}  {:{s4}}  {:{s5}}  {:{s6}}  {:{s7}}  {:{s8}}  {:{s9}}  {:{s10}}  {:{s11}}  {:{s12}}  {:{s13}}\n'.format(*x[:-1],s0=sizes[0],
                                 s1=sizes[1],s2=sizes[2],s3=sizes[3],s4=sizes[4],s5=sizes[5],s6=sizes[6],s7=sizes[7],s8=sizes[8],s9=sizes[9],s10=sizes[10],s11=sizes[11],s12=sizes[12],s13=sizes[13])
                 print(rulestring)
                 raw_input('\nContinue...')            
@@ -452,7 +452,7 @@ def main():
                 rulestring = ""
                 headers = ['','','Action','P#','T/vrf','(S)Tag','Source EPG','(D)Tag','Destination EPG','Contract','FilterID','Hits','5min_Hit','[Type;Protocol;from-toSport;from-toDport,flags]','']
                 sizes = get_column_sizes(rowlist=newentries,baseminimum=headers)
-                rulestring += ' Order #  {:{s2}} {:{s3}} {:{s4}} {:{s5}} {:{s6}} {:{s7}} {:{s8}} {:{s9}} {:{s10}} {:>{s11}} {:{s12}} {:{s13}}\n'.format(*headers[2:-1],
+                rulestring += ' Order #  {:{s2}}  {:{s3}}  {:{s4}}  {:{s5}}  {:{s6}}  {:{s7}}  {:{s8}}  {:{s9}}  {:{s10}}  {:>{s11}}  {:{s12}}  {:{s13}}\n'.format(*headers[2:-1],
                               s2=sizes[2],s3=sizes[3],s4=sizes[4],s5=sizes[5],s6=sizes[6],s7=sizes[7],s8=sizes[8],s9=sizes[9],s10=sizes[10],s11=sizes[11],s12=sizes[12],s13=sizes[13])
                 rulestring += '-' * sum(sizes)
                 rulestring += '\n'
@@ -462,7 +462,7 @@ def main():
                             continue
                         else:
                             s = ''
-                    rulestring += '[{:>{s0}}:{:{s1}}] {:{s2}} {:{s3}} {:{s4}} {:{s5}} {:{s6}} {:{s7}} {:{s8}} {:{s9}} {:{s10}} {:{s11}} {:{s12}}  {:{s13}}\n'.format(*x[:-1],s0=sizes[0],
+                    rulestring += '[{:>{s0}}:{:{s1}}] {:{s2}}  {:{s3}}  {:{s4}}  {:{s5}}  {:{s6}}  {:{s7}}  {:{s8}}  {:{s9}}  {:{s10}}  {:{s11}}  {:{s12}}  {:{s13}}\n'.format(*x[:-1],s0=sizes[0],
                                 s1=sizes[1],s2=sizes[2],s3=sizes[3],s4=sizes[4],s5=sizes[5],s6=sizes[6],s7=sizes[7],s8=sizes[8],s9=sizes[9],s10=sizes[10],s11=sizes[11],s12=sizes[12],s13=sizes[13])
                 print(rulestring)
                 raw_input('\nContinue...')
