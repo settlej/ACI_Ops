@@ -6,6 +6,10 @@ __pycache__/
 # C extensions
 *.so
 
+# ACI_Ops
+*.log
+aciops.log.*
+
 # Distribution / packaging
 .Python
 build/
