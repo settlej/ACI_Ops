@@ -2,7 +2,7 @@
 [![published](https://static.production.devnetcloud.com/codeexchange/assets/images/devnet-published.svg)](https://developer.cisco.com/codeexchange/github/repo/settlej/ACI_Ops)</br>
 Tools to enhance CLI experience replacing slower ACI show commands with additional information.</br></br>
 <strong>WARNING</strong>: Sandbox (sandboxapicdc.cisco.com) for APIC doesn't fully work with ACI Ops, this is due to the fact that the APICs and Fabric are virtual and don't have all the API object returns relating to real equipment.</br></br>
-Tested in 4.0(3d), 4.1(2m) and 4.2(1j) APIC/ACI</br>
+Tested in 4.0(3d), 4.1(2m), 4.2(1j), 4.2(3l) APIC/ACI</br>
 This program fully supports Python2 and will be updated to Python3 when ACI's internal platform migrates from Python2.</br></br>
 The entire program uses Python2 Standard Library!  </br><b>No 3rd party modules to import and update!</b></br>
 Program can run on Windows, Mac, and Linux.</br></br>
@@ -46,7 +46,7 @@ Can be ran on local computer or on APIC itself.  If on the APIC you can store th
      
  <strong>python -m virtualenv .</strong></br>
       or<br>
- <strong>python -m virtualenv</strong><em><path/to/virtual/location></em></br>
+ <strong>python -m virtualenv </strong><em><path/to/virtual/location></em></br>
 
  If python2 and python3 on same machine you may need to specify:</br>
  <strong>python2 -m virtualenv .</strong></br></br>
@@ -68,7 +68,6 @@ Then run:  <strong>python main_menu.py</strong>
  2.) user<br>
  3.) password</br>
  apic = [ip/hostname]
-
 # Screen Shots:
 ![Image of Main Menu](https://github.com/settlej/Better_ACI_CLI_Tools/blob/master/images/Menu.JPG)</br></br>
 # Important Fault Summary
