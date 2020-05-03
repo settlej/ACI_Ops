@@ -45,7 +45,7 @@ Can be ran on local computer or on APIC itself.  If on the APIC you can store th
      
  <strong>python -m virtualenv .</strong></br>
       or<br>
- <strong>python -m virtualenv</strong><em><path/to/virtual/location></em></br>
+ <strong>python -m virtualenv </strong><em><path/to/virtual/location></em></br>
 
  If python2 and python3 on same machine you may need to specify:</br>
  <strong>python2 -m virtualenv .</strong></br></br>
