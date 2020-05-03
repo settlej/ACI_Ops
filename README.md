@@ -1,7 +1,7 @@
 # ACI Ops
 Tools to enhance CLI experience replacing slower ACI show commands with additional information.</br></br>
 <strong>WARNING</strong>: Sandbox (sandboxapicdc.cisco.com) for APIC doesn't fully work with ACI Ops, this is due to the fact that the APICs and Fabric are virtual and don't have all the API object returns relating to real equipment.</br></br>
-Tested in 4.0(3d), 4.1(2m) and 4.2(1j) APIC/ACI</br>
+Tested in 4.0(3d), 4.1(2m), 4.2(1j), 4.2(3l) APIC/ACI</br>
 This program fully supports Python2 and will be updated to Python3 when ACI's internal platform migrates from Python2.</br></br>
 The entire program uses Python2 Standard Library!  </br><b>No 3rd party modules to import and update!</b></br>
 Program can run on Windows, Mac, and Linux.</br></br>
@@ -30,7 +30,43 @@ Can be ran on local computer or on APIC itself.  If on the APIC you can store th
  1u Leafs only supported </br>
  Some features like log pull may not be limited to single pod or 1u leaf.
 
+# Setup
+ No requriments besides python 2.7 and ssh</br>
+ ACI_Ops can be run on APIC or on local computer<br>
+ Recommend location on APIC for ACI_Ops: home folder for user<br>
+ Local computer needs to have "ssh" in cmd or bash to use tools module in ACI_Ops</br>
+ If running lower than 2.7 ipaddress library will be needed</br>
+</br>
 
+ [OPTIONAL] If you want to run ACI_Ops in a virtualenv for python2.</br>
+</br>
+ (linux) <strong>sudo pip install virtualenv</strong></br>
+ (windows/admin) <strong>pip install virtualenv</strong></br>
+     
+ <strong>python -m virtualenv .</strong></br>
+      or<br>
+ <strong>python -m virtualenv</strong><em><path/to/virtual/location></em></br>
+
+ If python2 and python3 on same machine you may need to specify:</br>
+ <strong>python2 -m virtualenv .</strong></br></br>
+ <strong>cd Scripts<br></strong>
+ (linux) <strong>source activate</strong><br>
+ (windows) <strong>activate</strong></br>
+
+ 
+# Installation
+ git clone https://github.com/settlej/ACI_Ops.git</br>
+ </strong>cd ACI_Ops</strong></br>
+ <strong>python</strong> or <strong>python2 main_menu.py</strong>
+<br></br>
+If you want to run on APIC copy all files to the user home directory, via SCP/SFTP.</br>
+Then run:  <strong>python main_menu.py</strong>
+# Enviroment Variables
+ If using running ACI_Ops on local computer, for quick login use these three variables:</br>
+ 1.) apic <br>
+ 2.) user<br>
+ 3.) password</br>
+ apic = [ip/hostname]
 # Screen Shots:
 ![Image of Main Menu](https://github.com/settlej/Better_ACI_CLI_Tools/blob/master/images/Menu.JPG)</br></br>
 # Important Fault Summary
