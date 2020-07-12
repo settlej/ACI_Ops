@@ -12,7 +12,6 @@ import traceback
 import pdb
 from localutils.custom_utils import clear_screen, refreshToken, custom_raw_input
 import localutils.sshleafutil 
-#import fabric_access.create_vpc as create_vpc
 import fabric_access.display_switch_to_leaf_structure as display_switch_to_leaf_structure
 import interfaces.change_interface_state as shut_noshut_interfaces
 import interfaces.assign_epg_interfaces as assign_epg_interfaces
@@ -22,7 +21,6 @@ import interfaces.show_all_endpoints_on_interface as show_all_endpoints_on_inter
 import interfaces.portsanddescriptions as portsanddescriptions
 import interfaces.interfacecounters as showinterface
 import interfaces.switch_port_view as switch_port_view
-#import interfaces.switchpreviewutil as switchpreviewutil
 import interfaces.clonevpcanddeploy as clonevpcanddeploy
 import interfaces.autodeploy as autodeploy
 import interfaces.portchannel_to_phy_interfaces as portchannel_to_phy_interfaces
@@ -48,6 +46,7 @@ import information.zoning_rules_checking as zoning_rules_checking
 import information.show_static_routes as show_static_routes
 import configuration.create_local_span_session as create_local_span_session
 import configuration.span_to_server as span_to_server
+import configuration.erspan_deploy as erspan_deploy
 import localutils.program_globals
 import logging
 from logging.handlers import RotatingFileHandler
@@ -270,32 +269,6 @@ class AuthenticationFailure(Exception):
     """Authentication Failure"""
     pass
 
-
-#def associate_permissions_to_role(rolerightsdict, userdomainlist):
-#   # import pdb; pdb.set_trace()
-#    for domain,rights in userdomainlist.items():
-#        for x in rolerightsdict:
-#            for num,right in enumerate(rights):
-#                if right.get(x):
-#                   # import pdb; pdb.set_trace()
-#                    print(domain, rights[num])
-#
-#def checkwritepermissions(permissionlist):
-#  #  for permission in permissionlist:
-#  #      #print(permission)
-#  #      if permission.get('all'):
-#  #          #print(permission)
-#  #          for usertype,role in permission['all'].items():
-#  #              if usertype == 'admin' and role == 'writePriv':
-#  #                  return True
-#  #          #    import pdb; pdb.set_trace()
-#  #          #    print(role)
-#  #          #    for x in role:
-#  #          #        if x['admin'] == 'writePriv':
-## #          # if permission['all'] == 'writePriv':
-#  #  return False
-#    return True
-
 def settimer():
     timertest = time.time()
 
@@ -407,6 +380,14 @@ def main():
                 if chosen == '1':
                     try:
                         shut_noshut_interfaces.main(apic,cookie)
+                        keyinterrupt = False
+                    except KeyboardInterrupt as k:
+                        print('\nExit to Main menu\n')
+                        keyinterrupt = True
+                        break
+                elif chosen == '111':
+                    try:
+                        erspan_deploy.main(user=current_user)
                         keyinterrupt = False
                     except KeyboardInterrupt as k:
                         print('\nExit to Main menu\n')

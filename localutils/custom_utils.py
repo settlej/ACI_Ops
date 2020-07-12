@@ -222,6 +222,51 @@ def POSTRequest(url, data, icookie):
         failure_reason = json.loads(urle.read())
         return 'invalid', failure_reason
 
+
+def DeleteandGetResponseData(url, cookie):
+    # Fuction to submit JSON and load it into Python Dictionary format and present all JSON inside the 'imdata' level
+    # Perform a POSTRequest function to perform a POST REST call to server and provide response data
+    response, error = DeleteRequest(url, cookie)
+    logger.info(url)
+    # the 'response' is an urllib2 object that needs to be read for JSON data, this loads the JSON to Python Dictionary format
+        # return only infomation inside the dictionary under 'imdata'.  If response is a string rether than a urllib object return str with error
+    if isinstance(response,str):
+        return response, error
+    else:
+        result = json.loads(response.read())
+        return result['imdata'], error
+
+def DeleteRequest(url, icookie):
+    # Function to Perform HTTP POST call to update and create objects and return server data in an http object
+    # POST in urllib2 is special because it doesn't exist as a built-in method for the urllib2 object you need to make a function (aka lambda) and refrence this method
+    method = "DELETE"
+    # icookie comes from the PostandGetResponseData fuction that references 'cookie' which is a global variable from reading /.aci/.sessions/.token
+    cookies = 'APIC-cookie=' + icookie
+    # notice 'data' is going to added to the urllib2 object, unlike GET requests
+    request = urllib2.Request(url)
+    # Function needs APIC cookie for authentication and what content format you need in returned http object (example JSON)
+    # need to add header one at a time in urllib2
+    request.add_header("cookie", cookies)
+    request.add_header("Content-type", "application/json")
+    request.add_header('Accept', 'application/json')
+    # Mandate the urllib request is a POST instead of default GET request
+    request.get_method = lambda: method
+    try:
+        return urllib2.urlopen(request, context=ssl._create_unverified_context()), None
+    except urllib2.HTTPError as httpe:
+        failure_reason = json.loads(httpe.read())
+        failure_reason = failure_reason['imdata'][0]['error']['attributes']['text'].strip()
+        return 'invalid', failure_reason
+    except urllib2.URLError as urle:
+        #print(urle.code)
+        failure_reason = json.loads(urle.read())
+        return 'invalid', failure_reason
+
+
+
+
+
+
 class json_collector(object):
     def __init__(self, **kwargs):
         self.__dict__.update(kwargs)
