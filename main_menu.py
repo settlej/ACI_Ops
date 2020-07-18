@@ -365,12 +365,13 @@ def main():
                             '\t ---------------------------------------------------\n' +
                             '\t| 26.) Configure Local Span\n' + 
                             '\t| 27.) Capture server traffic ERSPAN to server (Beta)\n' + 
-                            '\t| 28.) Interface Deployment Wizard (Beta)\n' + 
+                            '\t| 28.) ERSPAN relay\n' +
+                            '\t| 29.) Interface Deployment Wizard (Beta)\n' + 
                             #'\t| 20.) Create EPGs (Not Available)\n' +
                             '\t ---------------------------------------------------\n\n' +
                             '\t  [TROUBLESHOOTING]\n'
                             '\t ---------------------------------------------------\n' +
-                            '\t| 29.) Tools (PING, Clear Endpoint(s) on leaf)\n' + 
+                            '\t| 30.) Tools (PING, Clear Endpoint(s) on leaf)\n' + 
                             '\t ---------------------------------------------------\x1b[0m')
 
             cookie = refreshToken(apic, cookie)
@@ -385,9 +386,9 @@ def main():
                         print('\nExit to Main menu\n')
                         keyinterrupt = True
                         break
-                elif chosen == '111':
+                elif chosen == '28':
                     try:
-                        erspan_deploy.main(user=current_user)
+                        erspan_deploy.main(user=current_user,erspandestip='1.11.1.1',relay=False)
                         keyinterrupt = False
                     except KeyboardInterrupt as k:
                         print('\nExit to Main menu\n')
@@ -401,7 +402,7 @@ def main():
                         print('\nExit to Main menu\n')
                         keyinterrupt = True
                         break
-                elif chosen == '28':
+                elif chosen == '29':
                     try:
                         configure_and_deploy.main(apic,cookie)
                         keyinterrupt = False
@@ -433,7 +434,7 @@ def main():
                         print('\nExit to Main menu\n')
                         keyinterrupt = True
                         break		
-                elif chosen == '29':
+                elif chosen == '30':
                     try:
                         localutils.sshleafutil.main(apic,cookie,user=current_user)
                         keyinterrupt = False

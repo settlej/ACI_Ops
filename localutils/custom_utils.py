@@ -85,7 +85,7 @@ def askconfirmation(text):
 
 
 def custom_raw_input(inputstr):
-    r = raw_input(inputstr).strip().lstrip()
+    r = raw_input(inputstr).strip()
     if r == 'exit':
         raise KeyboardInterrupt
     else:
