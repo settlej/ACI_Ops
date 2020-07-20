@@ -16,6 +16,19 @@ from localutils.custom_utils import *
 import localutils.program_globals 
 
 
+class RestartException(Exception):
+    pass
+
+def custom_raw_input_restart(inputstr):
+    r = custom_raw_input(inputstr).strip()
+    if r == 'restart':
+        raise RestartException
+    else:
+        return r
+
+
+
+
 def sshlogin(user,device,command):
     cipher_re_attempt = None
     sshcommand = 'ssh {}@{} -o ConnectTimeout=3 -C {}'.format(user,device,command)
@@ -42,7 +55,6 @@ def sshlogin(user,device,command):
                 print(stderr)
                 return
         except KeyboardInterrupt:
-            return
             print('\nUser killed ssh attempt...\n')
             return
         except Exception as e:
@@ -209,7 +221,7 @@ def monitor_interface_menu():
           "\t1.) Physical Interfaces \n" + \
           "\t2.) PC Interfaces \n" + \
           "\t3.) VPC Interfaces \n")
-        selection = custom_raw_input("Select number: ")
+        selection = custom_raw_input_restart("Select number: ")
         print('\r')
         if selection.isdigit() and selection != '' and 1 <= int(selection) <= 3:
             break
@@ -322,8 +334,9 @@ class SpanSession():
 def display_current_span_sessions():
     result, count = GetResponseData('https://{apic}/api/node/class/spanSession.json?rsp-subtree=full&rsp-subtree-include=faults'.format(apic=apic),cookie=cookie,return_count=True)
     if int(count) == 0:
-        print("No Running Span Sessions")
+        print("\nNo Running Span Sessions")
     else:
+        print('')
         spanlist = []
         for sess in result:
             currentsession = SpanSession(sess['spanSession']['attributes'])
@@ -352,7 +365,7 @@ def display_current_span_sessions():
                print('  total faults: {}'.format(y['faultamount']))
                if y.get('dstIp'):
                    print(y['dstIp'])
-            print('\n\n')
+            print('-' * 40)
                    # if child.get('spanLDestination')
                    #import pdb; pdb.set_trace()
                 #for epg in bd['fvBD']['children']:
@@ -364,395 +377,404 @@ def display_current_span_sessions():
 
 
 def main(user=None,prestaged=False,erspandestip = None,relay = False):
-    clear_screen()
     global cookie
     global apic
     global currenttime
     global urllist
     urllist = []
     l3locations = []
+    l3outinterlist = []
     currenttime = localutils.program_globals.TIME
     cookie = localutils.program_globals.TOKEN
     if user == None:
         user = os.getenv['USER']
     apic = localutils.program_globals.APIC
     refreshToken(apic,cookie)
-    location_banner('ERSPAN Setup')
-    switchip = '10.200.200.213'
-    permanent = False
-    if not prestaged:
-        duration = None
-        vpc = None
-        location  = None
-        destip = None
-        srcip = None
-        protocol = 'unspecified'
-        ports = 'unspecified'
-        while True:
-            askpermanent =  custom_raw_input("\n 1.) Temporary ERSPAN\n"
-                                             + " 2.) Permanent ERSPAN\n"
-                                             + " 3.) View Span Sessions \n\n[Default=1]: ") or '1'
-            if askpermanent == '1':
-                permanent = False
-                break
-            elif askpermanent == '2':
-                permanent = True
-                break
-            elif askpermanent == '3':
-                display_current_span_sessions()
-                raw_input('\nContinue...')
-                clear_screen()
-                location_banner('ERSPAN Setup')
-                continue
-            else:
-                print('Invalid number')
-                continue
-
-    print('')
-    if not erspandestip:
-        while True:
-            erspandestip = custom_raw_input("Desination IP for ERSPAN traffic?: ")
-            try: 
-                ipaddress.IPv4Address(unicode(erspandestip))
-                break
-            except:
-                print('Invalid Ip address')
-                continue
-    if relay == True:
-        while True:
-            computerip = custom_raw_input("What is Capture workstation IP for relayed ERSPAN traffic?: ")
-            try: 
-                ipaddress.IPv4Address(unicode(computerip))
-                break
-            except:
-                print('Invalid Ip address')
-                continue
-    external = False
     while True:
-        askext = custom_raw_input("Include L3out interfaces? [y|default=n]:  ") or 'n'
-        if askext.lower()[0] == 'n':
-            break
-        if askext.lower()[0] == 'y':
-            external = True
-            break
-        else:
-            continue
-            
-    if not duration and permanent == False:
-        while True:
-            duration = custom_raw_input('How long to run datacenter ERSPAN? [10-500 sec]: ')
-            if not duration.isdigit():
-                print('Invalid number')
-                continue
-            if int(duration) > 500:
-                print('500 seconds is the limit')
-                continue
-            break
-    skipfilter = False
-    if not srcip and not destip and ports == 'unspecified':
-        while True:
-            createfilter = custom_raw_input("Create Filter ACL for capturing?: ") or 'y'
-            if createfilter != "" and createfilter[0].lower() == 'n':
-                skipfilter = True
-                break
-            elif createfilter != "" and createfilter[0].lower() == 'y':
+        try:
+            clear_screen()
+            location_banner('ERSPAN Setup')
+            switchip = '10.200.200.213'
+            permanent = False
+            if not prestaged:
+                duration = None
+                vpc = None
+                location  = None
+                destip = None
+                srcip = None
+                protocol = 'unspecified'
+                ports = 'unspecified'
                 while True:
-                    srcip = custom_raw_input("What Source ip to monitor?: ")
-                    try: 
-                        if srcip == 'any' or srcip == '0.0.0.0':
-                            srcip = 'unspecified'
-                            break
-                        ipaddress.IPv4Address(unicode(srcip))
+                    askpermanent =  custom_raw_input_restart("\n 1.) Temporary ERSPAN\n"
+                                                     + " 2.) Permanent ERSPAN\n"
+                                                     + " 3.) View Span Sessions \n\nSelection [1]: ") or '1'
+                    if askpermanent == '1':
+                        permanent = False
                         break
-                    except:
-                        print('Invalid Ip address')
-                        continue
-                while True:
-                    destip = custom_raw_input("What destination ip to monitor?: ")
-                    try: 
-                        if destip == 'any' or destip == '0.0.0.0':
-                            destip = 'unspecified'
-                            break
-                        ipaddress.IPv4Address(unicode(destip))
+                    elif askpermanent == '2':
+                        permanent = True
                         break
-                    except:
-                        print('Invalid Ip address')
+                    elif askpermanent == '3':
+                        display_current_span_sessions()
+                        raw_input('\nContinue...')
+                        clear_screen()
+                        location_banner('ERSPAN Setup')
                         continue
-                while True:
-                    protocol = custom_raw_input("What IP Protocol? (Example: ospf,pim,icmp,tcp,udp,any) [default=any]: ") or 'any'
-                    if protocol != "":
-                        if protocol == 'any':
-                            protocol = 'unspecified'
-                            break
-                    if protocol.strip() in ['ip', 'tcp', 'udp']:
-                        if protocol == 'ip':
-                            protocol = 'unspecified'
-                        while True:
-                            ports = custom_raw_input("What port or port range? (Example: 80 or 80-90 or any) [default=any]: ") or 'any'
-                            if ports != "":
-                                if ports == 'any':
-                                    ports = 'unspecified'
-                                    break
-                            if '-' in ports:
-                                ports = ports.split('-')
-                                if not ports[0].isdigit() or not ports[1].isdigit():
-                                    print('Invalid port numbers')
-                                    continue
-                                if int(ports[0]) > int(ports[1]):
-                                    print('Invalid port range')
-                                    continue
-                                break
-                            else:
-                                ports = [ports,ports]
-                                break
                     else:
-                        ports = 'unspecified'
-                        break
-                    break
-            else:
-                continue
-            break
-    locationlist = []
-    templocationlist = []
-    if not location and not vpc:
-        if srcip and destip:
-            print('\nSearching for source and destination interfaces...\n')
-            for ip in [srcip,destip]:
-                if ip != 'unspecified':
-                    url = """https://{apic}/api/node/class/fvCEp.json?rsp-subtree=full&rsp-subtree-class=fvRsCEpToPathEp&rsp-subtree-include=required&query-target-filter=eq(fvCEp.ip,"{ip}")""".format(apic=apic,ip=ip)
-                    results, totalcount = GetResponseData(url,cookie,return_count=True)
-                    if int(totalcount) == 1:
-                       templocationlist.extend([path['fvRsCEpToPathEp']['attributes']['tDn'] for path in results[0]['fvCEp']['children']])
-                    elif int(totalcount) > 1:
-                        for endpoint in results:
-                            templocationlist.extend([path['fvRsCEpToPathEp']['attributes']['tDn'] for path in results['fvCEp']['children']])
-                    elif totalcount == '0':
-                        print('Unable to dynamically locate source interface for Endpoint using {}'.format(ip))
-            if len(templocationlist) > 0:
-                templocationlist = list(set(templocationlist))
-                print("Found interfaces associated to IPs provided:\n")
-                for num,path in enumerate(templocationlist,1):
-                    print('   {}.) {}'.format(num,path))
-                while True:
-                    if len(templocationlist) == 1:
-                        search = custom_raw_input("\nWould you like to monitor found interface? [default=yes]: ") or 'all'
-                        if search[0].lower() == 'n':
-                            break
-                        elif search[0].lower() == 'y':
-                            location = templocationlist
-                            break
-                    else:
-                        search = custom_raw_input("\nWhich interfaces would you like to monitor? [default=all]: ") or 'all'
-                    if search[0].lower() == 'n':
-                        break
-                    elif search == 'all':
-                        location = templocationlist
-                        locationlist = templocationlist
-                        break
-                    try:
-                        menunumbers = parseandreturnsingelist(search)
-                        locationlist = [templocationlist[loc - 1] for loc in menunumbers]
-                        break
-                    except:
-                        print('Invalid options, try again...')
+                        print('Invalid number')
                         continue
-            else:
-                print("\nUnable to locate any interface from IPs provide")
-        additional = None
-        if external:
-            print('\nL3 Menu:\n')
-            l3outinterlist = gather_l3out_interfaces(apic)
-            headers = ['Tenant','L3out']
-            columns = [(x[1][0],x[1][1]) for x in l3outinterlist]
-            sizes = get_column_sizes(rowlist=columns,baseminimum=headers)
-            print('     {:{s1}} | {:{s2}}'.format('Tenant','L3out',s1=sizes[0],s2=sizes[1]))
-            print('     ' + '-' * sizes[0] + '---' + '-' * sizes[1])
-            for num,x in enumerate(l3outinterlist,1):
-                print(' {}.) {:{s1}} | {:{s2}}'.format(num,x[1][0],x[1][1],s1=sizes[0],s2=sizes[1]))
+        
             print('')
+            if not erspandestip:
+                while True:
+                    erspandestip = custom_raw_input_restart("Desination IP for ERSPAN traffic?: ")
+                    try: 
+                        ipaddress.IPv4Address(unicode(erspandestip))
+                        break
+                    except:
+                        print('Invalid Ip address')
+                        continue
+            if relay == True:
+                while True:
+                    computerip = custom_raw_input_restart("What is Capture workstation IP for relayed ERSPAN traffic?: ")
+                    try: 
+                        ipaddress.IPv4Address(unicode(computerip))
+                        break
+                    except:
+                        print('Invalid Ip address')
+                        continue
+            if not duration and permanent == False:
+                while True:
+                    duration = custom_raw_input_restart('How long to run datacenter ERSPAN? [10-500 sec]: ')
+                    if not duration.isdigit():
+                        print('Invalid number')
+                        continue
+                    if int(duration) > 500:
+                        print('500 seconds is the limit')
+                        continue
+                    break
+            external = False
             while True:
-                selections = custom_raw_input('L3 Selection or none: ')
-                if (not '-' in selections and not ',' in selections) and not selections.isdigit():
-                    print('Invalid selection')
-                    continue
-                if selections.lower() == 'none':
-                    l3location = []
-                    l3outinterlist = []
+                askext = custom_raw_input_restart("Include L3out interfaces? [y]:  ") or 'y'
+                if askext.lower()[0] == 'n':
+                    break
+                if askext.lower()[0] == 'y':
+                    external = True
                     break
                 else:
-                    menunumbers = parseandreturnsingelist(selections)
-                    try:
-                        l3locations.extend([l3outinterlist[num -1] for num in menunumbers])
-
-                    except IndexError:
-                        print('Invalid selection')
-                        continue
-                    if len(menunumbers) > 1:
-                        print('Only one selection is supported')
-                        continue
-                print('')
+                    continue
+            skipfilter = False
+            if not srcip and not destip and ports == 'unspecified':
                 while True:
-                    direc = custom_raw_input('L3OUT capture direction? [both,in,out]: ') or 'both'
-                    if direc in ['both','in','out']:
-                        [x.append(direc) for x in l3locations]
+                    createfilter = custom_raw_input_restart("Create Filter ACL for capturing?: ") or 'y'
+                    if createfilter != "" and createfilter[0].lower() == 'n':
+                        skipfilter = True
                         break
+                    elif createfilter != "" and createfilter[0].lower() == 'y':
+                        while True:
+                            srcip = custom_raw_input_restart("What Source ip to monitor?: ")
+                            try: 
+                                if srcip == 'any' or srcip == '0.0.0.0':
+                                    srcip = 'unspecified'
+                                    break
+                                ipaddress.IPv4Address(unicode(srcip))
+                                break
+                            except:
+                                print('Invalid Ip address')
+                                continue
+                        while True:
+                            destip = custom_raw_input_restart("What destination ip to monitor?: ")
+                            try: 
+                                if destip == 'any' or destip == '0.0.0.0':
+                                    destip = 'unspecified'
+                                    break
+                                ipaddress.IPv4Address(unicode(destip))
+                                break
+                            except:
+                                print('Invalid Ip address')
+                                continue
+                        while True:
+                            protocol = custom_raw_input_restart("What IP Protocol? (Example: ospf,pim,icmp,tcp,udp,any) [default=any]: ") or 'any'
+                            if protocol != "":
+                                if protocol == 'any':
+                                    protocol = 'unspecified'
+                                    break
+                            if protocol.strip() in ['ip', 'tcp', 'udp']:
+                                if protocol == 'ip':
+                                    protocol = 'unspecified'
+                                while True:
+                                    ports = custom_raw_input_restart("What port or port range? (Example: 80 or 80-90 or any) [default=any]: ") or 'any'
+                                    if ports != "":
+                                        if ports == 'any':
+                                            ports = 'unspecified'
+                                            break
+                                    if '-' in ports:
+                                        ports = ports.split('-')
+                                        if not ports[0].isdigit() or not ports[1].isdigit():
+                                            print('Invalid port numbers')
+                                            continue
+                                        if int(ports[0]) > int(ports[1]):
+                                            print('Invalid port range')
+                                            continue
+                                        break
+                                    else:
+                                        ports = [ports,ports]
+                                        break
+                            else:
+                                ports = 'unspecified'
+                                break
+                            break
                     else:
                         continue
-                break
-
-        if locationlist != [] or l3locations != []:
-            while True:
-                ask = custom_raw_input("\nWould you like to add interfaces manually? [n]: ") or 'no'
-                if ask[0].lower() == 'y':
+                    break
+            locationlist = []
+            templocationlist = []
+            if not location and not vpc:
+                if srcip and destip:
+                    print('\nSearching for source and destination interfaces...\n')
+                    for ip in [srcip,destip]:
+                        if ip != 'unspecified':
+                            url = """https://{apic}/api/node/class/fvCEp.json?rsp-subtree=full&rsp-subtree-class=fvRsCEpToPathEp&rsp-subtree-include=required&query-target-filter=eq(fvCEp.ip,"{ip}")""".format(apic=apic,ip=ip)
+                            results, totalcount = GetResponseData(url,cookie,return_count=True)
+                            if int(totalcount) == 1:
+                               templocationlist.extend([path['fvRsCEpToPathEp']['attributes']['tDn'] for path in results[0]['fvCEp']['children']])
+                            elif int(totalcount) > 1:
+                                for endpoint in results:
+                                    templocationlist.extend([path['fvRsCEpToPathEp']['attributes']['tDn'] for path in results['fvCEp']['children']])
+                            elif totalcount == '0':
+                                print('Unable to dynamically locate source interface for Endpoint using {}'.format(ip))
+                    if len(templocationlist) > 0:
+                        templocationlist = list(set(templocationlist))
+                        print("Found interfaces associated to IPs provided:\n")
+                        for num,path in enumerate(templocationlist,1):
+                            print('   {}.) {}'.format(num,path))
+                        while True:
+                            if len(templocationlist) == 1:
+                                search = custom_raw_input_restart("\nWould you like to monitor found interface? [default=yes]: ") or 'all'
+                                if search[0].lower() == 'n':
+                                    break
+                                elif search[0].lower() == 'y':
+                                    location = templocationlist
+                                    break
+                            else:
+                                search = custom_raw_input_restart("\nWhich interfaces would you like to monitor? [default=all]: ") or 'all'
+                            if search[0].lower() == 'n':
+                                break
+                            elif search == 'all':
+                                location = templocationlist
+                                locationlist = templocationlist
+                                break
+                            try:
+                                menunumbers = parseandreturnsingelist(search)
+                                locationlist = [templocationlist[loc - 1] for loc in menunumbers]
+                                break
+                            except:
+                                print('Invalid options, try again...')
+                                continue
+                    else:
+                        print("\nUnable to locate any interface from IPs provide")
+                additional = None
+                if external:
+                    print('\nL3 Menu:\n')
+                    l3outinterlist = gather_l3out_interfaces(apic)
+                    headers = ['Tenant','L3out']
+                    columns = [(x[1][0],x[1][1]) for x in l3outinterlist]
+                    sizes = get_column_sizes(rowlist=columns,baseminimum=headers)
+                    print('     {:{s1}} | {:{s2}}'.format('Tenant','L3out',s1=sizes[0],s2=sizes[1]))
+                    print('     ' + '-' * sizes[0] + '---' + '-' * sizes[1])
+                    for num,x in enumerate(l3outinterlist,1):
+                        print(' {}.) {:{s1}} | {:{s2}}'.format(num,x[1][0],x[1][1],s1=sizes[0],s2=sizes[1]))
+                    print('')
+                    while True:
+                        selections = custom_raw_input_restart('L3 Selection or none: ')
+                        if (not '-' in selections and not ',' in selections) and not selections.isdigit():
+                            print('Invalid selection')
+                            continue
+                        if selections.lower() == 'none':
+                            l3location = []
+                            l3outinterlist = []
+                            break
+                        else:
+                            menunumbers = parseandreturnsingelist(selections)
+                            try:
+                                l3locations.extend([l3outinterlist[num -1] for num in menunumbers])
+        
+                            except IndexError:
+                                print('Invalid selection')
+                                continue
+                            if len(menunumbers) > 1:
+                                print('Only one selection is supported')
+                                continue
+                        print('')
+                        while True:
+                            direc = custom_raw_input_restart('L3OUT capture direction? [both,in,out] [[both]]: ') or 'both'
+                            if direc in ['both','in','out']:
+                                [x.append(direc) for x in l3locations]
+                                break
+                            else:
+                                continue
+                        break
+        
+                if locationlist != [] or l3locations != []:
+                    while True:
+                        ask = custom_raw_input_restart("\nWould you like to add interfaces manually? [n]: ") or 'no'
+                        if ask[0].lower() == 'y':
+                            additional = True
+                            break
+                        if ask[0].lower() == 'n':
+                            break
+                if (locationlist == [] and l3outinterlist == []) or additional:
+                    allepglist = get_All_EGPs_names(apic,cookie)
+                    allpclist = get_All_PCs(apic,cookie)
+                    allvpclist = get_All_vPCs(apic,cookie)
+                    all_leaflist = get_All_leafs(apic,cookie)
                     additional = True
-                    break
-                if ask[0].lower() == 'n':
-                    break
-        if (locationlist == [] and l3outinterlist == []) or additional:
-            allepglist = get_All_EGPs_names(apic,cookie)
-            allpclist = get_All_PCs(apic,cookie)
-            allvpclist = get_All_vPCs(apic,cookie)
-            all_leaflist = get_All_leafs(apic,cookie)
-            additional = True
-            while additional == True:
-                selection = monitor_interface_menu()
-                if selection == '1':
-                    chosenleafs = physical_leaf_selection(all_leaflist, apic, cookie)
-                    switchpreviewutil.main(apic,cookie,chosenleafs)
-                    returnedlist = physical_interface_selection(apic, cookie, chosenleafs, provideleaf=False)
-                    locationlist.extend(returnedlist)
-                    print('\r')
-                elif selection == '2':
-                    returnedlist = port_channel_selection(allpclist)
-                    locationlist.extend(returnedlist)
-                    print('\r')
-                elif selection == '3':
-                    returnedlist = port_channel_selection(allvpclist)
-                    locationlist.extend(returnedlist)
-                    print('\r')
-                while True:
-                    addmore = custom_raw_input("Add any more Interfaces,PCs,VPCs? [n]: ") or 'n'
-                    if addmore[0].lower() == 'n':
-                        additional = False
-                        break
-                    elif addmore[0].lower() == 'y':
-                        break
-    if locationlist == []:
-        if location == None and vpc != None:
-            if ';' in vpc:
-                locationlist = vpc.split(';')
-            else:
-                locationlist = [vpc]
-        elif location == None and vpc == None and l3outinterlist == []:
-            custom_raw_input('ERROR: Source interface is required, exiting...')
-            raise KeyboardInterrupt
-        else:
-            locationlist = location
-
-    if ports == 'unspecified':
-        srcports = ['unspecified','unspecified']
-        destports = ['unspecified','unspecified']
-    elif type(ports) is list:
-        srcports = ['unspecified','unspecified']
-        destports = ports
-    else: 
-        destports = ports.split(':')
-        srcports= ['unspecified','unspecified']
-    #erspandestname = 'ERSPAN_DEST'
-    erspandestname = 'ERSPAN_DESTINATION_{}'.format(erspandestip.replace('.',""))
-    chosenepgs = []
-    while True:
-        filterepg = custom_raw_input("Capture speceific EPG traffic on source interface(s)? [y|default=n]: ") or 'no'
-        if filterepg[0].lower() == 'n':
-            epgfilter = False
-            break
-        elif filterepg[0].lower() == 'y':
-            allepglist = get_All_EGPs_names(apic,cookie)
-            while True:
-               chosenepgs, _ = display_and_select_epgs(None, allepglist)
-               if len(chosenepgs) > 1:
-                   print("Only one EPG supported, try again...\n")
-                   continue
-               epgfilter = chosenepgs
-               break
-            break
-    print('')
-    print('*' * 25)
-    print("Summary:")
-    if skipfilter == False:
-        print(" ACL Procotol {protocol}\n ACL Ports: {ports}".format(protocol=protocol,ports=ports))
-        print(" ACL IP source: {srcip}\n ACL IP dest: {destip}".format(srcip=srcip,destip=destip))
-    else:
-        print(" ACL filter: None")
-    print(" Duration: {duration} sec".format(duration=duration))
-    print(" ERSPAN Destination: " + str(erspandestip))
-    if chosenepgs:
-        print(" EPG filtered: {}".format(chosenepgs[0]))
-    if locationlist:
-        for loc in locationlist:
-           print(' Source interface: ' + str(loc))
-    if l3outinterlist:
-        for l3 in l3outinterlist:
-            print(' L3out interface: ' + str(l3[-2]))
-    print('*' * 25)
-    while True:
-        create = custom_raw_input('\nCreate ERSPAN? [y|n]:')
-        if create.strip() != "" and create.strip()[0].lower() == 'n':
-            custom_raw_input('\nCanceled!')
-            raise KeyboardInterrupt
-        elif create.strip() != "" and create.strip()[0].lower() == 'y':
-            break
-    try:
-        if skipfilter == True:
-            filterdn = None
-        else:
-            filterdn = create_filter_acl('ERSPAN_Filter_{}_{}'.format(user,currenttime),user,srcip,destip,protocol,srcports,destports)
-        erspanddestdn  = create_erspan_dest(erspandestname,user,erspandestip,erspansourceip='2.2.2.2',epgdn='uni/tn-HQ/ap-APP-HQ/epg-EPG-VL7-NET-MGMT')
-        spangroupdn = create_span_sourcegroup('ERSPAN_SOURCEGROUP_{}_{}'.format(user,currenttime),erspandestname,filterdn)
-        if locationlist:
-            create_span_sourcelocations('SPAN_Interfaces',spangroupdn,locationlist,epgfilter)
-        if l3outinterlist:
-            create_l3span_sourcelocations('L3Out_Interfaces',spangroupdn,l3outinterlist)
-        if skipfilter == False:
-            add_filter_to_span('ERSPAN_SOURCEGROUP_{}_{}'.format(user,currenttime),filterdn)
-        enable_span('ERSPAN_SOURCEGROUP_{}_{}'.format(user,currenttime))
-        print('\n')
-        if duration:
-            duration = int(duration)
-        if __name__ == '__main__':
-            command = 'wireshark erspan ip 2.2.2.2 any {computerip} Gi1/1/1 214.26.x.x {duration} rx silent'.format(duration=str(duration),computerip=computerip)
-            print('Logging into OOBM Switch (214.26.x.x) to relay traffic to computer\n')
-            print('ssh {}@214.26.x.x to start erspan relay'.format(user))
-            sshlogin(user,'214.26.x.x',command)
-        else:
-            if permanent == False:
-                print('ERSPAN will run for {duration} seconds'.format(duration=duration))
-                print('\n')
-                for i in range(duration +1):
-                    incre = int(50.0 / duration * i)
-                    if i != duration:
-                        print('|{}{}| {}%{}'.format('='*incre, ' '*(51-incre), 2*incre,'\b'*200),end="") 
+                    while additional == True:
+                        selection = monitor_interface_menu()
+                        if selection == '1':
+                            chosenleafs = physical_leaf_selection(all_leaflist, apic, cookie)
+                            switchpreviewutil.main(apic,cookie,chosenleafs)
+                            returnedlist = physical_interface_selection(apic, cookie, chosenleafs, provideleaf=False)
+                            locationlist.extend(returnedlist)
+                            print('\r')
+                        elif selection == '2':
+                            returnedlist = port_channel_selection(allpclist)
+                            locationlist.extend(returnedlist)
+                            print('\r')
+                        elif selection == '3':
+                            returnedlist = port_channel_selection(allvpclist)
+                            locationlist.extend(returnedlist)
+                            print('\r')
+                        while True:
+                            addmore = custom_raw_input_restart("Add any more Interfaces,PCs,VPCs? [n]: ") or 'n'
+                            if addmore[0].lower() == 'n':
+                                additional = False
+                                break
+                            elif addmore[0].lower() == 'y':
+                                break
+            if locationlist == []:
+                if location == None and vpc != None:
+                    if ';' in vpc:
+                        locationlist = vpc.split(';')
                     else:
-                        print('|{}{}{}| {}%'.format('='*20, 'COMPLETE!', '='*22, 100))
-                    time.sleep(1)
-    except KeyboardInterrupt:
-        print('\n\nCancelling and will delete ERSPAN')
-    except:
-        print('\n\nERROR has occurred! Removing ERSPAN')
-    finally:
-        failurenum = 0
-        failurelist = []
-        if permanent == False:
-            for url in urllist:
-                result = DeleteandGetResponseData(url[1],cookie)
-                if result[1] != None:
-                    failurenum += 1
-                    failurelist.append('Failure: Unable to delete {} object'.format(url[0]))
-            if failurenum == 0:
-                print('\nSuccessfully removed ERSPAN from ACI')
+                        locationlist = [vpc]
+                elif location == None and vpc == None and l3outinterlist == []:
+                    custom_raw_input_restart('ERROR: Source interface is required, exiting...')
+                    raise KeyboardInterrupt
+                else:
+                    locationlist = location
+        
+            if ports == 'unspecified':
+                srcports = ['unspecified','unspecified']
+                destports = ['unspecified','unspecified']
+            elif type(ports) is list:
+                srcports = ['unspecified','unspecified']
+                destports = ports
+            else: 
+                destports = ports.split(':')
+                srcports= ['unspecified','unspecified']
+            #erspandestname = 'ERSPAN_DEST'
+            erspandestname = 'ERSPAN_DESTINATION_{}'.format(erspandestip.replace('.',""))
+            chosenepgs = []
+            while True:
+                filterepg = custom_raw_input_restart("Capture speceific EPG traffic on source interface(s)? [y|default=n]: ") or 'no'
+                if filterepg[0].lower() == 'n':
+                    epgfilter = False
+                    break
+                elif filterepg[0].lower() == 'y':
+                    allepglist = get_All_EGPs_names(apic,cookie)
+                    while True:
+                       chosenepgs, _ = display_and_select_epgs(None, allepglist)
+                       if len(chosenepgs) > 1:
+                           print("Only one EPG supported, try again...\n")
+                           continue
+                       epgfilter = chosenepgs
+                       break
+                    break
+            print('')
+            print('*' * 25)
+            print("Summary:")
+            if skipfilter == False:
+                print(" ACL Procotol {protocol}\n ACL Ports: {ports}".format(protocol=protocol,ports=ports))
+                print(" ACL IP source: {srcip}\n ACL IP dest: {destip}".format(srcip=srcip,destip=destip))
+            else:
+                print(" ACL filter: None")
+            print(" Duration: {duration} sec".format(duration=duration))
+            print(" ERSPAN Destination: " + str(erspandestip))
+            if chosenepgs:
+                print(" EPG filtered: {}".format(chosenepgs[0]))
+            if locationlist:
+                for loc in locationlist:
+                   print(' Source interface: ' + str(loc))
+            if l3outinterlist:
+                for l3 in l3outinterlist:
+                    print(' L3out interface: ' + str(l3[-2]))
+            print('*' * 25)
+            while True:
+                create = custom_raw_input_restart('\nCreate ERSPAN? [y|n]:')
+                if create.strip() != "" and create.strip()[0].lower() == 'n':
+                    custom_raw_input_restart('\nCanceled!')
+                    raise RestartException
+                elif create.strip() != "" and create.strip()[0].lower() == 'y':
+                    break
+            try:
+                if skipfilter == True:
+                    filterdn = None
+                else:
+                    filterdn = create_filter_acl('ERSPAN_Filter_{}_{}'.format(user,currenttime),user,srcip,destip,protocol,srcports,destports)
+                erspanddestdn  = create_erspan_dest(erspandestname,user,erspandestip,erspansourceip='2.2.2.2',epgdn='uni/tn-HQ/ap-APP-HQ/epg-EPG-VL7-NET-MGMT')
+                spangroupdn = create_span_sourcegroup('ERSPAN_SOURCEGROUP_{}_{}'.format(user,currenttime),erspandestname,filterdn)
+                if locationlist:
+                    create_span_sourcelocations('SPAN_Interfaces',spangroupdn,locationlist,epgfilter)
+                if l3outinterlist:
+                    create_l3span_sourcelocations('L3Out_Interfaces',spangroupdn,l3outinterlist)
+                if skipfilter == False:
+                    add_filter_to_span('ERSPAN_SOURCEGROUP_{}_{}'.format(user,currenttime),filterdn)
+                enable_span('ERSPAN_SOURCEGROUP_{}_{}'.format(user,currenttime))
+                print('\n')
+                if duration:
+                    duration = int(duration)
+                if __name__ == '__main__':
+                    command = 'wireshark erspan ip 2.2.2.2 any {computerip} Gi1/1/1 214.26.x.x {duration} rx silent'.format(duration=str(duration),computerip=computerip)
+                    print('Logging into OOBM Switch (214.26.x.x) to relay traffic to computer\n')
+                    print('ssh {}@214.26.x.x to start erspan relay'.format(user))
+                    sshlogin(user,'214.26.x.x',command)
+                else:
+                    if permanent == False:
+                        print('ERSPAN will run for {duration} seconds'.format(duration=duration))
+                        print('\n')
+                        for i in range(duration +1):
+                            incre = int(50.0 / duration * i)
+                            if i != duration:
+                                print('|{}{}| {}%{}'.format('='*incre, ' '*(51-incre), 2*incre,'\b'*200),end="") 
+                            else:
+                                print('|{}{}{}| {}%'.format('='*20, 'COMPLETE!', '='*22, 100))
+                            time.sleep(1)
+            except KeyboardInterrupt:
+                print('\n\nCancelling and will delete ERSPAN')
+            except:
+                print('\n\nERROR has occurred! Removing ERSPAN')
+            finally:
+                failurenum = 0
+                failurelist = []
+                if permanent == False:
+                    for url in urllist:
+                        result = DeleteandGetResponseData(url[1],cookie)
+                        if result[1] != None:
+                            failurenum += 1
+                            failurelist.append('Failure: Unable to delete {} object'.format(url[0]))
+                    if failurenum == 0:
+                        print('\nSuccessfully removed ERSPAN from ACI')
+                else:
+                    print('\nERSPAN will remain operation until admin disables via GUI or API')
+                custom_raw_input_restart('\nContinue...')
+        except RestartException:
+            continue
         else:
-            print('\nERSPAN will remain operation until admin disables via GUI or API')
-        custom_raw_input('\nContinue...')
+            break
+        finally:
+            refreshToken(apic,cookie)
+
 
 
 if __name__ == "__main__":
